@@ -1,0 +1,263 @@
+package com.example.coffeeshopapp.presentation.screen.user.home
+
+import androidx.annotation.DrawableRes
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.NotificationsNone
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.StarRate
+import androidx.compose.material.icons.filled.Whatshot
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import com.example.coffeeshopapp.R
+import com.example.coffeeshopapp.data.CoffeeItem
+import com.example.coffeeshopapp.data.coffeeCategories
+import com.example.coffeeshopapp.data.model.Category
+import com.example.coffeeshopapp.data.trendingCoffeeList
+import com.example.coffeeshopapp.presentation.components.Categories
+import com.example.coffeeshopapp.presentation.components.SearchingTextField
+import com.example.coffeeshopapp.presentation.components.TrendingItems
+import com.example.coffeeshopapp.presentation.theme.CardBackgroundColor
+import com.example.coffeeshopapp.presentation.theme.CardBackgroundColor2
+import com.example.coffeeshopapp.presentation.theme.CoffeeShopAppTheme
+import com.example.coffeeshopapp.presentation.theme.CoffeeTextColor
+import com.example.coffeeshopapp.presentation.theme.IconStarRateColor
+import com.example.coffeeshopapp.presentation.theme.IconWhatshotColor
+import com.example.coffeeshopapp.presentation.theme.LabelColor
+import com.example.coffeeshopapp.presentation.theme.PlaceHolderColor
+import com.example.coffeeshopapp.presentation.theme.TextColor
+import com.example.coffeeshopapp.presentation.theme.TitleSmallColor
+import com.example.coffeeshopapp.presentation.theme.k2d
+
+@Composable
+fun HomeContent(
+    categories: List<Category>,
+    trendingItems: List<CoffeeItem>,
+    onCategoryClick: (String) -> Unit,
+    onFavoriteClick: (String) -> Unit,
+    onAddToCartClick: (String) -> Unit
+) {
+    var searchingKeyWords by remember {
+        mutableStateOf("")
+    }
+    LazyColumn(modifier = Modifier.fillMaxSize()) {
+        item {
+            Box(
+                modifier = Modifier.fillMaxWidth()
+                    .padding(top = 24.dp, start = 24.dp, end = 24.dp)
+            ) {
+                Text(
+                    text = buildAnnotatedString {
+                        withStyle(
+                            style = MaterialTheme.typography.titleMedium.toSpanStyle()
+                                .copy(color = LabelColor)
+                        ) {
+                            append("Enjoy your\nMorning ")
+                        }
+                        withStyle(
+                            style = MaterialTheme.typography.titleMedium.toSpanStyle()
+                                .copy(color = CoffeeTextColor)
+                        ) {
+                            append("Coffee!!")
+                        }
+
+                    },
+                    textAlign = TextAlign.Left,
+                )
+
+                IconButton(
+                    onClick = {},
+                    modifier = Modifier.align(Alignment.CenterEnd)
+                ) {
+                    Icon(
+                        Icons.Default.NotificationsNone,
+                        contentDescription = null,
+                        tint = LabelColor,
+                        modifier = Modifier
+                            .align(Alignment.CenterEnd)
+                            .size(36.dp)
+                    )
+                }
+            }
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 24.dp, start = 24.dp, end = 24.dp),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                SearchingTextField(
+                    value = searchingKeyWords,
+                    onValueChange = {
+                        searchingKeyWords = it
+                    },
+                    modifier = Modifier.fillMaxWidth(.8f)
+                        .align(Alignment.CenterVertically)
+                )
+
+
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.CenterVertically)
+                        .clickable {
+                            onFavoriteClick
+                        },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(42.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(CardBackgroundColor)
+                    )
+
+                    Image(
+                        painter = painterResource(R.drawable.icon_favorite_thin),
+                        contentDescription = null,
+                        modifier = Modifier.size(36.dp)
+                    )
+                }
+
+            }
+        }
+
+        item {
+            TitleSmall("Danh Mục", onClickSeeMore = {})
+            Categories(categories = categories, onCategoryClick = onCategoryClick)
+        }
+
+        item {
+            TitleSmall(
+                "Xu Hướng",
+                onClickSeeMore = {},
+                icon = Icons.Default.Whatshot,
+                iconColor = IconWhatshotColor
+            )
+            TrendingItems(items = trendingItems, onFavoriteClick = onFavoriteClick, onAddToCartClick = onAddToCartClick)
+        }
+
+        item {
+            TitleSmall("Danh Mục", onClickSeeMore = {})
+            Categories(onCategoryClick = {})
+        }
+
+        item {
+            TitleSmall(
+                "Xu Hướng",
+                onClickSeeMore = {},
+                icon = Icons.Default.Whatshot,
+                iconColor = IconWhatshotColor
+            )
+            TrendingItems(items = trendingItems, onFavoriteClick = onFavoriteClick, onAddToCartClick = onAddToCartClick)
+        }
+    }
+}
+
+@Composable
+fun TitleSmall(
+    titleContent: String,
+    onClickSeeMore: () -> Unit,
+    icon: ImageVector? = null,
+    iconColor: Color = LabelColor,
+    modifier: Modifier = Modifier
+) {
+    Box(modifier = modifier
+        .fillMaxWidth()
+        .padding(top = 18.dp, start = 24.dp, end = 24.dp)
+    ) {
+        Row(modifier = Modifier.wrapContentSize().align(Alignment.CenterStart), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(
+                text = titleContent,
+                color = TitleSmallColor,
+                style = MaterialTheme.typography.titleSmall,
+                modifier = Modifier,
+            )
+
+            if (icon != null)
+                Icon(
+                    imageVector = icon,
+                    tint = iconColor,
+                    contentDescription = null,
+                    modifier = Modifier.align(Alignment.CenterVertically)
+                )
+        }
+        TextButton(
+            onClick = onClickSeeMore,
+            modifier = Modifier.align(Alignment.CenterEnd),
+            contentPadding = PaddingValues(0.dp)
+        ) {
+            Row(modifier = Modifier.wrapContentWidth()) {
+                Text(
+                    text = "Xem thêm",
+                    color = PlaceHolderColor,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Icon(
+                    Icons.Default.KeyboardArrowRight,
+                    contentDescription = null,
+                    tint = PlaceHolderColor,
+                    modifier = Modifier.size(20.dp).align(Alignment.Bottom)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+@Preview(name = "Title Small")
+fun TitleSmallPreview() {
+    HomeContent(
+        categories = coffeeCategories,
+        trendingItems = trendingCoffeeList,
+        onCategoryClick = {},
+        onFavoriteClick = {},
+        onAddToCartClick = {}
+    )
+}
