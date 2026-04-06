@@ -10,7 +10,9 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.coffeeshopapp.presentation.theme.CoffeeShopAppTheme
 import com.example.coffeeshopapp.presentation.theme.LabelColor
 import com.example.coffeeshopapp.presentation.theme.PlaceHolderColor
 import com.example.coffeeshopapp.presentation.theme.TextColor
@@ -32,12 +34,22 @@ fun SearchingTextField(
 
             focusedTextColor = TextColor,
             unfocusedTextColor = TextColor,
+
         ),
         placeholder = {
-            Text(text = "Tìm kiếm", color = PlaceHolderColor, style = MaterialTheme.typography.bodyMedium)
+            Text(text = "Nhập tên sản phẩm...", color = PlaceHolderColor, style = MaterialTheme.typography.bodyMedium)
         },
         leadingIcon = {
             Icon(Icons.Default.Search, contentDescription = null, tint = LabelColor)
-        }
+        },
+        singleLine = true,
     )
+}
+
+@Composable
+@Preview(name = "Searching TextField")
+fun SearchPreview() {
+    CoffeeShopAppTheme {
+        SearchingTextField(value = "", onValueChange = {})
+    }
 }
