@@ -14,6 +14,7 @@ private val Context.authDataStore: DataStore<Preferences> by preferencesDataStor
 
 object AuthDataStore {
     private val TOKEN_KEY = stringPreferencesKey("access_token")
+    private val ROLES_KEY = stringPreferencesKey("roles")
 
     fun tokenFlow(context: Context): Flow<String?> {
         return context.authDataStore.data.map { prefs ->
@@ -24,6 +25,26 @@ object AuthDataStore {
     suspend fun setToken(context: Context, token: String?) {
         context.authDataStore.edit { prefs ->
             if (token == null) prefs.remove(TOKEN_KEY) else prefs[TOKEN_KEY] = token
+        }
+    }
+
+    fun rolesFlow(context: Context): Flow<List<String>> {
+        return context.authDataStore.data.map { prefs ->
+            prefs[ROLES_KEY]
+                ?.split(",")
+                ?.map { it.trim() }
+                ?.filter { it.isNotBlank() }
+                ?: emptyList()
+        }
+    }
+
+    suspend fun setRoles(context: Context, roles: List<String>) {
+        context.authDataStore.edit { prefs ->
+            if (roles.isEmpty()) {
+                prefs.remove(ROLES_KEY)
+            } else {
+                prefs[ROLES_KEY] = roles.joinToString(",")
+            }
         }
     }
 

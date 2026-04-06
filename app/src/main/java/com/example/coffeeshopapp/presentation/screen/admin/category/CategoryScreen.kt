@@ -1,24 +1,76 @@
 package com.example.coffeeshopapp.presentation.screen.admin.category
 
-import androidx.compose.foundation.layout.*
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardOptions
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
 import com.example.coffeeshopapp.data.model.dto.CategoryDto
 import com.example.coffeeshopapp.presentation.viewmodel.AdminCategoryScreenType
 import com.example.coffeeshopapp.presentation.viewmodel.AdminCategoryViewModel
 import com.example.coffeeshopapp.presentation.viewmodel.CategoryUiState
+import com.example.coffeeshopapp.utils.AppConstants
+import com.example.coffeeshopapp.utils.uriToImagePart
+import okhttp3.MultipartBody
 
 @Composable
 fun AdminCategoryScreen(
@@ -30,8 +82,8 @@ fun AdminCategoryScreen(
     if (uiState.showDeleteConfirmDialog && uiState.selectedCategory != null) {
         DeleteConfirmationDialog(
             category = uiState.selectedCategory!!,
-            onConfirm = { viewModel.confirmDelete() },
-            onDismiss = { viewModel.dismissDeleteDialog() }
+            onConfirm = viewModel::confirmDelete,
+            onDismiss = viewModel::dismissDeleteDialog
         )
     }
 
@@ -39,37 +91,46 @@ fun AdminCategoryScreen(
         AdminCategoryScreenType.LIST -> {
             CategoryListScreen(
                 uiState = uiState,
-                onAddClick = { viewModel.navigateTo(AdminCategoryScreenType.CREATE) },
-                onDetailClick = { viewModel.navigateTo(AdminCategoryScreenType.DETAIL, it) },
-                onEditClick = { viewModel.navigateTo(AdminCategoryScreenType.UPDATE, it) },
-                onDeleteClick = { viewModel.showDeleteDialog(it) },
+                onAddClick = viewModel::showCreateForm,
+                onDetailClick = { viewModel.loadCategoryDetail(it.id) },
+                onEditClick = { viewModel.loadCategoryForUpdate(it.id) },
+                onDeleteClick = viewModel::showDeleteDialog,
                 onBackClick = onBackClick
             )
         }
+
         AdminCategoryScreenType.DETAIL -> {
             CategoryDetailScreen(
                 category = uiState.selectedCategory,
-                onBack = { viewModel.navigateTo(AdminCategoryScreenType.LIST) },
-                onEdit = { viewModel.navigateTo(AdminCategoryScreenType.UPDATE, uiState.selectedCategory) }
+                onBack = viewModel::showList,
+                onEdit = {
+                    uiState.selectedCategory?.id?.let { viewModel.loadCategoryForUpdate(it) }
+                }
             )
         }
+
         AdminCategoryScreenType.CREATE -> {
             CategoryFormScreen(
                 isUpdating = false,
                 initialCategory = null,
-                onSubmit = { name, desc -> viewModel.createCategory(name, desc) },
-                onBack = { viewModel.navigateTo(AdminCategoryScreenType.LIST) }
+                isLoading = uiState.isLoading,
+                onSubmit = { name, displayOrder, image ->
+                    viewModel.createCategory(name, displayOrder, image)
+                },
+                onBack = viewModel::showList
             )
         }
+
         AdminCategoryScreenType.UPDATE -> {
             CategoryFormScreen(
                 isUpdating = true,
                 initialCategory = uiState.selectedCategory,
-                onSubmit = { name, desc -> 
+                isLoading = uiState.isLoading,
+                onSubmit = { name, displayOrder, image ->
                     val id = uiState.selectedCategory?.id ?: return@CategoryFormScreen
-                    viewModel.updateCategory(id, name, desc) 
+                    viewModel.updateCategory(id, name, displayOrder, image)
                 },
-                onBack = { viewModel.navigateTo(AdminCategoryScreenType.LIST) }
+                onBack = viewModel::showList
             )
         }
     }
@@ -77,7 +138,7 @@ fun AdminCategoryScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CategoryListScreen(
+private fun CategoryListScreen(
     uiState: CategoryUiState,
     onAddClick: () -> Unit,
     onDetailClick: (CategoryDto) -> Unit,
@@ -86,67 +147,136 @@ fun CategoryListScreen(
     onBackClick: () -> Unit
 ) {
     Scaffold(
+        containerColor = Color(0xFFF7F8FA),
         topBar = {
             TopAppBar(
-                title = { Text("Category Manager") },
+                title = { Text("Quản lý danh mục") },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Quay lại")
                     }
                 }
             )
         },
         floatingActionButton = {
             FloatingActionButton(onClick = onAddClick) {
-                Icon(Icons.Default.Add, contentDescription = "Add Category")
+                Icon(Icons.Default.Add, contentDescription = "Thêm danh mục")
             }
         }
     ) { padding ->
-        if (uiState.isLoading) {
-            Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
+        when {
+            uiState.isLoading -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(padding),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
             }
-        } else if (uiState.error != null) {
-            Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                Text("Error: ${uiState.error}", color = MaterialTheme.colorScheme.error)
+
+            uiState.error != null -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(padding),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("Lỗi: ${uiState.error}", color = MaterialTheme.colorScheme.error)
+                }
             }
-        } else {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize().padding(padding),
-                contentPadding = PaddingValues(16.dp)
-            ) {
-                items(uiState.categories) { category ->
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 8.dp),
-                        onClick = { onDetailClick(category) },
-                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Column {
-                                Text(text = category.name, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
-                                category.description?.let {
-                                    Spacer(modifier = Modifier.height(4.dp))
-                                    Text(text = it, style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
-                                }
-                            }
-                            Row {
-                                IconButton(onClick = { onEditClick(category) }) {
-                                    Icon(Icons.Default.Edit, contentDescription = "Edit", tint = MaterialTheme.colorScheme.primary)
-                                }
-                                IconButton(onClick = { onDeleteClick(category) }) {
-                                    Icon(Icons.Default.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error)
-                                }
-                            }
-                        }
+
+            uiState.categories.isEmpty() -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(padding),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("Chưa có danh mục nào.")
+                }
+            }
+
+            else -> {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(padding),
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    items(uiState.categories) { category ->
+                        CategoryCard(
+                            category = category,
+                            onDetailClick = { onDetailClick(category) },
+                            onEditClick = { onEditClick(category) },
+                            onDeleteClick = { onDeleteClick(category) }
+                        )
                     }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun CategoryCard(
+    category: CategoryDto,
+    onDetailClick: () -> Unit,
+    onEditClick: () -> Unit,
+    onDeleteClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        shape = RoundedCornerShape(16.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(14.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            CategoryImage(
+                imageUrl = category.imageUrl,
+                modifier = Modifier.size(72.dp)
+            )
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = category.name,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "Thứ tự hiển thị: ${category.displayOrder}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color(0xFF757575)
+                )
+                Text(
+                    text = if (category.isActive) "Đang hiển thị" else "Đã ẩn",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (category.isActive) Color(0xFF2E7D32) else Color(0xFF9E9E9E)
+                )
+            }
+
+            Row {
+                IconButton(onClick = onDetailClick) {
+                    Icon(Icons.Default.Visibility, contentDescription = "Xem chi tiết")
+                }
+                IconButton(onClick = onEditClick) {
+                    Icon(Icons.Default.Edit, contentDescription = "Sửa")
+                }
+                IconButton(onClick = onDeleteClick) {
+                    Icon(
+                        Icons.Default.Delete,
+                        contentDescription = "Xoá",
+                        tint = MaterialTheme.colorScheme.error
+                    )
                 }
             }
         }
@@ -155,7 +285,7 @@ fun CategoryListScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CategoryDetailScreen(
+private fun CategoryDetailScreen(
     category: CategoryDto?,
     onBack: () -> Unit,
     onEdit: () -> Unit
@@ -163,60 +293,94 @@ fun CategoryDetailScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Category Details") },
+                title = { Text("Chi tiết danh mục") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Quay lại")
                     }
                 },
                 actions = {
                     IconButton(onClick = onEdit) {
-                        Icon(Icons.Default.Edit, contentDescription = "Edit")
+                        Icon(Icons.Default.Edit, contentDescription = "Sửa")
                     }
                 }
             )
         }
     ) { padding ->
         if (category == null) {
-            Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                Text("Category not found")
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("Không tìm thấy danh mục.")
             }
             return@Scaffold
         }
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(16.dp)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            Text("Name", fontWeight = FontWeight.Bold, color = Color.Gray)
-            Text(category.name, style = MaterialTheme.typography.bodyLarge)
-            Spacer(modifier = Modifier.height(16.dp))
-            Text("Description", fontWeight = FontWeight.Bold, color = Color.Gray)
-            Text(category.description ?: "N/A", style = MaterialTheme.typography.bodyLarge)
+            CategoryImage(
+                imageUrl = category.imageUrl,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(180.dp)
+            )
+            DetailRow("Tên", category.name)
+            DetailRow("Thứ tự hiển thị", category.displayOrder.toString())
+            DetailRow("Trạng thái", if (category.isActive) "Đang hiển thị" else "Đã ẩn")
+            DetailRow("Mô tả", category.description ?: "Không có")
         }
+    }
+}
+
+@Composable
+private fun DetailRow(label: String, value: String) {
+    Column {
+        Text(text = label, color = Color(0xFF757575), style = MaterialTheme.typography.bodySmall)
+        Text(text = value, style = MaterialTheme.typography.bodyLarge)
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CategoryFormScreen(
+private fun CategoryFormScreen(
     isUpdating: Boolean,
     initialCategory: CategoryDto?,
-    onSubmit: (String, String?) -> Unit,
+    isLoading: Boolean,
+    onSubmit: (String, Int, MultipartBody.Part?) -> Unit,
     onBack: () -> Unit
 ) {
-    var title by remember { mutableStateOf(initialCategory?.name ?: "") }
-    var description by remember { mutableStateOf(initialCategory?.description ?: "") }
-    val screenTitle = if (isUpdating) "Update Category" else "Add Category"
+    val context = LocalContext.current
+    var name by rememberSaveable(initialCategory?.id) { mutableStateOf(initialCategory?.name.orEmpty()) }
+    var displayOrderText by rememberSaveable(initialCategory?.id) {
+        mutableStateOf(
+            if (initialCategory != null) initialCategory.displayOrder.toString() else "0"
+        )
+    }
+    var selectedImageUri by rememberSaveable(initialCategory?.id) { mutableStateOf<Uri?>(null) }
+
+    val imagePicker = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri ->
+        selectedImageUri = uri
+    }
+
+    val title = if (isUpdating) "Cập nhật danh mục" else "Tạo danh mục"
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(screenTitle) },
+                title = { Text(title) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Quay lại")
                     }
                 }
             )
@@ -226,60 +390,154 @@ fun CategoryFormScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(16.dp)
+                .verticalScroll(rememberScrollState())
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             OutlinedTextField(
-                value = title,
-                onValueChange = { title = it },
-                label = { Text("Category Name") },
-                modifier = Modifier.fillMaxWidth()
+                value = name,
+                onValueChange = { name = it },
+                modifier = Modifier.fillMaxWidth(),
+                label = { Text("Tên danh mục") },
+                singleLine = true
             )
-            Spacer(modifier = Modifier.height(16.dp))
+
             OutlinedTextField(
-                value = description,
-                onValueChange = { description = it },
-                label = { Text("Description") },
+                value = displayOrderText,
+                onValueChange = { input ->
+                    if (input.isEmpty() || input.all { it.isDigit() }) {
+                        displayOrderText = input
+                    }
+                },
                 modifier = Modifier.fillMaxWidth(),
-                minLines = 3
+                label = { Text("Thứ tự hiển thị") },
+                keyboardOptions = KeyboardOptions.Default.copy(
+                    keyboardType = androidx.compose.ui.text.input.KeyboardType.Number
+                ),
+                singleLine = true
             )
-            Spacer(modifier = Modifier.height(32.dp))
-            Button(
-                onClick = { onSubmit(title, description.ifEmpty { null }) },
-                modifier = Modifier.fillMaxWidth(),
-                enabled = title.isNotBlank()
+
+            Text(
+                text = "Ảnh danh mục",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold
+            )
+
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(180.dp)
+                    .clickable { imagePicker.launch("image/*") },
+                shape = RoundedCornerShape(14.dp),
+                border = BorderStroke(1.dp, Color(0xFFBDBDBD)),
+                color = Color(0xFFF8F8F8)
             ) {
-                Text(if (isUpdating) "Update" else "Save")
+                Box(contentAlignment = Alignment.Center) {
+                    val previewImage = selectedImageUri ?: initialCategory?.imageUrl?.let { Uri.parse(it) }
+                    if (previewImage != null) {
+                        CategoryImage(
+                            imageUrl = previewImage.toString(),
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    } else {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Icon(
+                                imageVector = Icons.Default.Image,
+                                contentDescription = null,
+                                tint = Color(0xFF757575)
+                            )
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Text("Nhấn để chọn ảnh", color = Color(0xFF757575))
+                        }
+                    }
+                }
+            }
+
+            if (selectedImageUri != null) {
+                Text(
+                    text = "Đã chọn ảnh mới",
+                    color = Color(0xFF2E7D32),
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+
+            if (isLoading) {
+                CircularProgressIndicator()
+            }
+
+            Button(
+                onClick = {
+                    val displayOrder = displayOrderText.toIntOrNull() ?: 0
+                    val imagePart = selectedImageUri?.let { uriToImagePart(context, it) }
+                    onSubmit(name.trim(), displayOrder, imagePart)
+                },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = name.isNotBlank() && !isLoading
+            ) {
+                Text(if (isUpdating) "Cập nhật" else "Tạo danh mục")
             }
         }
     }
 }
 
 @Composable
-fun DeleteConfirmationDialog(
+private fun CategoryImage(
+    imageUrl: String?,
+    modifier: Modifier = Modifier
+) {
+    val finalUrl = remember(imageUrl) { resolveImageUrl(imageUrl) }
+
+    if (finalUrl == null) {
+        Box(
+            modifier = modifier
+                .clip(RoundedCornerShape(12.dp))
+                .background(Color(0xFFE0E0E0)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(Icons.Default.Image, contentDescription = null, tint = Color(0xFF9E9E9E))
+        }
+        return
+    }
+
+    AsyncImage(
+        model = finalUrl,
+        contentDescription = null,
+        modifier = modifier.clip(RoundedCornerShape(12.dp)),
+        contentScale = ContentScale.Crop
+    )
+}
+
+private fun resolveImageUrl(raw: String?): String? {
+    if (raw.isNullOrBlank()) return null
+    if (raw.startsWith("content://")) return raw
+    if (raw.startsWith("http://") || raw.startsWith("https://")) return raw
+    return "${AppConstants.baseUrl}${if (raw.startsWith("/")) "" else "/"}$raw"
+}
+
+@Composable
+private fun DeleteConfirmationDialog(
     category: CategoryDto,
     onConfirm: () -> Unit,
     onDismiss: () -> Unit
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = {
-            Text(text = "Delete Category")
-        },
+        title = { Text("Xoá danh mục") },
         text = {
-            Text("Are you sure you want to delete ${category.name}? This action cannot be undone.")
+            Text(
+                text = "Bạn có chắc muốn xoá \"${category.name}\" không?",
+                maxLines = 3,
+                overflow = TextOverflow.Ellipsis
+            )
         },
         confirmButton = {
-            TextButton(
-                onClick = onConfirm
-            ) {
-                Text("Delete", color = MaterialTheme.colorScheme.error)
+            TextButton(onClick = onConfirm) {
+                Text("Xoá", color = MaterialTheme.colorScheme.error)
             }
         },
         dismissButton = {
-            TextButton(
-                onClick = onDismiss
-            ) {
-                Text("Cancel")
+            TextButton(onClick = onDismiss) {
+                Text("Huỷ")
             }
         }
     )

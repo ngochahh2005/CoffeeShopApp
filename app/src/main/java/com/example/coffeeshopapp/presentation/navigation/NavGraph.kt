@@ -1,4 +1,4 @@
-package com.example.coffeeshopapp.presentation.navigation
+﻿package com.example.coffeeshopapp.presentation.navigation
 
 import android.annotation.SuppressLint
 import androidx.compose.animation.AnimatedContentTransitionScope
@@ -8,16 +8,29 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.NavHost
+import com.example.coffeeshopapp.data.remote.NetworkClient
+import com.example.coffeeshopapp.data.repository.CategoryRepository
+import com.example.coffeeshopapp.domain.usecase.CreateCategoryUseCase
+import com.example.coffeeshopapp.domain.usecase.DeleteCategoryUseCase
+import com.example.coffeeshopapp.domain.usecase.GetCategoriesUseCase
+import com.example.coffeeshopapp.domain.usecase.GetCategoryByIdUseCase
+import com.example.coffeeshopapp.domain.usecase.UpdateCategoryUseCase
+import com.example.coffeeshopapp.presentation.screen.admin.DashboardScreen
+import com.example.coffeeshopapp.presentation.screen.admin.category.AdminCategoryScreen
 import com.example.coffeeshopapp.presentation.screen.auth.ForgotPasswordScreen
 import com.example.coffeeshopapp.presentation.screen.auth.LoginScreen
 import com.example.coffeeshopapp.presentation.screen.auth.RegisterScreen
 import com.example.coffeeshopapp.presentation.screen.user.CartScreen
-import com.example.coffeeshopapp.presentation.screen.user.favorite.FavouritesScreen
 import com.example.coffeeshopapp.presentation.screen.user.ProfileScreen
+import com.example.coffeeshopapp.presentation.screen.user.favorite.FavouritesScreen
 import com.example.coffeeshopapp.presentation.screen.user.home.HomeScreen
-import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.coffeeshopapp.presentation.viewmodel.AdminCategoryViewModel
 import com.example.coffeeshopapp.presentation.viewmodel.HomeViewModel
 
 @SuppressLint("RestrictedApi")
@@ -25,7 +38,7 @@ import com.example.coffeeshopapp.presentation.viewmodel.HomeViewModel
 fun NavGraph(innerPadding: PaddingValues, navController: NavHostController) {
     val sharedHomeViewModel: HomeViewModel = viewModel()
 
-    androidx.navigation.compose.NavHost(
+    NavHost(
         navController = navController,
         startDestination = Screen.Login.route,
         modifier = Modifier.padding(innerPadding),
@@ -55,19 +68,12 @@ fun NavGraph(innerPadding: PaddingValues, navController: NavHostController) {
         }
     ) {
         composable(route = Screen.UserHome.route) { backStackEntry ->
-            // create ViewModel scoped to the UserHome backStackEntry so loadData() runs when Home is shown
             val homeViewModel: HomeViewModel = viewModel(backStackEntry)
             HomeScreen(
                 viewModel = homeViewModel,
-                openFavouritesScreen = {
-                    navController.navigate(Screen.Favourites.route)
-                },
-                openCartScreen = {
-                    navController.navigate(Screen.Cart.route)
-                },
-                openProfileScreen = {
-                    navController.navigate(Screen.Profile.route)
-                }
+                openFavouritesScreen = { navController.navigate(Screen.Favourites.route) },
+                openCartScreen = { navController.navigate(Screen.Cart.route) },
+                openProfileScreen = { navController.navigate(Screen.Profile.route) }
             )
         }
 
@@ -77,49 +83,60 @@ fun NavGraph(innerPadding: PaddingValues, navController: NavHostController) {
                     entry.destination.route == Screen.UserHome.route
                 }
             }
-
-            // Nếu tìm thấy entry của UserHome thì dùng, không thì tạo mới (viewModel())
             val homeViewModel: HomeViewModel = if (homeBackStackEntry != null) {
                 viewModel(homeBackStackEntry)
             } else {
-                viewModel()
+                sharedHomeViewModel
             }
-
             FavouritesScreen(viewModel = homeViewModel)
         }
 
-        composable(route = Screen.Cart.route) {
-            CartScreen()
-        }
+        composable(route = Screen.Cart.route) { CartScreen() }
 
         composable(route = Screen.Profile.route) {
-            ProfileScreen()
+            ProfileScreen(onOpenAdmin = { navController.navigate(Screen.AdminDashboard.route) })
+        }
+
+        composable(route = Screen.AdminDashboard.route) {
+            DashboardScreen(
+                onBack = { navController.popBackStack() },
+                onOpenCategory = { navController.navigate(Screen.AdminCategory.route) }
+            )
+        }
+
+        composable(route = Screen.AdminCategory.route) {
+            val viewModel: AdminCategoryViewModel = viewModel(factory = object : ViewModelProvider.Factory {
+                @Suppress("UNCHECKED_CAST")
+                override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                    val repository = CategoryRepository(NetworkClient.api)
+                    return AdminCategoryViewModel(
+                        getCategoriesUseCase = GetCategoriesUseCase(repository),
+                        getCategoryByIdUseCase = GetCategoryByIdUseCase(repository),
+                        createCategoryUseCase = CreateCategoryUseCase(repository),
+                        updateCategoryUseCase = UpdateCategoryUseCase(repository),
+                        deleteCategoryUseCase = DeleteCategoryUseCase(repository)
+                    ) as T
+                }
+            })
+
+            AdminCategoryScreen(
+                viewModel = viewModel,
+                onBackClick = { navController.popBackStack() }
+            )
         }
 
         composable(route = Screen.Login.route) {
             LoginScreen(
-                openHomeScreen = {
-                    navController.navigate(Screen.UserHome.route)
-                },
-                openRegisterScreen = {
-                    navController.navigate(Screen.Register.route)
-                },
-                openResetPasswordScreen = {
-                    navController.navigate(Screen.ResetPassword.route)
-                }
+                openHomeScreen = { navController.navigate(Screen.UserHome.route) },
+                openRegisterScreen = { navController.navigate(Screen.Register.route) },
+                openResetPasswordScreen = { navController.navigate(Screen.ResetPassword.route) }
             )
         }
 
         composable(route = Screen.Register.route) {
-            RegisterScreen(
-                openLoginScreen = {
-                    navController.navigate(Screen.Login.route)
-                }
-            )
+            RegisterScreen(openLoginScreen = { navController.navigate(Screen.Login.route) })
         }
 
-        composable(route = Screen.ResetPassword.route) {
-            ForgotPasswordScreen()
-        }
+        composable(route = Screen.ResetPassword.route) { ForgotPasswordScreen() }
     }
 }

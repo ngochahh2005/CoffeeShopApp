@@ -6,12 +6,14 @@ import com.example.coffeeshopapp.data.model.dto.CategoryDto
 import com.example.coffeeshopapp.domain.usecase.CreateCategoryUseCase
 import com.example.coffeeshopapp.domain.usecase.DeleteCategoryUseCase
 import com.example.coffeeshopapp.domain.usecase.GetCategoriesUseCase
+import com.example.coffeeshopapp.domain.usecase.GetCategoryByIdUseCase
 import com.example.coffeeshopapp.domain.usecase.UpdateCategoryUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import okhttp3.MultipartBody
 
 data class CategoryUiState(
     val isLoading: Boolean = false,
@@ -28,6 +30,7 @@ enum class AdminCategoryScreenType {
 
 class AdminCategoryViewModel(
     private val getCategoriesUseCase: GetCategoriesUseCase,
+    private val getCategoryByIdUseCase: GetCategoryByIdUseCase,
     private val createCategoryUseCase: CreateCategoryUseCase,
     private val updateCategoryUseCase: UpdateCategoryUseCase,
     private val deleteCategoryUseCase: DeleteCategoryUseCase
@@ -45,10 +48,9 @@ class AdminCategoryViewModel(
             _uiState.update { it.copy(isLoading = true, error = null) }
             try {
                 val response = getCategoriesUseCase()
-                // Depending on generic success code, adjusting typical logic.
-                if (response.code == 200 || response.code == 1000 || response.code == 0) { 
+                if (isSuccess(response.code)) {
                     _uiState.update { 
-                        it.copy(categories = response.result ?: emptyList(), isLoading = false) 
+                        it.copy(categories = response.result ?: emptyList(), isLoading = false)
                     }
                 } else {
                     _uiState.update { it.copy(isLoading = false, error = response.message) }
@@ -59,19 +61,53 @@ class AdminCategoryViewModel(
         }
     }
 
-    fun navigateTo(screenType: AdminCategoryScreenType, category: CategoryDto? = null) {
-         _uiState.update { it.copy(currentScreen = screenType, selectedCategory = category) }
+    fun showCreateForm() {
+        _uiState.update {
+            it.copy(
+                currentScreen = AdminCategoryScreenType.CREATE,
+                selectedCategory = null,
+                error = null
+            )
+        }
     }
 
-    fun createCategory(name: String, description: String?) {
+    fun showList() {
+        _uiState.update {
+            it.copy(
+                currentScreen = AdminCategoryScreenType.LIST,
+                selectedCategory = null,
+                error = null
+            )
+        }
+    }
+
+    fun loadCategoryDetail(id: Long) {
+        loadCategoryById(id, AdminCategoryScreenType.DETAIL)
+    }
+
+    fun loadCategoryForUpdate(id: Long) {
+        loadCategoryById(id, AdminCategoryScreenType.UPDATE)
+    }
+
+    fun createCategory(
+        name: String,
+        displayOrder: Int,
+        image: MultipartBody.Part?
+    ) {
          viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }
             try {
-                val dto = CategoryDto(name = name, description = description, imageUrl = null) 
-                val response = createCategoryUseCase(dto)
-                if (response.code == 200 || response.code == 1000 || response.code == 0) {
+                val dto = CategoryDto(
+                    name = name.trim(),
+                    imageUrl = null,
+                    description = null,
+                    displayOrder = displayOrder,
+                    isActive = true
+                )
+                val response = createCategoryUseCase(dto, image)
+                if (isSuccess(response.code)) {
                     loadCategories()
-                    navigateTo(AdminCategoryScreenType.LIST)
+                    _uiState.update { it.copy(currentScreen = AdminCategoryScreenType.LIST) }
                 } else {
                     _uiState.update { it.copy(isLoading = false, error = response.message) }
                 }
@@ -81,15 +117,28 @@ class AdminCategoryViewModel(
          }
     }
 
-    fun updateCategory(id: Long, name: String, description: String?) {
+    fun updateCategory(
+        id: Long,
+        name: String,
+        displayOrder: Int,
+        image: MultipartBody.Part?
+    ) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }
             try {
-                val dto = CategoryDto(id = id, name = name, description = description, imageUrl = null) 
-                val response = updateCategoryUseCase(id, dto)
-                if (response.code == 200 || response.code == 1000 || response.code == 0) {
+                val old = uiState.value.selectedCategory
+                val dto = CategoryDto(
+                    id = id,
+                    name = name.trim(),
+                    imageUrl = old?.imageUrl,
+                    description = old?.description,
+                    displayOrder = displayOrder,
+                    isActive = old?.isActive ?: true
+                )
+                val response = updateCategoryUseCase(id, dto, image)
+                if (isSuccess(response.code)) {
                     loadCategories()
-                    navigateTo(AdminCategoryScreenType.LIST)
+                    _uiState.update { it.copy(currentScreen = AdminCategoryScreenType.LIST) }
                 } else {
                     _uiState.update { it.copy(isLoading = false, error = response.message) }
                 }
@@ -114,7 +163,7 @@ class AdminCategoryViewModel(
             _uiState.update { it.copy(isLoading = true, error = null) }
             try {
                 val response = deleteCategoryUseCase(id)
-                 if (response.code == 200 || response.code == 1000 || response.code == 0) {
+                 if (isSuccess(response.code)) {
                     loadCategories()
                 } else {
                     _uiState.update { it.copy(isLoading = false, error = response.message) }
@@ -124,4 +173,28 @@ class AdminCategoryViewModel(
             }
         }
     }
+
+    private fun loadCategoryById(id: Long, nextScreen: AdminCategoryScreenType) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, error = null) }
+            try {
+                val response = getCategoryByIdUseCase(id)
+                if (isSuccess(response.code) && response.result != null) {
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            selectedCategory = response.result,
+                            currentScreen = nextScreen
+                        )
+                    }
+                } else {
+                    _uiState.update { it.copy(isLoading = false, error = response.message) }
+                }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(isLoading = false, error = e.message) }
+            }
+        }
+    }
+
+    private fun isSuccess(code: Int): Boolean = code == 200 || code == 1000 || code == 0
 }

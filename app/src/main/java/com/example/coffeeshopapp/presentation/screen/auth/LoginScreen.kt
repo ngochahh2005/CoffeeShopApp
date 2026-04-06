@@ -144,8 +144,13 @@ fun LoginScreen(
                             val resp = NetworkClient.api.login(LoginRequestDto(username, password))
                             if (resp.result != null) {
                                 val token = resp.result.accessToken
+                                val roles = resp.result.roles
+                                    ?.mapNotNull { role -> role.name ?: role.code }
+                                    ?.map { it.uppercase() }
+                                    ?: emptyList()
                                 // persist token and set provider
                                 AuthDataStore.setToken(context, token)
+                                AuthDataStore.setRoles(context, roles)
                                 TokenProvider.token = token
                                 Toast.makeText(context, "Login Successful", Toast.LENGTH_SHORT).show()
                                 openHomeScreen()

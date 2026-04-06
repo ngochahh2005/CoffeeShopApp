@@ -65,7 +65,7 @@ dependencies {
     val navVersion = "2.8.5"
     implementation("androidx.navigation:navigation-compose:$navVersion")
 
-    implementation("androidx.compose.ui:ui-text-google-fonts:<version>")
+    implementation("androidx.compose.ui:ui-text-google-fonts:1.7.0")
 
     // DataStore for preferences
     implementation("androidx.datastore:datastore-preferences:1.0.0")
