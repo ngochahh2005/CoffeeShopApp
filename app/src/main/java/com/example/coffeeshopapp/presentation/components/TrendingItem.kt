@@ -1,6 +1,5 @@
 package com.example.coffeeshopapp.presentation.components
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -25,20 +24,30 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.StarRate
 import androidx.compose.material.icons.filled.Whatshot
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.example.coffeeshopapp.data.CoffeeItem
+import coil.compose.AsyncImage
+import com.example.coffeeshopapp.R
+import com.example.coffeeshopapp.data.model.entity.Product
 import com.example.coffeeshopapp.data.trendingCoffeeList
 import com.example.coffeeshopapp.presentation.theme.CardBackgroundColor
 import com.example.coffeeshopapp.presentation.theme.CardBackgroundColor2
@@ -48,12 +57,14 @@ import com.example.coffeeshopapp.presentation.theme.IconWhatshotColor
 import com.example.coffeeshopapp.presentation.theme.PlaceHolderColor
 import com.example.coffeeshopapp.presentation.theme.TitleSmallColor
 import com.example.coffeeshopapp.presentation.theme.k2d
+import com.example.coffeeshopapp.utils.getFullImageUrl
 
 @Composable
 fun TrendingItem(
-    coffee: CoffeeItem,
+    coffee: Product,
     onFavoriteClick: (String) -> Unit,
-    onAddToCartClick: (String) -> Unit,
+    onAddToCartClick: (String, Offset) -> Unit,
+    isLoading: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
@@ -70,10 +81,13 @@ fun TrendingItem(
                     .clip(RoundedCornerShape(16.dp))
                     .background(CardBackgroundColor2)
             ) {
-                Image(
-                    painter = painterResource(coffee.icon),
-                    contentDescription = null,
-                    modifier = Modifier.align(Alignment.Center).fillMaxSize(.9f)
+                AsyncImage(
+                    model = coffee.getFullImageUrl(),
+                    contentDescription = coffee.name,
+                    modifier = Modifier.align(Alignment.Center).fillMaxSize(),
+                    contentScale = ContentScale.Crop,
+                    placeholder = painterResource(R.drawable.loading_img),
+                    error = painterResource(R.drawable.error_img)
                 )
             }
 
@@ -120,26 +134,38 @@ fun TrendingItem(
                         style = MaterialTheme.typography.labelMedium
                     )
                 }
+
                 IconButton(
-                    onClick = { onFavoriteClick(coffee.id) },
+                    onClick = { if (!isLoading) onFavoriteClick(coffee.id) },
                     modifier = Modifier.size(24.dp).align(Alignment.TopEnd).padding(top = 4.dp)
                 ) {
-                    Icon(
-                        imageVector = if (coffee.isFavorite) Icons.Filled.Favorite else Icons.Default.FavoriteBorder,
-                        contentDescription = null,
-                        tint = PlaceHolderColor
-                    )
+                    if (isLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            strokeWidth = Dp(2f),
+                            color = PlaceHolderColor
+                        )
+                    } else {
+                        Icon(
+                            imageVector = if (coffee.isFavorite) Icons.Filled.Favorite else Icons.Default.FavoriteBorder,
+                            contentDescription = null,
+                            tint = PlaceHolderColor
+                        )
+                    }
                 }
             }
         }
 
+        // Nút +
+        var itemOffset by remember { mutableStateOf(Offset.Zero) }
         Box(modifier = Modifier
             .size(36.dp, 30.dp)
             .clip(RoundedCornerShape(topStart = 16.dp, bottomEnd = 16.dp))
             .background(color = CoffeeTextColor)
             .align(Alignment.BottomEnd)
+            .onGloballyPositioned { itemOffset = it.positionInRoot() }
             .clickable {
-                onAddToCartClick(coffee.id)
+                onAddToCartClick(coffee.id, itemOffset)
             }
         ) {
             Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.align(Alignment.Center), tint = CardBackgroundColor)
@@ -150,16 +176,11 @@ fun TrendingItem(
 
 @Composable
 fun TrendingItems(
-    items: List<CoffeeItem> = trendingCoffeeList,
+    items: List<Product> = trendingCoffeeList,
+    loadingFavorites: Set<String> = emptySet(),
     onFavoriteClick: (String) -> Unit,
-    onAddToCartClick: (String) -> Unit
+    onAddToCartClick: (String, Offset) -> Unit
 ) {
-    val trendingListState = remember {
-        val list = mutableStateListOf<CoffeeItem>()
-        list.addAll(trendingCoffeeList)
-        list
-    }
-
     LazyRow(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -169,7 +190,8 @@ fun TrendingItems(
             TrendingItem(
                 coffee = coffee,
                 onFavoriteClick = onFavoriteClick,
-                onAddToCartClick = onAddToCartClick
+                onAddToCartClick = onAddToCartClick,
+                isLoading = loadingFavorites.contains(coffee.id)
             )
         }
     }

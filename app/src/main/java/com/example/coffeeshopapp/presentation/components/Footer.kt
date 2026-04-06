@@ -19,10 +19,15 @@ import androidx.compose.material.icons.outlined.ShoppingBag
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import com.example.coffeeshopapp.presentation.utils.CartPositionStore
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.example.coffeeshopapp.presentation.navigation.Screen
 import com.example.coffeeshopapp.presentation.theme.FooterBackgroundColor
@@ -47,7 +52,14 @@ fun Footer(
                 iconUnselected = Icons.Outlined.Home,
                 isSelected = currentRoute == Screen.UserHome.route,
             ) {
-                navController.navigate(Screen.UserHome.route)
+                navController.navigate(Screen.UserHome.route) {
+                    // avoid multiple copies and restore state
+                    popUpTo(navController.graph.findStartDestination().id) {
+                        saveState = true
+                    }
+                    launchSingleTop = true
+                    restoreState = true
+                }
             }
 
             FooterIcon(
@@ -55,15 +67,36 @@ fun Footer(
                 iconUnselected = Icons.Outlined.FavoriteBorder,
                 isSelected = currentRoute == Screen.Favourites.route
             ) {
-                navController.navigate(Screen.Favourites.route)
+                navController.navigate(Screen.Favourites.route) {
+                    popUpTo(navController.graph.findStartDestination().id) {
+                        saveState = true
+                    }
+                    launchSingleTop = true
+                    restoreState = true
+                }
             }
 
-            FooterIcon(
-                iconSelected = Icons.Default.ShoppingBag,
-                iconUnselected = Icons.Outlined.ShoppingBag,
-                isSelected = currentRoute == Screen.Cart.route
-            ) {
-                navController.navigate(Screen.Cart.route)
+            // Shopping bag: capture its position for fly-to-cart animation
+            IconButton(onClick = {
+                navController.navigate(Screen.Cart.route) {
+                    popUpTo(navController.graph.findStartDestination().id) {
+                        saveState = true
+                    }
+                    launchSingleTop = true
+                    restoreState = true
+                }
+            }) {
+                Icon(
+                    imageVector = if (currentRoute == Screen.Cart.route) Icons.Default.ShoppingBag else Icons.Outlined.ShoppingBag,
+                    contentDescription = null,
+                    tint = LabelColor,
+                    modifier = Modifier
+                        .fillMaxSize(.75f)
+                        .onGloballyPositioned { coords ->
+                            val pos = coords.positionInRoot()
+                            CartPositionStore.update(Offset(pos.x, pos.y))
+                        }
+                )
             }
 
             FooterIcon(
@@ -71,7 +104,13 @@ fun Footer(
                 iconUnselected = Icons.Outlined.Person,
                 isSelected = currentRoute == Screen.Profile.route
             ) {
-                navController.navigate(Screen.Profile.route)
+                navController.navigate(Screen.Profile.route) {
+                    popUpTo(navController.graph.findStartDestination().id) {
+                        saveState = true
+                    }
+                    launchSingleTop = true
+                    restoreState = true
+                }
             }
         }
     }
@@ -84,9 +123,7 @@ fun FooterIcon(
     isSelected: Boolean,
     onClick: () -> Unit
 ) {
-    IconButton(
-        onClick = onClick
-    ) {
+    IconButton(onClick = onClick) {
         Icon(
             imageVector = if (isSelected) iconSelected else iconUnselected,
             contentDescription = null,

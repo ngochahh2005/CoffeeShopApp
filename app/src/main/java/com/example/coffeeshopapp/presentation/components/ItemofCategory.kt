@@ -2,6 +2,7 @@ package com.example.coffeeshopapp.presentation.components
 
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Image
+import coil.compose.AsyncImage
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -27,7 +28,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.example.coffeeshopapp.R
 import com.example.coffeeshopapp.data.coffeeCategories
-import com.example.coffeeshopapp.data.model.Category
+import com.example.coffeeshopapp.data.model.entity.Category
 import com.example.coffeeshopapp.presentation.theme.CardBackgroundColor
 import com.example.coffeeshopapp.presentation.theme.LabelColor
 
@@ -41,9 +42,9 @@ fun Categories(
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         contentPadding = PaddingValues(start = 24.dp, end = 24.dp)
     ) {
-        items(coffeeCategories, key = { it.id }) { category ->
+        items(categories, key = { it.id }) { category ->
             ItemOfCategories(
-                coffeeIcon = category.icon,
+                imageUrl = category.imageUrl,
                 coffeeName = category.name,
                 onClick = { onCategoryClick(category.id.toString()) }
             )
@@ -53,7 +54,7 @@ fun Categories(
 
 @Composable
 fun ItemOfCategories(
-    @DrawableRes coffeeIcon: Int,
+    imageUrl: String?,
     coffeeName: String,
     onClick: () -> Unit
 ) {
@@ -76,14 +77,29 @@ fun ItemOfCategories(
                         .padding(top = 5.dp)
                         .align(Alignment.TopCenter)
                 )
-                Image(
-                    painter = painterResource(coffeeIcon),
-                    contentDescription = null,
-                    modifier = Modifier
-                        .fillMaxHeight(.6f)
-                        .padding(top = 5.dp)
-                        .align(Alignment.TopCenter)
-                )
+
+                if (!imageUrl.isNullOrBlank()) {
+                    AsyncImage(
+                        model = imageUrl,
+                        contentDescription = null,
+                        modifier = Modifier
+                            .fillMaxHeight(.6f)
+                            .padding(top = 5.dp)
+                            .align(Alignment.TopCenter),
+                        contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                        placeholder = painterResource(R.drawable.icon_americano),
+                        error = painterResource(R.drawable.icon_americano)
+                    )
+                } else {
+                    Image(
+                        painter = painterResource(R.drawable.icon_americano),
+                        contentDescription = null,
+                        modifier = Modifier
+                            .fillMaxHeight(.6f)
+                            .padding(top = 5.dp)
+                            .align(Alignment.TopCenter)
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(12.dp))

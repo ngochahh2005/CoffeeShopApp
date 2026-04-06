@@ -19,6 +19,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.lifecycleScope
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
+import com.example.coffeeshopapp.data.remote.NetworkClient
+import com.example.coffeeshopapp.data.remote.LoginRequestDto
+import com.example.coffeeshopapp.data.local.AuthDataStore
+import com.example.coffeeshopapp.data.TokenProvider
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
@@ -121,14 +130,39 @@ fun LoginScreen(
             CommonSpace(32.dp)
 
             val context = LocalContext.current
+            val coroutineScope = rememberCoroutineScope()
+
+            var isLogging by remember { mutableStateOf(false) }
 
             MainButton(
                 text = "Login",
                 onClick = {
-                        openHomeScreen()
-                    Toast.makeText(context, "Login Successful", Toast.LENGTH_SHORT).show()
+                    if (isLogging) return@MainButton
+                    isLogging = true
+                    coroutineScope.launch {
+                        try {
+                            val resp = NetworkClient.api.login(LoginRequestDto(username, password))
+                            if (resp.result != null) {
+                                val token = resp.result.accessToken
+                                // persist token and set provider
+                                AuthDataStore.setToken(context, token)
+                                TokenProvider.token = token
+                                Toast.makeText(context, "Login Successful", Toast.LENGTH_SHORT).show()
+                                openHomeScreen()
+                            } else {
+                                Toast.makeText(context, "Login failed: ${resp.message}", Toast.LENGTH_SHORT).show()
+                            }
+                        } catch (e: Exception) {
+                            Toast.makeText(context, "Login error: ${e.message}", Toast.LENGTH_SHORT).show()
+                        } finally {
+                            isLogging = false
+                        }
+                    }
                 }
             )
+            if (isLogging) {
+                CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
+            }
 
             CommonSpace(20.dp)
 
