@@ -1,4 +1,4 @@
-﻿package com.example.coffeeshopapp.presentation.screen.user
+package com.example.coffeeshopapp.presentation.screen.user
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -16,6 +16,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -27,7 +29,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.coffeeshopapp.data.local.AuthDataStore
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
+
 fun ProfileScreen(onOpenAdmin: () -> Unit = {}) {
     val context = LocalContext.current
     val roles by AuthDataStore.rolesFlow(context).collectAsState(initial = emptyList())

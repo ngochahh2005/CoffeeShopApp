@@ -1,4 +1,4 @@
-﻿package com.example.coffeeshopapp.data.remote
+package com.example.coffeeshopapp.data.remote
 
 import com.example.coffeeshopapp.data.model.dto.ApiResponseDto
 import com.example.coffeeshopapp.data.model.dto.CategoryDto
@@ -14,6 +14,7 @@ import retrofit2.http.POST
 import retrofit2.http.PUT
 import retrofit2.http.Part
 import retrofit2.http.Path
+import retrofit2.http.Query
 
 data class LoginRequestDto(val username: String, val password: String)
 
@@ -63,4 +64,28 @@ interface ApiService {
 
     @POST("api/v1/auth/login")
     suspend fun login(@Body request: LoginRequestDto): ApiResponseDto<AuthResponseDto>
+
+    @Multipart
+    @POST("api/v1/admin/products")
+    suspend fun createProduct(
+        @Part("request") request: RequestBody,
+        @Part image: MultipartBody.Part? = null
+    ): ApiResponseDto<ProductDto>
+
+    @Multipart
+    @PUT("api/v1/admin/products/{id}")
+    suspend fun updateProduct(
+        @Path("id") id: Long,
+        @Part("request") request: RequestBody,
+        @Part image: MultipartBody.Part? = null
+    ): ApiResponseDto<ProductDto>
+
+    @DELETE("api/v1/admin/products/{id}")
+    suspend fun deleteProduct(@Path("id") id: Long): ApiResponseDto<Any>
+
+    @GET("api/v1/products/filter")
+    suspend fun filterProducts(@Query("categoryId") categoryId: Long): ApiResponseDto<List<ProductDto>>
+
+    @GET("api/v1/products/{id}")
+    suspend fun getProductById(@Path("id") id: Long): ApiResponseDto<ProductDto>
 }

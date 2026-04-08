@@ -1,7 +1,7 @@
 package com.example.coffeeshopapp.presentation.screen.auth
 
+import android.util.Base64
 import android.widget.Toast
-import androidx.compose.runtime.getValue
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import com.example.coffeeshopapp.R
@@ -16,11 +16,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.lifecycle.lifecycleScope
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
 import com.example.coffeeshopapp.data.remote.NetworkClient
@@ -44,6 +43,7 @@ import com.example.coffeeshopapp.presentation.theme.BackgroundColor
 import com.example.coffeeshopapp.presentation.theme.LabelColor
 import com.example.coffeeshopapp.presentation.theme.PlaceHolderColor
 import com.example.coffeeshopapp.presentation.theme.TitleColor
+import org.json.JSONObject
 
 @Composable
 fun LoginScreen(
@@ -144,10 +144,12 @@ fun LoginScreen(
                             val resp = NetworkClient.api.login(LoginRequestDto(username, password))
                             if (resp.result != null) {
                                 val token = resp.result.accessToken
-                                val roles = resp.result.roles
+                                val responseRoles = resp.result.roles
                                     ?.mapNotNull { role -> role.name ?: role.code }
-                                    ?.map { it.uppercase() }
+                                    ?.map { normalizeRole(it) }
                                     ?: emptyList()
+                                val jwtRoles = extractRolesFromJwt(token)
+                                val roles = (responseRoles + jwtRoles).distinct()
                                 // persist token and set provider
                                 AuthDataStore.setToken(context, token)
                                 AuthDataStore.setRoles(context, roles)
@@ -171,10 +173,6 @@ fun LoginScreen(
 
             CommonSpace(20.dp)
 
-            var isClickedRegisterButton by remember {
-                mutableStateOf(false)
-            }
-
             SubButton(
                 text = "Create an account",
                 onClick = {
@@ -184,10 +182,6 @@ fun LoginScreen(
             )
 
             Spacer(modifier = Modifier.weight(1f))
-            var isClickedForgotPasswordButton by remember {
-                mutableStateOf(false)
-            }
-
             TextButton(
                 onClick = {
                         openResetPasswordScreen()
@@ -204,6 +198,35 @@ fun LoginScreen(
         }
 
     }
+}
+
+private fun extractRolesFromJwt(token: String): List<String> {
+    return try {
+        val parts = token.split(".")
+        if (parts.size < 2) return emptyList()
+
+        val payload = String(
+            Base64.decode(parts[1], Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING),
+            Charsets.UTF_8
+        )
+        val json = JSONObject(payload)
+        val roles = json.optJSONArray("roles") ?: return emptyList()
+
+        buildList {
+            for (i in 0 until roles.length()) {
+                val role = roles.optString(i)
+                if (!role.isNullOrBlank()) {
+                    add(normalizeRole(role))
+                }
+            }
+        }.distinct()
+    } catch (_: Exception) {
+        emptyList()
+    }
+}
+
+private fun normalizeRole(raw: String): String {
+    return raw.removePrefix("ROLE_").uppercase()
 }
 
 //@Composable

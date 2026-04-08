@@ -6,6 +6,9 @@ sealed class Screen(val route: String) {
     object UserHome: Screen("user_home")
     object AdminDashboard: Screen("admin_dashboard")
     object AdminCategory: Screen("admin_category")
+    object AdminProduct: Screen("admin_product?productId={productId}") {
+        fun createRoute(productId: Long) = "admin_product?productId=$productId"
+    }
     object ProductList: Screen("product_list")
     object Cart: Screen("cart")
     object OrderHistory: Screen("order_history")

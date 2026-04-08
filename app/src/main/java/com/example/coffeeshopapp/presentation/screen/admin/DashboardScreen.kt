@@ -1,6 +1,5 @@
-﻿package com.example.coffeeshopapp.presentation.screen.admin
+package com.example.coffeeshopapp.presentation.screen.admin
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -20,6 +19,7 @@ import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
@@ -44,23 +44,32 @@ data class AdminModule(
     val onClick: () -> Unit
 )
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen(
     onBack: () -> Unit,
-    onOpenCategory: () -> Unit
+    onOpenCategory: () -> Unit,
+    onOpenProduct: () -> Unit = {}
 ) {
     val modules = listOf(
-        AdminModule("Danh mục", "Quản lý danh mục", Icons.Default.Category, Color(0xFF0070EB), onOpenCategory),
-        AdminModule("Sản phẩm", "Quản lý sản phẩm", Icons.Default.Inventory2, Color(0xFF2E7D32), {}),
-        AdminModule("Đơn hàng", "Quản lý đơn hàng", Icons.Default.ReceiptLong, Color(0xFFEF6C00), {}),
-        AdminModule("Cấu hình", "Thiết lập hệ thống", Icons.Default.Settings, Color(0xFF6A1B9A), {})
+        AdminModule("Danh muc", "Quan ly danh muc", Icons.Default.Category, Color(0xFF0070EB), onOpenCategory),
+        AdminModule("San pham", "Quan ly san pham", Icons.Default.Inventory2, Color(0xFF2E7D32), onOpenProduct),
+        AdminModule("Don hang", "Quan ly don hang", Icons.Default.ReceiptLong, Color(0xFFEF6C00), {}),
+        AdminModule("Cau hinh", "Thiet lap he thong", Icons.Default.Settings, Color(0xFF6A1B9A), {})
     )
 
     Scaffold(
         containerColor = Color(0xFFF7F8FA),
         topBar = {
             TopAppBar(
-                title = {},
+                title = {
+                    Text(
+                        text = "Trang quan tri",
+                        fontSize = 20.sp,
+                        lineHeight = 24.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -71,35 +80,44 @@ fun DashboardScreen(
         }
     ) { padding ->
         LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 20.dp),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .padding(horizontal = 20.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             item {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.Dashboard, contentDescription = null, tint = Color(0xFF3F2A1D))
+                    Text(
+                        text = "  Admin Dashboard",
+                        fontSize = 22.sp,
+                        lineHeight = 26.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF3F2A1D)
+                    )
+                }
                 Text(
-                    text = " Admin Dashboard",
-                    fontSize = 28.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = Color(0xFF3F2A1D)
+                    text = "Truy cap nhanh cac module quan tri",
+                    color = Color(0xFF7B7672),
+                    fontSize = 14.sp,
+                    modifier = Modifier.padding(top = 4.dp, bottom = 8.dp)
                 )
-            }
-            Text(
-                text = "Truy cập nhanh các module quản trị",
-                color = Color(0xFF7B7672),
-                modifier = Modifier.padding(top = 4.dp, bottom = 8.dp)
-            )
             }
 
             items(modules) { module ->
                 Surface(
-                    modifier = Modifier.fillMaxWidth().clickable(onClick = module.onClick),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable(onClick = module.onClick),
                     shape = RoundedCornerShape(20.dp),
                     color = Color.White,
                     shadowElevation = 3.dp
                 ) {
                     Row(
-                        modifier = Modifier.fillMaxWidth().padding(16.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Surface(
@@ -107,15 +125,21 @@ fun DashboardScreen(
                             shape = RoundedCornerShape(12.dp),
                             color = module.color.copy(alpha = 0.14f)
                         ) {
-                            Row(modifier = Modifier.fillMaxSize(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
+                            Row(
+                                modifier = Modifier.fillMaxSize(),
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
                                 Icon(module.icon, contentDescription = null, tint = module.color)
                             }
                         }
+
                         Column(modifier = Modifier.padding(start = 12.dp).weight(1f)) {
-                            Text(module.title, fontWeight = FontWeight.Bold, color = Color(0xFF2B2B2B))
+                            Text(module.title, fontWeight = FontWeight.Bold, color = Color(0xFF2B2B2B), fontSize = 16.sp)
                             Text(module.description, color = Color(0xFF7B7672), fontSize = 13.sp)
                         }
-                        Text("Mở", color = module.color, fontWeight = FontWeight.SemiBold)
+
+                        Text("Mo", color = module.color, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
                     }
                 }
             }

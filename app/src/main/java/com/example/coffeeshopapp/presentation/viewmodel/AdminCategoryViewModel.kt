@@ -3,10 +3,12 @@ package com.example.coffeeshopapp.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.coffeeshopapp.data.model.dto.CategoryDto
+import com.example.coffeeshopapp.data.model.dto.ProductDto
 import com.example.coffeeshopapp.domain.usecase.CreateCategoryUseCase
 import com.example.coffeeshopapp.domain.usecase.DeleteCategoryUseCase
 import com.example.coffeeshopapp.domain.usecase.GetCategoriesUseCase
 import com.example.coffeeshopapp.domain.usecase.GetCategoryByIdUseCase
+import com.example.coffeeshopapp.domain.usecase.GetProductsByCategoryUseCase
 import com.example.coffeeshopapp.domain.usecase.UpdateCategoryUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -20,6 +22,7 @@ data class CategoryUiState(
     val categories: List<CategoryDto> = emptyList(),
     val error: String? = null,
     val selectedCategory: CategoryDto? = null,
+    val categoryProducts: List<com.example.coffeeshopapp.data.model.dto.ProductDto> = emptyList(),
     val showDeleteConfirmDialog: Boolean = false,
     val currentScreen: AdminCategoryScreenType = AdminCategoryScreenType.LIST
 )
@@ -33,7 +36,8 @@ class AdminCategoryViewModel(
     private val getCategoryByIdUseCase: GetCategoryByIdUseCase,
     private val createCategoryUseCase: CreateCategoryUseCase,
     private val updateCategoryUseCase: UpdateCategoryUseCase,
-    private val deleteCategoryUseCase: DeleteCategoryUseCase
+    private val deleteCategoryUseCase: DeleteCategoryUseCase,
+    private val getProductsByCategoryUseCase: GetProductsByCategoryUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(CategoryUiState())
@@ -176,14 +180,28 @@ class AdminCategoryViewModel(
 
     private fun loadCategoryById(id: Long, nextScreen: AdminCategoryScreenType) {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, error = null) }
+            _uiState.update { it.copy(isLoading = true, error = null, categoryProducts = emptyList()) }
             try {
                 val response = getCategoryByIdUseCase(id)
                 if (isSuccess(response.code) && response.result != null) {
+                    
+                    var products: List<ProductDto> = emptyList()
+                    if (nextScreen == AdminCategoryScreenType.DETAIL) {
+                        try {
+                            val pResponse = getProductsByCategoryUseCase(id)
+                            if (isSuccess(pResponse.code)) {
+                                products = pResponse.result ?: emptyList()
+                            }
+                        } catch (e: Exception) {
+                            // ignore product load error
+                        }
+                    }
+                    
                     _uiState.update {
                         it.copy(
                             isLoading = false,
                             selectedCategory = response.result,
+                            categoryProducts = products,
                             currentScreen = nextScreen
                         )
                     }
