@@ -107,12 +107,6 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                         )
                     }
                 }
-
-                try {
-
-                } catch (e: Exception) {
-
-                }
             } catch (e: Exception) {
                 _uiState.update {
                     it.copy(

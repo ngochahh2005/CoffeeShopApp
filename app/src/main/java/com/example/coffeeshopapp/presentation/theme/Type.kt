@@ -17,7 +17,7 @@ val k2d = FontFamily(
     Font(R.font.k2d_bold, FontWeight.Bold)
 )
 
-val Pacifico = FontFamily(
+val pacifico = FontFamily(
     Font(R.font.pacifico_regular, FontWeight.Normal)
 )
 
