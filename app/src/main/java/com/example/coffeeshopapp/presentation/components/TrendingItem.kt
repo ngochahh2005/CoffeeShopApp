@@ -7,11 +7,9 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentSize
@@ -43,6 +41,8 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
@@ -51,6 +51,7 @@ import com.example.coffeeshopapp.data.model.entity.Product
 import com.example.coffeeshopapp.data.trendingCoffeeList
 import com.example.coffeeshopapp.presentation.theme.CardBackgroundColor
 import com.example.coffeeshopapp.presentation.theme.CardBackgroundColor2
+import com.example.coffeeshopapp.presentation.theme.CoffeeShopAppTheme
 import com.example.coffeeshopapp.presentation.theme.CoffeeTextColor
 import com.example.coffeeshopapp.presentation.theme.IconStarRateColor
 import com.example.coffeeshopapp.presentation.theme.IconWhatshotColor
@@ -108,8 +109,14 @@ fun TrendingItem(
                             color = TitleSmallColor,
                             fontWeight = FontWeight.Bold,
                             style = MaterialTheme.typography.bodyMedium,
+                            maxLines = 1,
+                            softWrap = true,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.padding(end = 20.dp)
                         )
                     }
+
+                    CommonSpace(1.dp)
 
                     Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
                         Icon(
@@ -122,11 +129,14 @@ fun TrendingItem(
                             text = coffee.rating.toString() + " (" + coffee.reviewers.toString() + " người đánh giá)",
                             color = CoffeeTextColor,
                             style = MaterialTheme.typography.labelMedium,
-                            fontFamily = k2d
+                            fontFamily = k2d,
+                            maxLines = 1,
+                            softWrap = true,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
 
-                    Spacer(modifier = Modifier.height(6.dp))
+                    CommonSpace(4.dp)
 
                     Text(
                         text = coffee.getPrice(),
@@ -194,5 +204,24 @@ fun TrendingItems(
                 isLoading = loadingFavorites.contains(coffee.id)
             )
         }
+    }
+}
+
+@Composable
+@Preview(name = "Trending Item Preview")
+fun TrendingItemPreview() {
+    CoffeeShopAppTheme {
+        TrendingItem(
+            coffee = Product(
+                id = "1",
+                name = "Nước ép giải nhiệt mùa hè",
+                price = 35000,
+                rating = 4.5,
+                reviewers = 100000,
+                isFavorite = true
+            ),
+            onFavoriteClick = {},
+            onAddToCartClick = {_, _ ->}
+        )
     }
 }

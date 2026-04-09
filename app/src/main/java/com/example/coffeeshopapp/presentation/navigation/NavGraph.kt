@@ -55,7 +55,6 @@ fun NavGraph(innerPadding: PaddingValues, navController: NavHostController) {
         }
     ) {
         composable(route = Screen.UserHome.route) { backStackEntry ->
-            // create ViewModel scoped to the UserHome backStackEntry so loadData() runs when Home is shown
             val homeViewModel: HomeViewModel = viewModel(backStackEntry)
             HomeScreen(
                 viewModel = homeViewModel,
