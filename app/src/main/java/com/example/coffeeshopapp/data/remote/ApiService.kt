@@ -3,6 +3,7 @@
 import com.example.coffeeshopapp.data.model.dto.ApiResponseDto
 import com.example.coffeeshopapp.data.model.dto.CategoryDto
 import com.example.coffeeshopapp.data.model.dto.FavoriteStatusDto
+import com.example.coffeeshopapp.data.model.dto.LoginRequestDto
 import com.example.coffeeshopapp.data.model.dto.ProductDto
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
@@ -15,7 +16,6 @@ import retrofit2.http.PUT
 import retrofit2.http.Part
 import retrofit2.http.Path
 
-data class LoginRequestDto(val username: String, val password: String)
 
 data class RoleDto(
     val name: String? = null,

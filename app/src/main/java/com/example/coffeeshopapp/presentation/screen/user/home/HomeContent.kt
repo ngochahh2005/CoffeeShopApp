@@ -21,10 +21,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -35,6 +31,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.coffeeshopapp.data.coffeeCategories
 import com.example.coffeeshopapp.data.model.entity.Category
 import com.example.coffeeshopapp.data.model.entity.Product
@@ -48,9 +45,11 @@ import com.example.coffeeshopapp.presentation.theme.IconWhatshotColor
 import com.example.coffeeshopapp.presentation.theme.LabelColor
 import com.example.coffeeshopapp.presentation.theme.PlaceHolderColor
 import com.example.coffeeshopapp.presentation.theme.TitleSmallColor
+import com.example.coffeeshopapp.presentation.viewmodel.HomeViewModel
 
 @Composable
 fun HomeContent(
+    viewModel: HomeViewModel = viewModel(),
     categories: List<Category>,
     trendingItems: List<Product>,
     loadingFavorites: Set<String> = emptySet(),
@@ -58,9 +57,6 @@ fun HomeContent(
     onFavoriteClick: (String) -> Unit,
     onAddToCartClick: (String, Offset) -> Unit
 ) {
-    var searchingKeyWords by remember {
-        mutableStateOf("")
-    }
     LazyColumn(modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 56.dp)) {
         item {
             Box(
@@ -109,10 +105,7 @@ fun HomeContent(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 SearchingTextField(
-                    value = searchingKeyWords,
-                    onValueChange = {
-                        searchingKeyWords = it
-                    },
+                    viewModel = viewModel,
                     modifier = Modifier
                         .fillMaxWidth()
                         .align(Alignment.CenterVertically)
@@ -140,26 +133,6 @@ fun HomeContent(
                 onAddToCartClick = onAddToCartClick
             )
         }
-
-        item {
-            TitleSmall("Danh Mục", onClickSeeMore = {})
-            Categories(onCategoryClick = {})
-        }
-
-        item {
-            TitleSmall(
-                "Xu Hướng",
-                onClickSeeMore = {},
-                icon = Icons.Default.Whatshot,
-                iconColor = IconWhatshotColor
-            )
-            TrendingItems(
-                items = trendingItems,
-                loadingFavorites = loadingFavorites,
-                onFavoriteClick = onFavoriteClick,
-                onAddToCartClick = onAddToCartClick,
-            )
-        }
     }
 }
 
@@ -169,9 +142,8 @@ private fun TitleSmall(
     onClickSeeMore: () -> Unit,
     icon: ImageVector? = null,
     iconColor: Color = LabelColor,
-    modifier: Modifier = Modifier
 ) {
-    Box(modifier = modifier
+    Box(modifier = Modifier
         .fillMaxWidth()
         .padding(top = 18.dp, start = 24.dp, end = 24.dp)
     ) {
@@ -218,15 +190,22 @@ private fun TitleSmall(
 }
 
 @Composable
-@Preview(name = "Title Small", showSystemUi = true)
-fun TitleSmallPreview() {
+@Preview(showSystemUi = true)
+fun HomeContentPreview() {
     CoffeeShopAppTheme {
         HomeContent(
             categories = coffeeCategories,
             trendingItems = trendingCoffeeList,
-            onCategoryClick = {},
-            onFavoriteClick = {},
-            onAddToCartClick = { id, offset -> }
+            loadingFavorites = setOf("1"),
+            onCategoryClick = { id ->
+                println("Category $id clicked")
+            },
+            onFavoriteClick = { id ->
+                println("Favorite $id clicked")
+            },
+            onAddToCartClick = { id, offset ->
+                println("Add $id at $offset")
+            }
         )
     }
 }

@@ -8,64 +8,113 @@ import com.example.coffeeshopapp.R
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.coffeeshopapp.data.model.dto.RegisterRequestDto
+import com.example.coffeeshopapp.data.remote.NetworkClient
+import com.example.coffeeshopapp.presentation.components.AuthScreenLogo
 import com.example.coffeeshopapp.presentation.components.CommonSpace
 import com.example.coffeeshopapp.presentation.components.MainButton
 import com.example.coffeeshopapp.presentation.components.PasswordTextField
 import com.example.coffeeshopapp.presentation.components.UsernameTextField
 import com.example.coffeeshopapp.presentation.theme.BackgroundColor
+import com.example.coffeeshopapp.presentation.theme.CoffeeShopAppTheme
 import com.example.coffeeshopapp.presentation.theme.LabelColor
 import com.example.coffeeshopapp.presentation.theme.TitleColor
+import com.example.coffeeshopapp.presentation.theme.rememberScreenInfo
+import com.example.coffeeshopapp.presentation.viewmodel.AuthViewModel
+import kotlinx.coroutines.launch
 
 @Composable
 fun RegisterScreen(
+    viewModel: AuthViewModel = viewModel(),
     openLoginScreen: () -> Unit
 ) {
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val focusManager = LocalFocusManager.current
 
-    Box(
+    var isRegistering by remember { mutableStateOf(false) }
+
+    val handleRegister = {
+        if (viewModel.username.isEmpty() || viewModel.password.isEmpty() || viewModel.confirmPassword.isEmpty()) {
+            Toast.makeText(context, "Vui lòng nhập đầy đủ thông tin!", Toast.LENGTH_SHORT).show()
+        } else if (viewModel.password != viewModel.confirmPassword) {
+            Toast.makeText(context, "Mật khẩu không khớp!", Toast.LENGTH_SHORT).show()
+        } else {
+            if (!isRegistering) {
+                isRegistering = true
+                keyboardController?.hide()
+
+                coroutineScope.launch {
+                    try {
+                        val resp = NetworkClient.api.register(
+                            RegisterRequestDto(
+                                viewModel.username,
+                                viewModel.password,
+                                viewModel.confirmPassword
+                            )
+                        )
+
+                        if (resp.result != null) {
+                            Toast.makeText(context, "Đăng ký thành công!", Toast.LENGTH_SHORT).show()
+                            openLoginScreen()
+                        } else {
+                            Toast.makeText(context, "Lỗi: ${resp.message}", Toast.LENGTH_SHORT).show()
+                        }
+                    } catch (e: Exception) {
+                        Toast.makeText(context, "Lỗi kết nối: ${e.message}", Toast.LENGTH_SHORT).show()
+                    } finally {
+                        isRegistering = false
+                    }
+                }
+            }
+        }
+    }
+
+    var scrollState = rememberScrollState()
+
+    Column (
         modifier = Modifier
             .fillMaxSize()
             .background(color = BackgroundColor)
+            .imePadding()
+            .verticalScroll(scrollState)
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-        ) {
-            Image(
-                painter = painterResource(R.drawable.login_background),
-                contentDescription = null,
-                alignment = Alignment.TopCenter,
-                contentScale = ContentScale.FillHeight
-            )
-            Image(
-                painter = painterResource(R.drawable.icon_login),
-                contentDescription = null,
-                modifier = Modifier
-                    .size(300.dp)
-                    .align(Alignment.TopCenter)
-            )
-        }
+        AuthScreenLogo()
 
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(start = 30.dp, end = 30.dp, top = 325.dp)
+                .weight(1f)
+                .padding(start = 30.dp, end = 30.dp)
         ) {
             Text(
                 text = "Nice To\nMeet You!",
@@ -75,27 +124,26 @@ fun RegisterScreen(
 
             CommonSpace()
 
-            var username by remember {
-                mutableStateOf("")
-            }
-//
+            // Username
             Column {
                 Text(
-                    text = "Email",
+                    text = "Username",
                     color = LabelColor,
                     style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(horizontal = 4.dp)
                 )
                 UsernameTextField(
-                    username = username,
-                    onValueChange = { username = it },
+                    username = viewModel.username,
+                    onValueChange = { viewModel.onUsernameChange(it) },
+                    onAction = { focusManager.moveFocus(FocusDirection.Down) },
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
 
             CommonSpace()
 
+            // Password
             Text(
                 text = "Password",
                 color = LabelColor,
@@ -103,18 +151,19 @@ fun RegisterScreen(
                 style = MaterialTheme.typography.bodyMedium,
             )
 
-            var password by remember {
-                mutableStateOf("")
-            }
-
             PasswordTextField(
-                password = password,
-                onValueChange = {password = it},
+                password = viewModel.password,
+                onValueChange = { viewModel.onPasswordChange(it) },
+                imeAction = ImeAction.Next,
+                isShowPassword = viewModel.isShowPassword,
+                onShowPasswordChange = { viewModel.onShowPasswordChange() },
+                onAction = { focusManager.moveFocus(FocusDirection.Down) },
                 modifier = Modifier.fillMaxWidth()
             )
 
             CommonSpace()
 
+            // Confirm password
             Text(
                 text = "Confirm password",
                 color = LabelColor,
@@ -122,39 +171,34 @@ fun RegisterScreen(
                 style = MaterialTheme.typography.bodyMedium,
             )
 
-            var passwordConfirm by remember {
-                mutableStateOf("")
-            }
-
             PasswordTextField(
-                password = passwordConfirm,
-                onValueChange = {passwordConfirm = it},
+                password = viewModel.confirmPassword,
+                onValueChange = { viewModel.onConfirmPasswordChange(it) },
+                imeAction = ImeAction.Done,
+                isShowPassword = viewModel.isShowConfirmPassword,
+                onShowPasswordChange = { viewModel.onShowConfirmPasswordChange() },
+                onAction = { handleRegister() },
                 modifier = Modifier.fillMaxWidth()
             )
 
             CommonSpace(32.dp)
 
-            val context = LocalContext.current
-
+            // Nút register
             Spacer(modifier = Modifier.weight(1f))
             MainButton(
                 text = "Register",
-                onClick = {
-                    openLoginScreen()
-                    Toast.makeText(context, "Register Successful!", Toast.LENGTH_SHORT).show()
-                }
+                onClick = { handleRegister() },
+                modifier = Modifier.padding(bottom = 18.dp)
             )
-
-            CommonSpace(20.dp)
         }
     }
 
 }
 
-//@Composable
-//@Preview(name = "Register Screen", showSystemUi = true)
-//fun RegisterScreenPreview() {
-//    CoffeeShopAppTheme {
-//        RegisterScreen()
-//    }
-//}
+@Composable
+@Preview(name = "Register Screen", showSystemUi = true)
+fun RegisterScreenPreview() {
+    CoffeeShopAppTheme {
+        RegisterScreen(openLoginScreen = {})
+    }
+}
