@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
@@ -108,13 +109,13 @@ fun RegisterScreen(
             .imePadding()
             .verticalScroll(scrollState)
     ) {
-        AuthScreenLogo()
+        AuthScreenLogo(modifier = Modifier.fillMaxWidth().fillMaxHeight(0.4f))
 
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .weight(1f)
-                .padding(start = 30.dp, end = 30.dp)
+                .padding(horizontal = 30.dp)
+                .defaultMinSize(minHeight = (rememberScreenInfo().height * 0.6f))
         ) {
             Text(
                 text = "Nice To\nMeet You!",
@@ -181,10 +182,9 @@ fun RegisterScreen(
                 modifier = Modifier.fillMaxWidth()
             )
 
-            CommonSpace(32.dp)
+            CommonSpace(56.dp)
 
             // Nút register
-            Spacer(modifier = Modifier.weight(1f))
             MainButton(
                 text = "Register",
                 onClick = { handleRegister() },

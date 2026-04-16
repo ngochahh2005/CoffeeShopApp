@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
@@ -23,7 +22,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.SheetState
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -40,25 +38,24 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.example.coffeeshopapp.R
 import com.example.coffeeshopapp.data.model.entity.Product
 import com.example.coffeeshopapp.presentation.theme.BackgroundColor
 import com.example.coffeeshopapp.presentation.theme.CoffeeShopAppTheme
 import com.example.coffeeshopapp.presentation.theme.CoffeeTextColor
-import com.example.coffeeshopapp.presentation.theme.pacifico
 import com.example.coffeeshopapp.presentation.theme.PlaceHolderColor
-import com.example.coffeeshopapp.presentation.theme.TitleSmallColor
 import com.example.coffeeshopapp.presentation.theme.rememberScreenInfo
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProductDetailScreen(
     product: Product,
-    isShowSheet: Boolean = true,
+    isShowSheet: Boolean,
 ) {
     ModalBottomSheet(
-        onDismissRequest = { },
+        onDismissRequest = {
+//            isShowSheet = false
+        },
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
         shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
         dragHandle = null,
@@ -130,7 +127,8 @@ fun ProductDetailScreen(
 fun ProductDetailScreenPreview() {
     CoffeeShopAppTheme {
         ProductDetailScreen(
-            product = Product("1", "Sinh tố bơ", 25000, imageUrl = "", description = "Bơ sáp Daklak xay nhuyễn")
+            product = Product("1", "Sinh tố bơ", 25000, imageUrl = "", description = "Bơ sáp Daklak xay nhuyễn"),
+            isShowSheet = true
         )
     }
 }

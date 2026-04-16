@@ -2,19 +2,14 @@ package com.example.coffeeshopapp.presentation.screen.auth
 
 import android.widget.Toast
 import androidx.compose.runtime.getValue
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import com.example.coffeeshopapp.R
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
@@ -33,13 +28,12 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -133,8 +127,8 @@ fun LoginScreen(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .weight(1f)
                 .padding(horizontal = 30.dp)
+                .heightIn(min = (rememberScreenInfo().height * 0.58f))
         ) {
             // Title
             Text(
@@ -202,7 +196,7 @@ fun LoginScreen(
                 }
             )
 
-            Spacer(modifier = Modifier.weight(1f))
+            CommonSpace(18.dp)
 
             // Forgot Password
             TextButton(
@@ -212,7 +206,7 @@ fun LoginScreen(
                 Text(
                     text = "Forgot your password?",
                     color = PlaceHolderColor,
-                    modifier = Modifier.padding(bottom = 18.dp)
+//                    modifier = Modifier.padding(bottom = 18.dp)
                 )
             }
         }
@@ -223,6 +217,14 @@ fun LoginScreen(
 @Composable
 @Preview(name = "Login Screen", showSystemUi = true)
 fun LoginScreenPreview() {
+    CoffeeShopAppTheme {
+        LoginScreen(openRegisterScreen = {}, openHomeScreen = {}, openResetPasswordScreen = {})
+    }
+}
+
+@Composable
+@Preview(name = "Login Screen", showSystemUi = true, device = Devices.PIXEL_9_PRO_FOLD)
+fun LoginScreenPreview2() {
     CoffeeShopAppTheme {
         LoginScreen(openRegisterScreen = {}, openHomeScreen = {}, openResetPasswordScreen = {})
     }
