@@ -1,6 +1,5 @@
 package com.example.coffeeshopapp.presentation.components
 
-import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Image
 import coil.compose.AsyncImage
 import androidx.compose.foundation.background
@@ -24,12 +23,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.coffeeshopapp.R
 import com.example.coffeeshopapp.data.coffeeCategories
 import com.example.coffeeshopapp.data.model.entity.Category
 import com.example.coffeeshopapp.presentation.theme.CardBackgroundColor
+import com.example.coffeeshopapp.presentation.theme.CoffeeShopAppTheme
 import com.example.coffeeshopapp.presentation.theme.LabelColor
 
 @Composable
@@ -86,18 +88,17 @@ fun ItemOfCategories(
                             .fillMaxHeight(.6f)
                             .padding(top = 5.dp)
                             .align(Alignment.TopCenter),
-                        contentScale = androidx.compose.ui.layout.ContentScale.Crop,
-                        placeholder = painterResource(R.drawable.icon_americano),
-                        error = painterResource(R.drawable.icon_americano)
+                        placeholder = painterResource(R.drawable.loading_img),
+                        error = painterResource(R.drawable.error_img)
                     )
                 } else {
                     Image(
-                        painter = painterResource(R.drawable.icon_americano),
+                        painter = painterResource(R.drawable.loading_img),
                         contentDescription = null,
                         modifier = Modifier
                             .fillMaxHeight(.6f)
                             .padding(top = 5.dp)
-                            .align(Alignment.TopCenter)
+                            .align(Alignment.TopCenter),
                     )
                 }
             }
@@ -106,5 +107,13 @@ fun ItemOfCategories(
 
             Text(text = coffeeName, color = LabelColor, style = MaterialTheme.typography.bodySmall)
         }
+    }
+}
+
+@Composable
+@Preview(name = "Item of Categories")
+fun ItemofCategoriesPreview() {
+    CoffeeShopAppTheme {
+        ItemOfCategories(imageUrl = "/uploads/category/americano.png", coffeeName = "Americano", onClick = {})
     }
 }

@@ -130,6 +130,7 @@ fun HomeScreen(
             }
             else -> {
                 HomeContent(
+                    viewModel = viewModel,
                     categories = uiState.categories,
                     trendingItems = uiState.trendingItems,
                     loadingFavorites = uiState.loadingFavorites,

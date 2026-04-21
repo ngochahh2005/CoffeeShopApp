@@ -17,6 +17,10 @@ val k2d = FontFamily(
     Font(R.font.k2d_bold, FontWeight.Bold)
 )
 
+val pacifico = FontFamily(
+    Font(R.font.pacifico_regular, FontWeight.Normal)
+)
+
 val Typography = Typography(
     titleLarge = TextStyle(
         fontFamily = lightlime,

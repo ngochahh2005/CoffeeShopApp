@@ -3,7 +3,9 @@ package com.example.coffeeshopapp.data.remote
 import com.example.coffeeshopapp.data.model.dto.ApiResponseDto
 import com.example.coffeeshopapp.data.model.dto.CategoryDto
 import com.example.coffeeshopapp.data.model.dto.FavoriteStatusDto
+import com.example.coffeeshopapp.data.model.dto.LoginRequestDto
 import com.example.coffeeshopapp.data.model.dto.ProductDto
+import com.example.coffeeshopapp.data.model.dto.RegisterRequestDto
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
 import retrofit2.http.Body
@@ -16,7 +18,6 @@ import retrofit2.http.Part
 import retrofit2.http.Path
 import retrofit2.http.Query
 
-data class LoginRequestDto(val username: String, val password: String)
 
 data class RoleDto(
     val name: String? = null,
@@ -28,6 +29,13 @@ data class AuthResponseDto(
     val accessTokenExp: Long,
     val refreshToken: String?,
     val refreshTokenExp: Long?,
+    val roles: List<RoleDto>? = null
+)
+
+data class UserDto(
+    val id: Long? = null,
+    val username: String? = null,
+    val email: String? = null,
     val roles: List<RoleDto>? = null
 )
 
@@ -88,4 +96,10 @@ interface ApiService {
 
     @GET("api/v1/products/{id}")
     suspend fun getProductById(@Path("id") id: Long): ApiResponseDto<ProductDto>
+
+    @POST("/api/v1/auth/register")
+    suspend fun register(@Body request: RegisterRequestDto): ApiResponseDto<AuthResponseDto>
+
+    @GET("api/v1/users/me")
+    suspend fun getMyInfo(): ApiResponseDto<UserDto>
 }

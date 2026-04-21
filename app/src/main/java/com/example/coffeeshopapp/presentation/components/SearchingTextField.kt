@@ -12,20 +12,21 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.coffeeshopapp.presentation.theme.CoffeeShopAppTheme
 import com.example.coffeeshopapp.presentation.theme.LabelColor
 import com.example.coffeeshopapp.presentation.theme.PlaceHolderColor
 import com.example.coffeeshopapp.presentation.theme.TextColor
+import com.example.coffeeshopapp.presentation.viewmodel.HomeViewModel
 
 @Composable
 fun SearchingTextField(
-    value: String,
-    onValueChange: (String) -> Unit,
+    viewModel: HomeViewModel = viewModel(),
     modifier: Modifier = Modifier
 ) {
     OutlinedTextField(
-        value = value,
-        onValueChange = onValueChange,
+        value = viewModel.searchKeyWords,
+        onValueChange = { viewModel.onSearchKeyWordsChange(it) },
         modifier = modifier,
         shape = RoundedCornerShape(36.dp),
         colors = OutlinedTextFieldDefaults.colors(
@@ -50,6 +51,6 @@ fun SearchingTextField(
 @Preview(name = "Searching TextField")
 fun SearchPreview() {
     CoffeeShopAppTheme {
-        SearchingTextField(value = "", onValueChange = {})
+        SearchingTextField()
     }
 }

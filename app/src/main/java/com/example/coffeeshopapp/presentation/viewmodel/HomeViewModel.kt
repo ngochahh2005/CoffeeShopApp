@@ -1,6 +1,7 @@
 package com.example.coffeeshopapp.presentation.viewmodel
 
 import android.app.Application
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.geometry.Offset
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -20,10 +21,19 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
 
 class HomeViewModel(application: Application) : AndroidViewModel(application) {
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
+
+    var searchKeyWords by mutableStateOf("")
+    private set
+
+    fun onSearchKeyWordsChange(newValue: String) {
+        searchKeyWords = newValue
+    }
 
     init {
         loadData()
@@ -96,12 +106,6 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                             error = null
                         )
                     }
-                }
-
-                try {
-
-                } catch (e: Exception) {
-
                 }
             } catch (e: Exception) {
                 _uiState.update {

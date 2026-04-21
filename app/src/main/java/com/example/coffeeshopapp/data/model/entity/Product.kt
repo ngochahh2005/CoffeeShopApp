@@ -6,6 +6,7 @@ data class Product(
     val id: String,
     val name: String,
     val price: Long,
+    val description: String = "",
     @SerializedName("image_url") val imageUrl: String? = null,
     val rating: Double = 0.0,
     val reviewers: Int = 0,
