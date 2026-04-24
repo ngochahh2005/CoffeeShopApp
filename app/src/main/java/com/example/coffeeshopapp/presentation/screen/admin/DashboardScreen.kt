@@ -8,6 +8,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ReceiptLong
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -44,7 +46,7 @@ private val SubText = Color(0xFF8E8E93)
 
 private fun formatMoney(value: java.math.BigDecimal?): String {
     if (value == null) return "0đ"
-    val fmt = NumberFormat.getInstance(Locale("vi", "VN"))
+    val fmt = NumberFormat.getInstance(Locale.forLanguageTag("vi-VN"))
     return "${fmt.format(value)}đ"
 }
 
@@ -58,6 +60,7 @@ fun DashboardScreen(
     onOpenUsers: () -> Unit = {},
     onOpenOrders: (String) -> Unit = {},
     onOpenPromotions: () -> Unit = {},
+    onOpenToppings: () -> Unit = {},
     onOpenReviews: () -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsState()
@@ -95,8 +98,7 @@ fun DashboardScreen(
             // ─── Quick Stats ───
             item { StatsGrid(state.overview, onUsers = onOpenUsers, onProducts = onOpenProduct, onOrders = onOpenOrders) }
 
-            // ─── Quick Nav ───
-            item { QuickNavRow(onOpenCategory, onOpenProduct, onOpenUsers, onOpenOrders, onOpenPromotions, onOpenReviews) }
+            item { QuickNavRow(onOpenCategory, onOpenProduct, onOpenUsers, onOpenOrders, onOpenPromotions, onOpenToppings, onOpenReviews) }
 
             // ─── Revenue Chart ───
             item { RevenueSection(state, onToggle = { viewModel.switchRevenueGroupBy(it) }) }
@@ -133,7 +135,7 @@ private fun StatsGrid(overview: DashboardOverviewDto?, onUsers: () -> Unit, onPr
             StatCard(Modifier.weight(1f), "Sản phẩm", o.totalProducts.toString(), Icons.Default.Inventory2, CoffeeLight, onProducts)
         }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            StatCard(Modifier.weight(1f), "Tổng đơn", o.totalOrders.toString(), Icons.Default.ShoppingCart, AccentOrange) { onOrders("PENDING") }
+            StatCard(Modifier.weight(1f), "Tổng đơn", o.totalOrders.toString(), Icons.Default.ShoppingCart, AccentOrange) { onOrders("ALL") }
             StatCard(Modifier.weight(1f), "Chờ xác nhận", o.pendingOrders.toString(), Icons.Default.HourglassTop, Color(0xFFFFCC00)) { onOrders("PENDING") }
         }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -141,7 +143,7 @@ private fun StatsGrid(overview: DashboardOverviewDto?, onUsers: () -> Unit, onPr
             StatCard(Modifier.weight(1f), "Đã huỷ", o.cancelledOrders.toString(), Icons.Default.Cancel, AccentRed) { onOrders("CANCELLED") }
         }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            StatCard(Modifier.weight(1f), "Doanh thu hôm nay", formatMoney(o.todayRevenue), Icons.Default.TrendingUp, AccentGreen, {})
+            StatCard(Modifier.weight(1f), "Doanh thu hôm nay", formatMoney(o.todayRevenue), Icons.AutoMirrored.Filled.TrendingUp, AccentGreen, {})
             StatCard(Modifier.weight(1f), "Doanh thu tháng", formatMoney(o.monthRevenue), Icons.Default.CalendarMonth, AccentBlue, {})
         }
     }
@@ -174,14 +176,15 @@ private fun StatCard(modifier: Modifier, label: String, value: String, icon: Ima
 @Composable
 private fun QuickNavRow(
     onCategory: () -> Unit, onProduct: () -> Unit, onUsers: () -> Unit,
-    onOrders: (String) -> Unit, onPromotions: () -> Unit, onReviews: () -> Unit
+    onOrders: (String) -> Unit, onPromotions: () -> Unit, onToppings: () -> Unit, onReviews: () -> Unit
 ) {
     LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
         item { QuickNavChip("Danh mục", Icons.Default.Category, Color(0xFF0070EB), onCategory) }
         item { QuickNavChip("Sản phẩm", Icons.Default.Inventory2, Color(0xFF2E7D32), onProduct) }
         item { QuickNavChip("Người dùng", Icons.Default.People, AccentBlue, onUsers) }
-        item { QuickNavChip("Đơn hàng", Icons.Default.ReceiptLong, AccentOrange) { onOrders("PENDING") } }
+        item { QuickNavChip("Đơn hàng", Icons.AutoMirrored.Filled.ReceiptLong, AccentOrange) { onOrders("ALL") } }
         item { QuickNavChip("Khuyến mãi", Icons.Default.Discount, Color(0xFF6A1B9A), onPromotions) }
+        item { QuickNavChip("Topping", Icons.Default.AddCircle, Color(0xFF8E24AA), onToppings) }
         item { QuickNavChip("Đánh giá", Icons.Default.Star, Color(0xFFFFB300), onReviews) }
     }
 }
@@ -313,3 +316,5 @@ private fun RecentReviewItem(review: ReviewDto) {
         }
     }
 }
+
+

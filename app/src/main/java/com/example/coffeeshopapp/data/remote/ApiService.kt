@@ -13,6 +13,7 @@ import com.example.coffeeshopapp.data.model.dto.RegisterRequestDto
 import com.example.coffeeshopapp.data.model.dto.RevenuePointDto
 import com.example.coffeeshopapp.data.model.dto.ReviewDto
 import com.example.coffeeshopapp.data.model.dto.RoleAdminDto
+import com.example.coffeeshopapp.data.model.dto.ToppingDto
 import com.example.coffeeshopapp.data.model.dto.TopProductDto
 import com.example.coffeeshopapp.data.model.dto.UserCreateRequestDto
 import com.example.coffeeshopapp.data.model.dto.UserResponseDto
@@ -28,7 +29,6 @@ import retrofit2.http.PUT
 import retrofit2.http.Part
 import retrofit2.http.Path
 import retrofit2.http.Query
-
 
 data class RoleDto(
     val name: String? = null,
@@ -51,7 +51,6 @@ data class UserDto(
 )
 
 interface ApiService {
-    // ─── Products & Categories (existing) ───
     @GET("api/v1/products")
     suspend fun getProduct(): ApiResponseDto<List<ProductDto>>
 
@@ -115,7 +114,6 @@ interface ApiService {
     @GET("api/v1/users/me")
     suspend fun getMyInfo(): ApiResponseDto<UserDto>
 
-    // ─── Dashboard ───
     @GET("api/v1/admin/dashboard/overview")
     suspend fun getDashboardOverview(): ApiResponseDto<DashboardOverviewDto>
 
@@ -135,7 +133,6 @@ interface ApiService {
     @GET("api/v1/admin/dashboard/recent-reviews")
     suspend fun getRecentReviews(): ApiResponseDto<List<ReviewDto>>
 
-    // ─── Admin Users ───
     @GET("api/v1/admin/users")
     suspend fun getAdminUsers(): ApiResponseDto<List<UserResponseDto>>
 
@@ -154,13 +151,11 @@ interface ApiService {
     @DELETE("api/v1/admin/users/{id}")
     suspend fun deleteUser(@Path("id") id: Long): ApiResponseDto<Any>
 
-    // â”€â”€â”€ Admin Roles â”€â”€â”€
     @GET("api/v1/admin/roles")
     suspend fun getAdminRoles(): ApiResponseDto<List<RoleAdminDto>>
 
-    // ─── Admin Orders ───
     @GET("api/v1/admin/orders")
-    suspend fun getAdminOrders(@Query("status") status: String): ApiResponseDto<List<OrderDto>>
+    suspend fun getAdminOrders(@Query("status") status: String? = null): ApiResponseDto<List<OrderDto>>
 
     @GET("api/v1/orders/{orderId}")
     suspend fun getOrderById(@Path("orderId") orderId: Long): ApiResponseDto<OrderDto>
@@ -171,7 +166,6 @@ interface ApiService {
         @Query("status") status: String
     ): ApiResponseDto<OrderDto>
 
-    // ─── Admin Promotions ───
     @GET("api/v1/promotions")
     suspend fun getAllPromotions(): ApiResponseDto<List<PromotionDto>>
 
@@ -190,7 +184,30 @@ interface ApiService {
     @DELETE("api/v1/admin/promotions/{id}")
     suspend fun deletePromotion(@Path("id") id: Long): ApiResponseDto<Any>
 
-    // ─── Admin Reviews ───
+    @GET("api/v1/toppings")
+    suspend fun getToppings(): ApiResponseDto<List<ToppingDto>>
+
+    @GET("api/v1/toppings/{id}")
+    suspend fun getToppingById(@Path("id") id: Long): ApiResponseDto<ToppingDto>
+
+    @Multipart
+    @POST("api/v1/admin/toppings")
+    suspend fun createTopping(
+        @Part("request") request: RequestBody,
+        @Part image: MultipartBody.Part? = null
+    ): ApiResponseDto<ToppingDto>
+
+    @Multipart
+    @PUT("api/v1/admin/toppings/{id}")
+    suspend fun updateTopping(
+        @Path("id") id: Long,
+        @Part("request") request: RequestBody,
+        @Part image: MultipartBody.Part? = null
+    ): ApiResponseDto<ToppingDto>
+
+    @DELETE("api/v1/admin/toppings/{id}")
+    suspend fun deleteTopping(@Path("id") id: Long): ApiResponseDto<Any>
+
     @GET("api/v1/admin/reviews")
     suspend fun getAdminReviews(): ApiResponseDto<List<ReviewDto>>
 

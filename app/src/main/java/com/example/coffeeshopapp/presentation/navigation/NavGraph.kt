@@ -18,16 +18,23 @@ import androidx.navigation.compose.NavHost
 import com.example.coffeeshopapp.data.remote.NetworkClient
 import com.example.coffeeshopapp.data.repository.AdminRepository
 import com.example.coffeeshopapp.data.repository.CategoryRepository
+import com.example.coffeeshopapp.data.repository.ToppingRepository
 import com.example.coffeeshopapp.domain.usecase.CreateCategoryUseCase
+import com.example.coffeeshopapp.domain.usecase.CreateToppingUseCase
 import com.example.coffeeshopapp.domain.usecase.DeleteCategoryUseCase
+import com.example.coffeeshopapp.domain.usecase.DeleteToppingUseCase
 import com.example.coffeeshopapp.domain.usecase.GetCategoriesUseCase
 import com.example.coffeeshopapp.domain.usecase.GetCategoryByIdUseCase
 import com.example.coffeeshopapp.domain.usecase.GetProductsByCategoryUseCase
+import com.example.coffeeshopapp.domain.usecase.GetToppingByIdUseCase
+import com.example.coffeeshopapp.domain.usecase.GetToppingsUseCase
 import com.example.coffeeshopapp.domain.usecase.UpdateCategoryUseCase
+import com.example.coffeeshopapp.domain.usecase.UpdateToppingUseCase
 import com.example.coffeeshopapp.presentation.screen.admin.DashboardScreen
 import com.example.coffeeshopapp.presentation.screen.admin.OrderManagementScreen
 import com.example.coffeeshopapp.presentation.screen.admin.PromotionManagementScreen
 import com.example.coffeeshopapp.presentation.screen.admin.ReviewManagementScreen
+import com.example.coffeeshopapp.presentation.screen.admin.ToppingManagementScreen
 import com.example.coffeeshopapp.presentation.screen.admin.UserManagementScreen
 import com.example.coffeeshopapp.presentation.screen.admin.category.AdminCategoryScreen
 import com.example.coffeeshopapp.presentation.screen.auth.ForgotPasswordScreen
@@ -97,6 +104,7 @@ fun NavGraph(innerPadding: PaddingValues, navController: NavHostController) {
                     onOpenUsers = { navController.navigate(Screen.AdminUsers.route) },
                     onOpenOrders = { status -> navController.navigate(Screen.AdminOrders.createRoute(status)) },
                     onOpenPromotions = { navController.navigate(Screen.AdminPromotions.route) },
+                    onOpenToppings = { navController.navigate(Screen.AdminToppings.route) },
                     onOpenReviews = { navController.navigate(Screen.AdminReviews.route) }
                 )
             }
@@ -144,10 +152,10 @@ fun NavGraph(innerPadding: PaddingValues, navController: NavHostController) {
             route = Screen.AdminOrders.route,
             arguments = listOf(androidx.navigation.navArgument("initialTab") {
                 type = androidx.navigation.NavType.StringType
-                defaultValue = "PENDING"
+                defaultValue = "ALL"
             })
         ) { backStackEntry ->
-            val initialTab = backStackEntry.arguments?.getString("initialTab") ?: "PENDING"
+            val initialTab = backStackEntry.arguments?.getString("initialTab") ?: "ALL"
             val vm: AdminOrderViewModel = viewModel(factory = object : ViewModelProvider.Factory {
                 @Suppress("UNCHECKED_CAST")
                 override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -166,6 +174,23 @@ fun NavGraph(innerPadding: PaddingValues, navController: NavHostController) {
                 }
             })
             AdminScreenTheme { PromotionManagementScreen(viewModel = vm, onBackClick = { navController.popBackStack() }) }
+        }
+
+        composable(route = Screen.AdminToppings.route) {
+            val vm: AdminToppingViewModel = viewModel(factory = object : ViewModelProvider.Factory {
+                @Suppress("UNCHECKED_CAST")
+                override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                    val repository = ToppingRepository(NetworkClient.api)
+                    return AdminToppingViewModel(
+                        getToppingsUseCase = GetToppingsUseCase(repository),
+                        getToppingByIdUseCase = GetToppingByIdUseCase(repository),
+                        createToppingUseCase = CreateToppingUseCase(repository),
+                        updateToppingUseCase = UpdateToppingUseCase(repository),
+                        deleteToppingUseCase = DeleteToppingUseCase(repository)
+                    ) as T
+                }
+            })
+            AdminScreenTheme { ToppingManagementScreen(viewModel = vm, onBackClick = { navController.popBackStack() }) }
         }
 
         // ─── Admin Reviews ───
@@ -228,3 +253,5 @@ fun NavGraph(innerPadding: PaddingValues, navController: NavHostController) {
         composable(route = Screen.ResetPassword.route) { ForgotPasswordScreen() }
     }
 }
+
+

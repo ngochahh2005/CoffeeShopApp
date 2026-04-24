@@ -1,5 +1,7 @@
 package com.example.coffeeshopapp.presentation.screen.admin
 
+import android.util.Patterns
+
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -155,6 +157,7 @@ private fun UserCard(user: UserResponseDto, onDetail: () -> Unit, onEdit: () -> 
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
+@Suppress("DEPRECATION")
 @Composable
 private fun UserFormScreen(
     isUpdate: Boolean,
@@ -205,13 +208,30 @@ private fun UserFormScreen(
             )
         }
     ) { padding ->
+        if (showError && !lastError.isNullOrBlank()) {
+            AlertDialog(
+                onDismissRequest = { showError = false },
+                title = { Text("Có lỗi xảy ra") },
+                text = { Text(lastError ?: "") },
+                confirmButton = { TextButton(onClick = { showError = false }) { Text("OK") } }
+            )
+        }
+
         Column(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             if (!isUpdate) {
                 OutlinedTextField(value = username, onValueChange = { username = it }, modifier = Modifier.fillMaxWidth(), label = { Text("Tên đăng nhập") }, singleLine = true, shape = RoundedCornerShape(12.dp))
             } else {
                 OutlinedTextField(value = username, onValueChange = {}, modifier = Modifier.fillMaxWidth(), label = { Text("Tên đăng nhập") }, enabled = false, shape = RoundedCornerShape(12.dp))
             }
-            OutlinedTextField(value = email, onValueChange = { email = it }, modifier = Modifier.fillMaxWidth(), label = { Text("Email") }, singleLine = true, shape = RoundedCornerShape(12.dp))
+            OutlinedTextField(
+                value = email,
+                onValueChange = { if (!isUpdate) email = it },
+                modifier = Modifier.fillMaxWidth(),
+                label = { Text("Email") },
+                enabled = !isUpdate,
+                singleLine = true,
+                shape = RoundedCornerShape(12.dp)
+            )
             
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedTextField(value = firstName, onValueChange = { firstName = it }, modifier = Modifier.weight(1f), label = { Text("Họ") }, singleLine = true, shape = RoundedCornerShape(12.dp))
@@ -261,6 +281,12 @@ private fun UserFormScreen(
                             showError = true
                             return@Button
                         }
+                        if (!isUpdate && !Patterns.EMAIL_ADDRESS.matcher(email.trim()).matches()) {
+                            lastError = "Email không đúng định dạng"
+                            showError = true
+                            return@Button
+                        }
+
 
                         if (isUpdate) {
                             onUpdate(

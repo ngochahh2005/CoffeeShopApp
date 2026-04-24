@@ -11,9 +11,10 @@ sealed class Screen(val route: String) {
     }
     object AdminUsers: Screen("admin_users")
     object AdminOrders: Screen("admin_orders?initialTab={initialTab}") {
-        fun createRoute(initialTab: String = "PENDING") = "admin_orders?initialTab=$initialTab"
+        fun createRoute(initialTab: String = "ALL") = "admin_orders?initialTab=$initialTab"
     }
     object AdminPromotions: Screen("admin_promotions")
+    object AdminToppings: Screen("admin_toppings")
     object AdminReviews: Screen("admin_reviews")
     object ProductList: Screen("product_list")
     object Cart: Screen("cart")
@@ -30,4 +31,5 @@ val screenWithBottomBar = listOf(
     Screen.Cart.route,
     Screen.Profile.route
 )
+
 

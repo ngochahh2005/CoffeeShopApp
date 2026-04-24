@@ -12,6 +12,7 @@ import com.example.coffeeshopapp.data.model.entity.Product
 import com.example.coffeeshopapp.data.remote.NetworkClient
 import com.example.coffeeshopapp.data.trendingCoffeeList
 import com.example.coffeeshopapp.utils.toFullImageUrl
+import com.example.coffeeshopapp.utils.isActiveResolved
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -82,7 +83,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                                 name = c.name,
                                 imageUrl = c.imageUrl?.toFullImageUrl(),
                                 displayOrder = c.displayOrder,
-                                isActive = c.isActive
+                                isActive = c.isActiveResolved()
                             )
                         } ?: coffeeCategories
                     } catch (ex: Exception) {

@@ -20,8 +20,8 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.FormatListBulleted
 import androidx.compose.material.icons.filled.AutoAwesome
-import androidx.compose.material.icons.filled.FormatListBulleted
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.outlined.ShoppingCart
 import androidx.compose.material3.Icon
@@ -188,7 +188,7 @@ private fun FavoriteTitle(
 
             IconButton(onClick = onToggleGrid) {
                 Icon(
-                    imageVector = if (isGrid) Icons.Default.FormatListBulleted else Icons.Default.GridView,
+                    imageVector = if (isGrid) Icons.AutoMirrored.Filled.FormatListBulleted else Icons.Default.GridView,
                     contentDescription = null,
                     tint = LabelColor,
                     modifier = Modifier.size(32.dp)

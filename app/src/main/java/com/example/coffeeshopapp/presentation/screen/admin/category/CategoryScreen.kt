@@ -48,6 +48,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -70,6 +71,7 @@ import com.example.coffeeshopapp.data.model.dto.CategoryDto
 import com.example.coffeeshopapp.presentation.viewmodel.AdminCategoryScreenType
 import com.example.coffeeshopapp.presentation.viewmodel.AdminCategoryViewModel
 import com.example.coffeeshopapp.presentation.viewmodel.CategoryUiState
+import com.example.coffeeshopapp.utils.isActiveResolved
 import com.example.coffeeshopapp.utils.toFullImageUrl
 import com.example.coffeeshopapp.utils.uriToImagePart
 import okhttp3.MultipartBody
@@ -117,8 +119,9 @@ fun AdminCategoryScreen(
                 isUpdating = false,
                 initialCategory = null,
                 isLoading = uiState.isLoading,
-                onSubmit = { name, displayOrder, image ->
-                    viewModel.createCategory(name, displayOrder, image)
+                errorMessage = uiState.error,
+                onSubmit = { name, description, displayOrder, image ->
+                    viewModel.createCategory(name, description, displayOrder, image)
                 },
                 onBack = viewModel::showList
             )
@@ -129,9 +132,10 @@ fun AdminCategoryScreen(
                 isUpdating = true,
                 initialCategory = uiState.selectedCategory,
                 isLoading = uiState.isLoading,
-                onSubmit = { name, displayOrder, image ->
+                errorMessage = uiState.error,
+                onSubmit = { name, description, displayOrder, image ->
                     val id = uiState.selectedCategory?.id ?: return@CategoryFormScreen
-                    viewModel.updateCategory(id, name, displayOrder, image)
+                    viewModel.updateCategory(id, name, description, displayOrder, image)
                 },
                 onBack = viewModel::showList
             )
@@ -269,9 +273,9 @@ private fun CategoryCard(
                     color = Color(0xFF757575)
                 )
                 Text(
-                    text = if (category.isActive) "Dang hien thi" else "Da an",
+                    text = if (category.isActiveResolved()) "Dang hien thi" else "Da an",
                     fontSize = 13.sp,
-                    color = if (category.isActive) Color(0xFF2E7D32) else Color(0xFF9E9E9E)
+                    color = if (category.isActiveResolved()) Color(0xFF2E7D32) else Color(0xFF9E9E9E)
                 )
             }
 
@@ -352,7 +356,7 @@ private fun CategoryDetailScreen(
             )
             DetailRow("Ten", category.name)
             DetailRow("Thu tu hien thi", category.displayOrder.toString())
-            DetailRow("Trang thai", if (category.isActive) "Dang hien thi" else "Da an")
+            DetailRow("Trang thai", if (category.isActiveResolved()) "Dang hien thi" else "Da an")
             DetailRow("Mo ta", category.description ?: "Khong co")
         }
     }
@@ -372,15 +376,26 @@ private fun CategoryFormScreen(
     isUpdating: Boolean,
     initialCategory: CategoryDto?,
     isLoading: Boolean,
-    onSubmit: (String, Int, MultipartBody.Part?) -> Unit,
+    errorMessage: String?,
+    onSubmit: (String, String, Int, MultipartBody.Part?) -> Unit,
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
+    var lastError by remember { mutableStateOf<String?>(null) }
+    var showError by remember { mutableStateOf(false) }
     var name by rememberSaveable(initialCategory?.id) { mutableStateOf(initialCategory?.name.orEmpty()) }
+    var description by rememberSaveable(initialCategory?.id) { mutableStateOf(initialCategory?.description.orEmpty()) }
     var displayOrderText by rememberSaveable(initialCategory?.id) {
         mutableStateOf(if (initialCategory != null) initialCategory.displayOrder.toString() else "0")
     }
     var selectedImageUri by rememberSaveable(initialCategory?.id) { mutableStateOf<Uri?>(null) }
+
+    LaunchedEffect(errorMessage) {
+        if (!errorMessage.isNullOrBlank() && errorMessage != lastError) {
+            lastError = errorMessage
+            showError = true
+        }
+    }
 
     val imagePicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -409,6 +424,15 @@ private fun CategoryFormScreen(
             )
         }
     ) { padding ->
+        if (showError && !lastError.isNullOrBlank()) {
+            AlertDialog(
+                onDismissRequest = { showError = false },
+                title = { Text("Có lỗi xảy ra") },
+                text = { Text(lastError ?: "") },
+                confirmButton = { TextButton(onClick = { showError = false }) { Text("OK") } }
+            )
+        }
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -436,6 +460,14 @@ private fun CategoryFormScreen(
                 label = { Text("Thu tu hien thi", fontSize = 14.sp) },
                 keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
                 singleLine = true
+            )
+
+            OutlinedTextField(
+                value = description,
+                onValueChange = { description = it },
+                modifier = Modifier.fillMaxWidth(),
+                label = { Text("Mo ta", fontSize = 14.sp) },
+                minLines = 3
             )
 
             Text(
@@ -490,7 +522,7 @@ private fun CategoryFormScreen(
                 onClick = {
                     val displayOrder = displayOrderText.toIntOrNull() ?: 0
                     val imagePart = selectedImageUri?.let { uriToImagePart(context, it) }
-                    onSubmit(name.trim(), displayOrder, imagePart)
+                    onSubmit(name.trim(), description.trim(), displayOrder, imagePart)
                 },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = name.isNotBlank() && !isLoading

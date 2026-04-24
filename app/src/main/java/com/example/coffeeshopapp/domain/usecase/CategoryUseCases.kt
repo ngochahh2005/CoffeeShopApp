@@ -2,6 +2,7 @@ package com.example.coffeeshopapp.domain.usecase
 
 import com.example.coffeeshopapp.data.model.dto.ApiResponseDto
 import com.example.coffeeshopapp.data.model.dto.CategoryDto
+import com.example.coffeeshopapp.data.model.dto.CategoryRequestDto
 import com.example.coffeeshopapp.data.repository.CategoryRepository
 import okhttp3.MultipartBody
 
@@ -19,7 +20,7 @@ class GetCategoryByIdUseCase(private val repository: CategoryRepository) {
 
 class CreateCategoryUseCase(private val repository: CategoryRepository) {
     suspend operator fun invoke(
-        dto: CategoryDto,
+        dto: CategoryRequestDto,
         image: MultipartBody.Part?
     ): ApiResponseDto<CategoryDto> {
         return repository.createCategory(dto, image)
@@ -29,7 +30,7 @@ class CreateCategoryUseCase(private val repository: CategoryRepository) {
 class UpdateCategoryUseCase(private val repository: CategoryRepository) {
     suspend operator fun invoke(
         id: Long,
-        dto: CategoryDto,
+        dto: CategoryRequestDto,
         image: MultipartBody.Part?
     ): ApiResponseDto<CategoryDto> {
         return repository.updateCategory(id, dto, image)

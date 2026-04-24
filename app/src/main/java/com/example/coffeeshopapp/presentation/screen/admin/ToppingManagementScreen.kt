@@ -1,0 +1,412 @@
+package com.example.coffeeshopapp.presentation.screen.admin
+
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
+import com.example.coffeeshopapp.data.model.dto.ToppingDto
+import com.example.coffeeshopapp.presentation.viewmodel.AdminToppingScreenType
+import com.example.coffeeshopapp.presentation.viewmodel.AdminToppingViewModel
+import com.example.coffeeshopapp.presentation.viewmodel.ToppingUiState
+import com.example.coffeeshopapp.utils.formatGrouped
+import com.example.coffeeshopapp.utils.isActiveResolved
+import com.example.coffeeshopapp.utils.toFullImageUrl
+import com.example.coffeeshopapp.utils.uriToImagePart
+import okhttp3.MultipartBody
+
+@Composable
+fun ToppingManagementScreen(
+    viewModel: AdminToppingViewModel,
+    onBackClick: () -> Unit
+) {
+    val uiState by viewModel.uiState.collectAsState()
+
+    if (uiState.showDeleteConfirmDialog && uiState.selectedTopping != null) {
+        AlertDialog(
+            onDismissRequest = viewModel::dismissDeleteDialog,
+            title = { Text("Xoá topping") },
+            text = { Text("Bạn có chắc muốn xoá \"${uiState.selectedTopping!!.name}\" không?") },
+            confirmButton = {
+                TextButton(onClick = viewModel::confirmDelete) {
+                    Text("Xoá", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = { TextButton(onClick = viewModel::dismissDeleteDialog) { Text("Huỷ") } }
+        )
+    }
+
+    when (uiState.currentScreen) {
+        AdminToppingScreenType.LIST -> ToppingListScreen(
+            uiState = uiState,
+            onAddClick = viewModel::showCreateForm,
+            onDetailClick = { viewModel.loadToppingDetail(it.id) },
+            onEditClick = { viewModel.loadToppingForUpdate(it.id) },
+            onDeleteClick = viewModel::showDeleteDialog,
+            onBackClick = onBackClick
+        )
+
+        AdminToppingScreenType.DETAIL -> ToppingDetailScreen(
+            topping = uiState.selectedTopping,
+            onBack = viewModel::showList,
+            onEdit = { uiState.selectedTopping?.id?.let(viewModel::loadToppingForUpdate) }
+        )
+
+        AdminToppingScreenType.CREATE -> ToppingFormScreen(
+            isUpdating = false,
+            initialTopping = null,
+            isLoading = uiState.isLoading,
+            errorMessage = uiState.error,
+            onSubmit = { name, price, image -> viewModel.createTopping(name, price, image) },
+            onBack = viewModel::showList
+        )
+
+        AdminToppingScreenType.UPDATE -> ToppingFormScreen(
+            isUpdating = true,
+            initialTopping = uiState.selectedTopping,
+            isLoading = uiState.isLoading,
+            errorMessage = uiState.error,
+            onSubmit = { name, price, image ->
+                val id = uiState.selectedTopping?.id ?: return@ToppingFormScreen
+                viewModel.updateTopping(id, name, price, image)
+            },
+            onBack = viewModel::showList
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ToppingListScreen(
+    uiState: ToppingUiState,
+    onAddClick: () -> Unit,
+    onDetailClick: (ToppingDto) -> Unit,
+    onEditClick: (ToppingDto) -> Unit,
+    onDeleteClick: (ToppingDto) -> Unit,
+    onBackClick: () -> Unit
+) {
+    Scaffold(
+        containerColor = Color(0xFFF7F8FA),
+        topBar = {
+            TopAppBar(
+                title = { Text("Quản lý topping") },
+                navigationIcon = {
+                    IconButton(onClick = onBackClick) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                }
+            )
+        },
+        floatingActionButton = {
+            FloatingActionButton(onClick = onAddClick) {
+                Icon(Icons.Default.Add, contentDescription = "Add topping")
+            }
+        }
+    ) { padding ->
+        when {
+            uiState.isLoading -> Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
+
+            uiState.error != null -> Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
+                Text("Lỗi: ${uiState.error}", color = MaterialTheme.colorScheme.error)
+            }
+
+            uiState.toppings.isEmpty() -> Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
+                Text("Chưa có topping nào.")
+            }
+
+            else -> LazyColumn(
+                modifier = Modifier.fillMaxSize().padding(padding),
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                items(uiState.toppings) { topping ->
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(14.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            ToppingImage(topping.imageUrl, Modifier.size(72.dp))
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(topping.name, fontWeight = FontWeight.Bold, fontSize = 17.sp)
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text("Giá: ${topping.price.formatGrouped()} đ", color = Color(0xFF757575), fontSize = 13.sp)
+                                Text(
+                                    if (topping.isActiveResolved()) "Đang bán" else "Ngừng bán",
+                                    color = if (topping.isActiveResolved()) Color(0xFF2E7D32) else Color(0xFF9E9E9E),
+                                    fontSize = 13.sp
+                                )
+                            }
+                            Row {
+                                IconButton(onClick = { onDetailClick(topping) }) { Icon(Icons.Default.Visibility, contentDescription = "Detail") }
+                                IconButton(onClick = { onEditClick(topping) }) { Icon(Icons.Default.Edit, contentDescription = "Edit") }
+                                IconButton(onClick = { onDeleteClick(topping) }) {
+                                    Icon(Icons.Default.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ToppingDetailScreen(
+    topping: ToppingDto?,
+    onBack: () -> Unit,
+    onEdit: () -> Unit
+) {
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Chi tiết topping") },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                actions = {
+                    IconButton(onClick = onEdit) {
+                        Icon(Icons.Default.Edit, contentDescription = "Edit")
+                    }
+                }
+            )
+        }
+    ) { padding ->
+        if (topping == null) {
+            Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
+                Text("Không tìm thấy topping.")
+            }
+            return@Scaffold
+        }
+
+        Column(
+            modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            ToppingImage(topping.imageUrl, Modifier.fillMaxWidth().height(180.dp))
+            DetailRow("Tên", topping.name)
+            DetailRow("Giá", "${topping.price.formatGrouped()} đ")
+            DetailRow("Trạng thái", if (topping.isActiveResolved()) "Đang bán" else "Ngừng bán")
+        }
+    }
+}
+
+@Composable
+private fun DetailRow(label: String, value: String) {
+    Column {
+        Text(label, color = Color(0xFF757575), fontSize = 12.sp)
+        Text(value, fontSize = 16.sp, fontWeight = FontWeight.Medium)
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ToppingFormScreen(
+    isUpdating: Boolean,
+    initialTopping: ToppingDto?,
+    isLoading: Boolean,
+    errorMessage: String?,
+    onSubmit: (String, Long, MultipartBody.Part?) -> Unit,
+    onBack: () -> Unit
+) {
+    val context = LocalContext.current
+    var lastError by remember { mutableStateOf<String?>(null) }
+    var showError by remember { mutableStateOf(false) }
+    var name by rememberSaveable(initialTopping?.id) { mutableStateOf(initialTopping?.name.orEmpty()) }
+    var priceText by rememberSaveable(initialTopping?.id) { mutableStateOf(initialTopping?.price?.toLong()?.toString() ?: "") }
+    var selectedImageUri by rememberSaveable(initialTopping?.id) { mutableStateOf<Uri?>(null) }
+
+    LaunchedEffect(errorMessage) {
+        if (!errorMessage.isNullOrBlank() && errorMessage != lastError) {
+            lastError = errorMessage
+            showError = true
+        }
+    }
+
+    val imagePicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        selectedImageUri = uri
+    }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text(if (isUpdating) "Cập nhật topping" else "Tạo topping") },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                }
+            )
+        }
+    ) { padding ->
+        if (showError && !lastError.isNullOrBlank()) {
+            AlertDialog(
+                onDismissRequest = { showError = false },
+                title = { Text("Có lỗi xảy ra") },
+                text = { Text(lastError ?: "") },
+                confirmButton = { TextButton(onClick = { showError = false }) { Text("OK") } }
+            )
+        }
+
+        Column(
+            modifier = Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            OutlinedTextField(
+                value = name,
+                onValueChange = { name = it },
+                modifier = Modifier.fillMaxWidth(),
+                label = { Text("Tên topping") },
+                singleLine = true
+            )
+
+            OutlinedTextField(
+                value = priceText,
+                onValueChange = { if (it.isEmpty() || it.all(Char::isDigit)) priceText = it },
+                modifier = Modifier.fillMaxWidth(),
+                label = { Text("Giá (VNĐ)") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                singleLine = true
+            )
+
+            Surface(
+                modifier = Modifier.fillMaxWidth().height(180.dp).clickable { imagePicker.launch("image/*") },
+                shape = RoundedCornerShape(14.dp),
+                border = BorderStroke(1.dp, Color(0xFFBDBDBD)),
+                color = Color(0xFFF8F8F8)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    val previewImage = selectedImageUri ?: initialTopping?.imageUrl?.let { Uri.parse(it) }
+                    if (previewImage != null) {
+                        ToppingImage(previewImage.toString(), Modifier.fillMaxSize())
+                    } else {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Icon(Icons.Default.Image, contentDescription = null, tint = Color(0xFF757575))
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Text("Nhấn để chọn ảnh", color = Color(0xFF757575))
+                        }
+                    }
+                }
+            }
+
+            if (isLoading) CircularProgressIndicator()
+
+            Button(
+                onClick = {
+                    val price = priceText.toLongOrNull()
+                    if (price == null || price <= 0L) {
+                        lastError = "Giá topping phải lớn hơn 0"
+                        showError = true
+                        return@Button
+                    }
+                    val imagePart = selectedImageUri?.let { uriToImagePart(context, it) }
+                    onSubmit(name.trim(), price, imagePart)
+                },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = name.isNotBlank() && !isLoading
+            ) {
+                Text(if (isUpdating) "Cập nhật" else "Tạo topping")
+            }
+        }
+    }
+}
+
+@Composable
+private fun ToppingImage(imageUrl: String?, modifier: Modifier = Modifier) {
+    val finalUrl = remember(imageUrl) {
+        when {
+            imageUrl.isNullOrBlank() -> null
+            imageUrl.startsWith("content://") -> imageUrl
+            else -> imageUrl.toFullImageUrl()
+        }
+    }
+
+    if (finalUrl == null) {
+        Box(
+            modifier = modifier.clip(RoundedCornerShape(12.dp)).background(Color(0xFFE0E0E0)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(Icons.Default.Image, contentDescription = null, tint = Color(0xFF9E9E9E))
+        }
+        return
+    }
+
+    AsyncImage(
+        model = finalUrl,
+        contentDescription = null,
+        modifier = modifier.clip(RoundedCornerShape(12.dp)),
+        contentScale = ContentScale.Crop
+    )
+}
