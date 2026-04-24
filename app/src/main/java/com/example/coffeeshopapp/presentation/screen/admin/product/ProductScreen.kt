@@ -52,6 +52,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -76,7 +77,9 @@ import com.example.coffeeshopapp.data.model.dto.ProductSizeRequestDto
 import com.example.coffeeshopapp.presentation.viewmodel.AdminProductScreenType
 import com.example.coffeeshopapp.presentation.viewmodel.AdminProductViewModel
 import com.example.coffeeshopapp.presentation.viewmodel.ProductUiState
-import com.example.coffeeshopapp.utils.AppConstants
+import com.example.coffeeshopapp.utils.isActiveResolved
+import com.example.coffeeshopapp.utils.formatGrouped
+import com.example.coffeeshopapp.utils.toFullImageUrl
 import com.example.coffeeshopapp.utils.uriToImagePart
 import okhttp3.MultipartBody
 
@@ -131,6 +134,7 @@ fun AdminProductScreen(
                 initialProduct = null,
                 categories = uiState.categories,
                 isLoading = uiState.isLoading,
+                errorMessage = uiState.error,
                 onSubmit = { name, desc, basePrice, catId, sizes, image ->
                     viewModel.createProduct(name, desc, basePrice, catId, sizes, image)
                 },
@@ -144,6 +148,7 @@ fun AdminProductScreen(
                 initialProduct = uiState.selectedProduct,
                 categories = uiState.categories,
                 isLoading = uiState.isLoading,
+                errorMessage = uiState.error,
                 onSubmit = { name, desc, basePrice, catId, sizes, image ->
                     val id = uiState.selectedProduct?.id ?: return@ProductFormScreen
                     viewModel.updateProduct(id, name, desc, basePrice, catId, sizes, image)
@@ -239,11 +244,11 @@ fun ProductCard(
             Column(modifier = Modifier.weight(1f)) {
                 Text(text = product.name, fontSize = 17.sp, lineHeight = 21.sp, fontWeight = FontWeight.Bold)
                 Spacer(modifier = Modifier.height(4.dp))
-                Text(text = "Giá: ${product.basePrice}", fontSize = 13.sp, color = Color(0xFF757575))
+                Text(text = "Giá: ${product.basePrice.formatGrouped()} đ", fontSize = 13.sp, color = Color(0xFF757575))
                 Text(
-                    text = if (product.isActive) "Đang kinh doanh" else "Ngừng bán",
+                    text = if (product.isActiveResolved()) "Đang kinh doanh" else "Ngừng bán",
                     fontSize = 13.sp,
-                    color = if (product.isActive) Color(0xFF2E7D32) else Color(0xFF9E9E9E)
+                    color = if (product.isActiveResolved()) Color(0xFF2E7D32) else Color(0xFF9E9E9E)
                 )
             }
             Row {
@@ -289,9 +294,9 @@ fun ProductDetailScreen(
             ProductImage(imageUrl = product.imageUrl, modifier = Modifier.fillMaxWidth().height(180.dp))
             DetailRow("Tên sản phẩm", product.name)
             DetailRow("Danh mục", categoryName)
-            DetailRow("Giá cơ bản", "${product.basePrice} VNĐ")
+            DetailRow("Giá cơ bản", "${product.basePrice.formatGrouped()} đ")
             DetailRow("Mô tả", product.desc ?: "Không có")
-            DetailRow("Trạng thái", if (product.isActive) "Đang kinh doanh" else "Ngừng kinh doanh")
+            DetailRow("Trạng thái", if (product.isActiveResolved()) "Đang kinh doanh" else "Ngừng kinh doanh")
             
             Text("Các size và phụ thu", fontSize = 17.sp, lineHeight = 21.sp, fontWeight = FontWeight.Bold)
             product.size.forEach { size ->
@@ -300,7 +305,7 @@ fun ProductDetailScreen(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text("Size ${size.sizeName}")
-                    Text("+${size.priceExtra} VNĐ", color = Color(0xFF757575))
+                    Text("+${size.priceExtra.formatGrouped()} đ", color = Color(0xFF757575))
                 }
             }
         }
@@ -322,10 +327,21 @@ private fun ProductFormScreen(
     initialProduct: ProductDto?,
     categories: List<CategoryDto>,
     isLoading: Boolean,
-    onSubmit: (String, String, Double, Long, List<ProductSizeRequestDto>, MultipartBody.Part?) -> Unit,
+    errorMessage: String?,
+    onSubmit: (String, String, Long, Long, List<ProductSizeRequestDto>, MultipartBody.Part?) -> Unit,
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
+    var lastError by remember { mutableStateOf<String?>(null) }
+    var showError by remember { mutableStateOf(false) }
+
+    LaunchedEffect(errorMessage) {
+        if (!errorMessage.isNullOrBlank() && errorMessage != lastError) {
+            lastError = errorMessage
+            showError = true
+        }
+    }
+
     var name by rememberSaveable(initialProduct?.id) { mutableStateOf(initialProduct?.name.orEmpty()) }
     var basePriceText by rememberSaveable(initialProduct?.id) { mutableStateOf(initialProduct?.basePrice?.toLong()?.toString() ?: "") }
     var desc by rememberSaveable(initialProduct?.id) { mutableStateOf(initialProduct?.desc.orEmpty()) }
@@ -354,6 +370,15 @@ private fun ProductFormScreen(
             )
         }
     ) { padding ->
+        if (showError && !lastError.isNullOrBlank()) {
+            AlertDialog(
+                onDismissRequest = { showError = false },
+                title = { Text("Có lỗi xảy ra") },
+                text = { Text(lastError ?: "") },
+                confirmButton = { TextButton(onClick = { showError = false }) { Text("OK") } }
+            )
+        }
+
         Column(
             modifier = Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)
@@ -420,11 +445,11 @@ private fun ProductFormScreen(
 
             Button(
                 onClick = {
-                    val basePrice = basePriceText.toDoubleOrNull() ?: 0.0
+                    val basePrice = basePriceText.toLongOrNull() ?: 0L
                     val sizes = mutableListOf<ProductSizeRequestDto>()
-                    if (sActive) sizes.add(ProductSizeRequestDto("S", sPriceText.toDoubleOrNull() ?: 0.0))
-                    if (mActive) sizes.add(ProductSizeRequestDto("M", mPriceText.toDoubleOrNull() ?: 0.0))
-                    if (lActive) sizes.add(ProductSizeRequestDto("L", lPriceText.toDoubleOrNull() ?: 0.0))
+                    if (sActive) sizes.add(ProductSizeRequestDto("S", sPriceText.toLongOrNull() ?: 0L))
+                    if (mActive) sizes.add(ProductSizeRequestDto("M", mPriceText.toLongOrNull() ?: 0L))
+                    if (lActive) sizes.add(ProductSizeRequestDto("L", lPriceText.toLongOrNull() ?: 0L))
                     
                     val imagePart = selectedImageUri?.let { uriToImagePart(context, it) }
                     selectedCategoryId?.let { catId ->
@@ -474,8 +499,7 @@ private fun ProductImage(imageUrl: String?, modifier: Modifier = Modifier) {
 private fun resolveImageUrl(raw: String?): String? {
     if (raw.isNullOrBlank()) return null
     if (raw.startsWith("content://")) return raw
-    if (raw.startsWith("http://") || raw.startsWith("https://")) return raw
-    return "${AppConstants.baseUrl}${if (raw.startsWith("/")) "" else "/"}$raw"
+    return raw.toFullImageUrl()
 }
 
 @Composable

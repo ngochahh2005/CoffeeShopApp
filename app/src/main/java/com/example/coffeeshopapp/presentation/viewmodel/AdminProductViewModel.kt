@@ -1,4 +1,4 @@
-package com.example.coffeeshopapp.presentation.viewmodel
+﻿package com.example.coffeeshopapp.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import okhttp3.MultipartBody
+import com.example.coffeeshopapp.utils.getErrorMessage
 
 data class ProductUiState(
     val isLoading: Boolean = false,
@@ -76,7 +77,7 @@ class AdminProductViewModel(
                     _uiState.update { it.copy(isLoading = false, error = response.message) }
                 }
             } catch (e: Exception) {
-                _uiState.update { it.copy(isLoading = false, error = e.message) }
+                _uiState.update { it.copy(isLoading = false, error = e.getErrorMessage()) }
             }
         }
     }
@@ -116,7 +117,7 @@ class AdminProductViewModel(
     fun createProduct(
         name: String,
         description: String?,
-        basePrice: Double,
+        basePrice: Long,
         categoryId: Long,
         sizes: List<ProductSizeRequestDto>,
         image: MultipartBody.Part?
@@ -139,7 +140,7 @@ class AdminProductViewModel(
                     _uiState.update { it.copy(isLoading = false, error = response.message) }
                 }
             } catch (e: Exception) {
-                _uiState.update { it.copy(isLoading = false, error = e.message) }
+                _uiState.update { it.copy(isLoading = false, error = e.getErrorMessage()) }
             }
         }
     }
@@ -148,7 +149,7 @@ class AdminProductViewModel(
         id: Long,
         name: String,
         description: String?,
-        basePrice: Double,
+        basePrice: Long,
         categoryId: Long,
         sizes: List<ProductSizeRequestDto>,
         image: MultipartBody.Part?
@@ -171,7 +172,7 @@ class AdminProductViewModel(
                     _uiState.update { it.copy(isLoading = false, error = response.message) }
                 }
             } catch (e: Exception) {
-                _uiState.update { it.copy(isLoading = false, error = e.message) }
+                _uiState.update { it.copy(isLoading = false, error = e.getErrorMessage()) }
             }
         }
     }
@@ -197,7 +198,7 @@ class AdminProductViewModel(
                     _uiState.update { it.copy(isLoading = false, error = response.message) }
                 }
             } catch (e: Exception) {
-                _uiState.update { it.copy(isLoading = false, error = e.message) }
+                _uiState.update { it.copy(isLoading = false, error = e.getErrorMessage()) }
             }
         }
     }
@@ -219,7 +220,7 @@ class AdminProductViewModel(
                     _uiState.update { it.copy(isLoading = false, error = response.message) }
                 }
             } catch (e: Exception) {
-                _uiState.update { it.copy(isLoading = false, error = e.message) }
+                _uiState.update { it.copy(isLoading = false, error = e.getErrorMessage()) }
             }
         }
     }

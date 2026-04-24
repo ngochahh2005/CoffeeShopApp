@@ -1,4 +1,4 @@
-package com.example.coffeeshopapp.presentation.viewmodel
+﻿package com.example.coffeeshopapp.presentation.viewmodel
 
 import android.app.Application
 import androidx.compose.runtime.mutableStateOf
@@ -23,6 +23,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
+import com.example.coffeeshopapp.utils.getErrorMessage
 
 class HomeViewModel(application: Application) : AndroidViewModel(application) {
     private val _uiState = MutableStateFlow(HomeUiState())
@@ -111,7 +112,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        error = e.message
+                        error = e.getErrorMessage()
                     )
                 }
             }
@@ -138,7 +139,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             try {
                 FavoritesDataStore.toggleFavorite(getApplication(), productId)
             } catch (e: Exception) {
-                _uiState.update { it.copy(error = e.message) }
+                _uiState.update { it.copy(error = e.getErrorMessage()) }
             }
 
             try {
@@ -153,7 +154,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                     }
                 }
             } catch (e: Exception) {
-                _uiState.update { it.copy(error = e.message) }
+                _uiState.update { it.copy(error = e.getErrorMessage()) }
             } finally {
                 _uiState.update { it.copy(loadingFavorites = it.loadingFavorites - productId) }
             }
@@ -180,7 +181,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     fun addToCart(coffeeId: String, offset: Offset) {
         viewModelScope.launch {
             _flyAnimationEvent.emit(Pair(coffeeId, offset))
-            println("Đã thêm món $coffeeId vào giỏ hàng tại vị trí $offset")
+            println("ÄÃ£ thÃªm mÃ³n $coffeeId vÃ o giá» hÃ ng táº¡i vá»‹ trÃ­ $offset")
         }
     }
 }

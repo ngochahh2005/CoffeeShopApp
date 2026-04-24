@@ -1,4 +1,4 @@
-package com.example.coffeeshopapp.presentation.viewmodel
+﻿package com.example.coffeeshopapp.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import okhttp3.MultipartBody
+import com.example.coffeeshopapp.utils.getErrorMessage
 
 data class CategoryUiState(
     val isLoading: Boolean = false,
@@ -60,7 +61,7 @@ class AdminCategoryViewModel(
                     _uiState.update { it.copy(isLoading = false, error = response.message) }
                 }
             } catch (e: Exception) {
-                _uiState.update { it.copy(isLoading = false, error = e.message) }
+                _uiState.update { it.copy(isLoading = false, error = e.getErrorMessage()) }
             }
         }
     }
@@ -116,7 +117,7 @@ class AdminCategoryViewModel(
                     _uiState.update { it.copy(isLoading = false, error = response.message) }
                 }
             } catch (e: Exception) {
-                _uiState.update { it.copy(isLoading = false, error = e.message) }
+                _uiState.update { it.copy(isLoading = false, error = e.getErrorMessage()) }
             }
          }
     }
@@ -147,7 +148,7 @@ class AdminCategoryViewModel(
                     _uiState.update { it.copy(isLoading = false, error = response.message) }
                 }
             } catch (e: Exception) {
-                _uiState.update { it.copy(isLoading = false, error = e.message) }
+                _uiState.update { it.copy(isLoading = false, error = e.getErrorMessage()) }
             }
          }
     }
@@ -173,7 +174,7 @@ class AdminCategoryViewModel(
                     _uiState.update { it.copy(isLoading = false, error = response.message) }
                 }
             } catch (e: Exception) {
-                _uiState.update { it.copy(isLoading = false, error = e.message) }
+                _uiState.update { it.copy(isLoading = false, error = e.getErrorMessage()) }
             }
         }
     }
@@ -209,7 +210,7 @@ class AdminCategoryViewModel(
                     _uiState.update { it.copy(isLoading = false, error = response.message) }
                 }
             } catch (e: Exception) {
-                _uiState.update { it.copy(isLoading = false, error = e.message) }
+                _uiState.update { it.copy(isLoading = false, error = e.getErrorMessage()) }
             }
         }
     }

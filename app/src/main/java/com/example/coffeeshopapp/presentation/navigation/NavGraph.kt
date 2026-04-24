@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -15,6 +16,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.NavHost
 import com.example.coffeeshopapp.data.remote.NetworkClient
+import com.example.coffeeshopapp.data.repository.AdminRepository
 import com.example.coffeeshopapp.data.repository.CategoryRepository
 import com.example.coffeeshopapp.domain.usecase.CreateCategoryUseCase
 import com.example.coffeeshopapp.domain.usecase.DeleteCategoryUseCase
@@ -23,6 +25,10 @@ import com.example.coffeeshopapp.domain.usecase.GetCategoryByIdUseCase
 import com.example.coffeeshopapp.domain.usecase.GetProductsByCategoryUseCase
 import com.example.coffeeshopapp.domain.usecase.UpdateCategoryUseCase
 import com.example.coffeeshopapp.presentation.screen.admin.DashboardScreen
+import com.example.coffeeshopapp.presentation.screen.admin.OrderManagementScreen
+import com.example.coffeeshopapp.presentation.screen.admin.PromotionManagementScreen
+import com.example.coffeeshopapp.presentation.screen.admin.ReviewManagementScreen
+import com.example.coffeeshopapp.presentation.screen.admin.UserManagementScreen
 import com.example.coffeeshopapp.presentation.screen.admin.category.AdminCategoryScreen
 import com.example.coffeeshopapp.presentation.screen.auth.ForgotPasswordScreen
 import com.example.coffeeshopapp.presentation.screen.auth.LoginScreen
@@ -32,8 +38,7 @@ import com.example.coffeeshopapp.presentation.screen.user.ProfileScreen
 import com.example.coffeeshopapp.presentation.screen.user.favorite.FavouritesScreen
 import com.example.coffeeshopapp.presentation.screen.user.home.HomeScreen
 import com.example.coffeeshopapp.presentation.theme.AdminScreenTheme
-import com.example.coffeeshopapp.presentation.viewmodel.AdminCategoryViewModel
-import com.example.coffeeshopapp.presentation.viewmodel.HomeViewModel
+import com.example.coffeeshopapp.presentation.viewmodel.*
 
 @SuppressLint("RestrictedApi")
 @Composable
@@ -43,31 +48,7 @@ fun NavGraph(innerPadding: PaddingValues, navController: NavHostController) {
     NavHost(
         navController = navController,
         startDestination = Screen.Login.route,
-        modifier = Modifier.padding(innerPadding),
-        enterTransition = {
-            slideIntoContainer(
-                towards = AnimatedContentTransitionScope.SlideDirection.Left,
-                animationSpec = tween(300)
-            )
-        },
-        exitTransition = {
-            slideOutOfContainer(
-                towards = AnimatedContentTransitionScope.SlideDirection.Left,
-                animationSpec = tween(300)
-            )
-        },
-        popEnterTransition = {
-            slideIntoContainer(
-                towards = AnimatedContentTransitionScope.SlideDirection.Right,
-                animationSpec = tween(300)
-            )
-        },
-        popExitTransition = {
-            slideOutOfContainer(
-                towards = AnimatedContentTransitionScope.SlideDirection.Right,
-                animationSpec = tween(300)
-            )
-        }
+        modifier = Modifier.fillMaxSize().padding(innerPadding),
     ) {
         composable(route = Screen.UserHome.route) { backStackEntry ->
             val homeViewModel: HomeViewModel = viewModel(backStackEntry)
@@ -99,16 +80,29 @@ fun NavGraph(innerPadding: PaddingValues, navController: NavHostController) {
             ProfileScreen(onOpenAdmin = { navController.navigate(Screen.AdminDashboard.route) })
         }
 
+        // ─── Admin Dashboard ───
         composable(route = Screen.AdminDashboard.route) {
+            val vm: DashboardViewModel = viewModel(factory = object : ViewModelProvider.Factory {
+                @Suppress("UNCHECKED_CAST")
+                override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                    return DashboardViewModel(AdminRepository(NetworkClient.api)) as T
+                }
+            })
             AdminScreenTheme {
                 DashboardScreen(
+                    viewModel = vm,
                     onBack = { navController.popBackStack() },
                     onOpenCategory = { navController.navigate(Screen.AdminCategory.route) },
-                    onOpenProduct = { navController.navigate(Screen.AdminProduct.createRoute(-1L)) }
+                    onOpenProduct = { navController.navigate(Screen.AdminProduct.createRoute(-1L)) },
+                    onOpenUsers = { navController.navigate(Screen.AdminUsers.route) },
+                    onOpenOrders = { status -> navController.navigate(Screen.AdminOrders.createRoute(status)) },
+                    onOpenPromotions = { navController.navigate(Screen.AdminPromotions.route) },
+                    onOpenReviews = { navController.navigate(Screen.AdminReviews.route) }
                 )
             }
         }
 
+        // ─── Admin Category ───
         composable(route = Screen.AdminCategory.route) {
             val viewModel: AdminCategoryViewModel = viewModel(factory = object : ViewModelProvider.Factory {
                 @Suppress("UNCHECKED_CAST")
@@ -126,13 +120,63 @@ fun NavGraph(innerPadding: PaddingValues, navController: NavHostController) {
                     ) as T
                 }
             })
-
             AdminScreenTheme {
                 AdminCategoryScreen(
                     viewModel = viewModel,
                     onBackClick = { navController.popBackStack() }
                 )
             }
+        }
+
+        // ─── Admin Users ───
+        composable(route = Screen.AdminUsers.route) {
+            val vm: AdminUserViewModel = viewModel(factory = object : ViewModelProvider.Factory {
+                @Suppress("UNCHECKED_CAST")
+                override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                    return AdminUserViewModel(AdminRepository(NetworkClient.api)) as T
+                }
+            })
+            AdminScreenTheme { UserManagementScreen(viewModel = vm, onBackClick = { navController.popBackStack() }) }
+        }
+
+        // ─── Admin Orders ───
+        composable(
+            route = Screen.AdminOrders.route,
+            arguments = listOf(androidx.navigation.navArgument("initialTab") {
+                type = androidx.navigation.NavType.StringType
+                defaultValue = "PENDING"
+            })
+        ) { backStackEntry ->
+            val initialTab = backStackEntry.arguments?.getString("initialTab") ?: "PENDING"
+            val vm: AdminOrderViewModel = viewModel(factory = object : ViewModelProvider.Factory {
+                @Suppress("UNCHECKED_CAST")
+                override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                    return AdminOrderViewModel(AdminRepository(NetworkClient.api), initialTab) as T
+                }
+            })
+            AdminScreenTheme { OrderManagementScreen(viewModel = vm, onBackClick = { navController.popBackStack() }) }
+        }
+
+        // ─── Admin Promotions ───
+        composable(route = Screen.AdminPromotions.route) {
+            val vm: AdminPromotionViewModel = viewModel(factory = object : ViewModelProvider.Factory {
+                @Suppress("UNCHECKED_CAST")
+                override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                    return AdminPromotionViewModel(AdminRepository(NetworkClient.api)) as T
+                }
+            })
+            AdminScreenTheme { PromotionManagementScreen(viewModel = vm, onBackClick = { navController.popBackStack() }) }
+        }
+
+        // ─── Admin Reviews ───
+        composable(route = Screen.AdminReviews.route) {
+            val vm: AdminReviewViewModel = viewModel(factory = object : ViewModelProvider.Factory {
+                @Suppress("UNCHECKED_CAST")
+                override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                    return AdminReviewViewModel(AdminRepository(NetworkClient.api)) as T
+                }
+            })
+            AdminScreenTheme { ReviewManagementScreen(viewModel = vm, onBackClick = { navController.popBackStack() }) }
         }
 
         composable(route = Screen.Login.route) {
@@ -152,12 +196,12 @@ fun NavGraph(innerPadding: PaddingValues, navController: NavHostController) {
             arguments = listOf(androidx.navigation.navArgument("productId") { type = androidx.navigation.NavType.LongType })
         ) { backStackEntry ->
             val productId = backStackEntry.arguments?.getLong("productId") ?: -1L
-            val viewModel: com.example.coffeeshopapp.presentation.viewmodel.AdminProductViewModel = viewModel(factory = object : ViewModelProvider.Factory {
+            val viewModel: AdminProductViewModel = viewModel(factory = object : ViewModelProvider.Factory {
                 @Suppress("UNCHECKED_CAST")
                 override fun <T : ViewModel> create(modelClass: Class<T>): T {
                     val repository = com.example.coffeeshopapp.data.repository.ProductRepository(NetworkClient.api)
                     val catRepo = CategoryRepository(NetworkClient.api)
-                    return com.example.coffeeshopapp.presentation.viewmodel.AdminProductViewModel(
+                    return AdminProductViewModel(
                         getProductsUseCase = com.example.coffeeshopapp.domain.usecase.GetProductsUseCase(repository),
                         getProductByIdUseCase = com.example.coffeeshopapp.domain.usecase.GetProductByIdUseCase(repository),
                         createProductUseCase = com.example.coffeeshopapp.domain.usecase.CreateProductUseCase(repository),

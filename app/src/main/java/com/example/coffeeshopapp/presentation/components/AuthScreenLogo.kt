@@ -36,7 +36,6 @@ fun AuthScreenLogo(modifier: Modifier = Modifier) {
             contentDescription = null,
             modifier = Modifier
                 .fillMaxWidth(.8f)
-                .fillMaxHeight(.35f)
                 .align(Alignment.TopCenter)
                 .padding(top = 5.dp)
         )

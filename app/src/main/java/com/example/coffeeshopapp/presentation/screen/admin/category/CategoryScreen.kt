@@ -61,7 +61,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -71,7 +70,7 @@ import com.example.coffeeshopapp.data.model.dto.CategoryDto
 import com.example.coffeeshopapp.presentation.viewmodel.AdminCategoryScreenType
 import com.example.coffeeshopapp.presentation.viewmodel.AdminCategoryViewModel
 import com.example.coffeeshopapp.presentation.viewmodel.CategoryUiState
-import com.example.coffeeshopapp.utils.AppConstants
+import com.example.coffeeshopapp.utils.toFullImageUrl
 import com.example.coffeeshopapp.utils.uriToImagePart
 import okhttp3.MultipartBody
 
@@ -532,8 +531,7 @@ private fun CategoryImage(
 private fun resolveImageUrl(raw: String?): String? {
     if (raw.isNullOrBlank()) return null
     if (raw.startsWith("content://")) return raw
-    if (raw.startsWith("http://") || raw.startsWith("https://")) return raw
-    return "${AppConstants.baseUrl}${if (raw.startsWith("/")) "" else "/"}$raw"
+    return raw.toFullImageUrl()
 }
 
 @Composable
