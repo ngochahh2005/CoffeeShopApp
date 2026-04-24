@@ -2,124 +2,137 @@ package com.example.coffeeshopapp.presentation.screen.auth
 
 import android.widget.Toast
 import androidx.compose.runtime.getValue
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import com.example.coffeeshopapp.R
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
+import com.example.coffeeshopapp.data.remote.NetworkClient
+import com.example.coffeeshopapp.data.local.AuthDataStore
+import com.example.coffeeshopapp.data.TokenProvider
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.coffeeshopapp.data.model.dto.RegisterRequestDto
-import com.example.coffeeshopapp.data.remote.NetworkClient
+import com.example.coffeeshopapp.data.model.dto.LoginRequestDto
 import com.example.coffeeshopapp.presentation.components.AuthScreenLogo
 import com.example.coffeeshopapp.presentation.components.CommonSpace
 import com.example.coffeeshopapp.presentation.components.MainButton
 import com.example.coffeeshopapp.presentation.components.PasswordTextField
+import com.example.coffeeshopapp.presentation.components.SubButton
 import com.example.coffeeshopapp.presentation.components.UsernameTextField
 import com.example.coffeeshopapp.presentation.theme.BackgroundColor
 import com.example.coffeeshopapp.presentation.theme.CoffeeShopAppTheme
 import com.example.coffeeshopapp.presentation.theme.LabelColor
+import com.example.coffeeshopapp.presentation.theme.PlaceHolderColor
 import com.example.coffeeshopapp.presentation.theme.TitleColor
 import com.example.coffeeshopapp.presentation.theme.rememberScreenInfo
 import com.example.coffeeshopapp.presentation.viewmodel.AuthViewModel
-import com.example.coffeeshopapp.utils.getErrorMessage
-import kotlinx.coroutines.launch
 
 @Composable
-fun RegisterScreen(
+fun LoginScreen(
     viewModel: AuthViewModel = viewModel(),
-    openLoginScreen: () -> Unit
+    openHomeScreen: () -> Unit,
+    openRegisterScreen: () -> Unit,
+    openResetPasswordScreen: () -> Unit
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     val keyboardController = LocalSoftwareKeyboardController.current
     val focusManager = LocalFocusManager.current
+    var isLogging by remember { mutableStateOf(false) }
 
-    var isRegistering by remember { mutableStateOf(false) }
-
-    val handleRegister = {
-        if (viewModel.username.isEmpty() || viewModel.password.isEmpty() || viewModel.confirmPassword.isEmpty()) {
+    val handleLogin = {
+        if (viewModel.username.isEmpty() || viewModel.password.isEmpty()) {
             Toast.makeText(context, "Vui lòng nhập đầy đủ thông tin!", Toast.LENGTH_SHORT).show()
-        } else if (viewModel.password != viewModel.confirmPassword) {
-            Toast.makeText(context, "Mật khẩu không khớp!", Toast.LENGTH_SHORT).show()
         } else {
-            if (!isRegistering) {
-                isRegistering = true
+            if (!isLogging) {
+                isLogging = true
                 keyboardController?.hide()
 
                 coroutineScope.launch {
                     try {
-                        val resp = NetworkClient.api.register(
-                            RegisterRequestDto(
+                        val resp = NetworkClient.api.login(
+                            LoginRequestDto(
                                 viewModel.username,
-                                viewModel.password,
-                                viewModel.confirmPassword
+                                viewModel.password
                             )
                         )
 
                         if (resp.result != null) {
-                            Toast.makeText(context, "Đăng ký thành công!", Toast.LENGTH_SHORT).show()
-                            openLoginScreen()
+                            val token = resp.result.accessToken
+                            AuthDataStore.setToken(context, token)
+                            TokenProvider.token = token
+                            // Fetch current user info to get roles and save them
+                            try {
+                                val meResp = NetworkClient.api.getMyInfo()
+                                val roles = meResp.result?.roles?.mapNotNull { it.name } ?: emptyList()
+                                AuthDataStore.setRoles(context, roles)
+                            } catch (_: Exception) {
+                                // ignore role fetch error; user will default to USER
+                            }
+                            Toast.makeText(context, "Đăng nhập thành công!", Toast.LENGTH_SHORT)
+                                .show()
+                            openHomeScreen()
                         } else {
-                            Toast.makeText(context, "Lỗi: ${resp.message}", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(
+                                context,
+                                "Đăng nhập thất bại: ${resp.message}",
+                                Toast.LENGTH_SHORT
+                            ).show()
                         }
                     } catch (e: Exception) {
-                        Toast.makeText(context, e.getErrorMessage(), Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "Lỗi kết nối: ${e.message}", Toast.LENGTH_SHORT)
+                            .show()
                     } finally {
-                        isRegistering = false
+                        isLogging = false
                     }
                 }
             }
         }
     }
 
-    var scrollState = rememberScrollState()
-
     Column (
         modifier = Modifier
             .fillMaxSize()
             .background(color = BackgroundColor)
             .imePadding()
-            .verticalScroll(scrollState)
+            .verticalScroll(rememberScrollState())
     ) {
         AuthScreenLogo(modifier = Modifier.fillMaxWidth())
 
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .weight(1f)
-                .padding(start = 30.dp, end = 30.dp)
+                .padding(horizontal = 30.dp)
+                .heightIn(min = (rememberScreenInfo().height * 0.58f))
         ) {
+            // Title
             Text(
-                text = "Nice To\nMeet You!",
+                text = "Welcome\nBack!",
                 color = TitleColor,
                 style = MaterialTheme.typography.titleLarge
             )
@@ -155,51 +168,64 @@ fun RegisterScreen(
 
             PasswordTextField(
                 password = viewModel.password,
-                onValueChange = { viewModel.onPasswordChange(it) },
-                imeAction = ImeAction.Next,
+                onValueChange = {viewModel.onPasswordChange(it)},
+                imeAction = ImeAction.Done,
                 isShowPassword = viewModel.isShowPassword,
                 onShowPasswordChange = { viewModel.onShowPasswordChange() },
-                onAction = { focusManager.moveFocus(FocusDirection.Down) },
+                onAction = { handleLogin() },
                 modifier = Modifier.fillMaxWidth()
             )
 
-            CommonSpace()
+            CommonSpace(32.dp)
 
-            // Confirm password
-            Text(
-                text = "Confirm password",
-                color = LabelColor,
-                fontWeight = FontWeight.Bold,
-                style = MaterialTheme.typography.bodyMedium,
-            )
-
-            PasswordTextField(
-                password = viewModel.confirmPassword,
-                onValueChange = { viewModel.onConfirmPasswordChange(it) },
-                imeAction = ImeAction.Done,
-                isShowPassword = viewModel.isShowConfirmPassword,
-                onShowPasswordChange = { viewModel.onShowConfirmPasswordChange() },
-                onAction = { handleRegister() },
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            CommonSpace(56.dp)
-
-            // Nút register
             MainButton(
-                text = "Register",
-                onClick = { handleRegister() },
-                modifier = Modifier.padding(bottom = 18.dp)
+                text = "Login",
+                onClick = { handleLogin() }
             )
-        }
-    }
+            
+            if (isLogging) {
+                CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
+            }
 
+            CommonSpace(20.dp)
+
+            SubButton(
+                text = "Create an account",
+                onClick = {
+                    openRegisterScreen()
+                }
+            )
+
+            CommonSpace(18.dp)
+
+            // Forgot Password
+            TextButton(
+                onClick = { openResetPasswordScreen() },
+                modifier = Modifier.align(alignment = Alignment.CenterHorizontally)
+            ) {
+                Text(
+                    text = "Forgot your password?",
+                    color = PlaceHolderColor,
+//                    modifier = Modifier.padding(bottom = 18.dp)
+                )
+            }
+        }
+
+    }
 }
 
 @Composable
-@Preview(name = "Register Screen", showSystemUi = true)
-fun RegisterScreenPreview() {
+@Preview(name = "Login Screen", showSystemUi = true)
+fun LoginScreenPreview() {
     CoffeeShopAppTheme {
-        RegisterScreen(openLoginScreen = {})
+        LoginScreen(openRegisterScreen = {}, openHomeScreen = {}, openResetPasswordScreen = {})
+    }
+}
+
+@Composable
+@Preview(name = "Login Screen", showSystemUi = true, device = Devices.PIXEL_9_PRO_FOLD)
+fun LoginScreenPreview2() {
+    CoffeeShopAppTheme {
+        LoginScreen(openRegisterScreen = {}, openHomeScreen = {}, openResetPasswordScreen = {})
     }
 }

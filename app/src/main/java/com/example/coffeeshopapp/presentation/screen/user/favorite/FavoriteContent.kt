@@ -42,6 +42,7 @@ import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.coffeeshopapp.data.model.entity.Product
@@ -81,7 +82,7 @@ fun FavoriteContent(
         } else {
             if (isGrid) {
                 LazyVerticalGrid(
-                    columns = GridCells.Fixed(2),
+                    columns = GridCells.Adaptive(minSize = 180.dp),
                     contentPadding = PaddingValues(bottom = 80.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -194,6 +195,23 @@ private fun FavoriteTitle(
                 )
             }
         }
+    }
+}
+
+@Composable
+@Preview(name = "FavouritesScreenPreview", showSystemUi = true, device = Devices.PIXEL_9_PRO_FOLD)
+fun FavoriteScreenPreview2() {
+    val mockFavorites = listOf(
+        Product(id = "1", name = "Cà phê Muối", price = 35000, isFavorite = true),
+        Product(id = "2", name = "Bạc Xỉu", price = 29000, isFavorite = true),
+        Product(id = "3", name = "Espresso", price = 45000, isFavorite = true)
+    )
+
+    CoffeeShopAppTheme {
+        FavoriteContent(
+            favorites = mockFavorites,
+            loadingFavorites = setOf("1")
+        )
     }
 }
 

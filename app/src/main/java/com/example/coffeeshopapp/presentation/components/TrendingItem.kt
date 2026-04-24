@@ -68,7 +68,7 @@ fun TrendingItem(
     isLoading: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
-    Box(modifier = Modifier.fillMaxSize()) {
+    Box(modifier = Modifier.wrapContentSize()) {
         Column(
             modifier = modifier.size(200.dp, 220.dp).clip(RoundedCornerShape(16.dp))
                 .background(CardBackgroundColor).padding(6.dp),
@@ -208,7 +208,7 @@ fun TrendingItems(
 }
 
 @Composable
-@Preview(name = "Trending Item Preview")
+@Preview(name = "Trending Item Preview", showSystemUi = true)
 fun TrendingItemPreview() {
     CoffeeShopAppTheme {
         TrendingItem(
