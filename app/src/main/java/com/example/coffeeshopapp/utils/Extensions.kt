@@ -1,7 +1,9 @@
 package com.example.coffeeshopapp.utils
 
-import com.example.coffeeshopapp.data.model.entity.Product
+import com.example.coffeeshopapp.data.model.dto.CategoryDto
 import com.example.coffeeshopapp.data.model.dto.ProductDto
+import com.example.coffeeshopapp.data.model.dto.ToppingDto
+import com.example.coffeeshopapp.data.model.entity.Product
 import com.example.coffeeshopapp.data.remote.NetworkClient
 import org.json.JSONObject
 import retrofit2.HttpException
@@ -75,4 +77,12 @@ fun String?.toFullImageUrl(): String? {
 
 fun ProductDto.isActiveResolved(): Boolean {
     return this.isActive ?: (this.isDeleted?.not() ?: true)
+}
+
+fun CategoryDto.isActiveResolved(): Boolean {
+    return this.isActive ?: true
+}
+
+fun ToppingDto.isActiveResolved(): Boolean {
+    return this.isActive ?: true
 }

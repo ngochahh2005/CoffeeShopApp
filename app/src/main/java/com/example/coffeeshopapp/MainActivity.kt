@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.HorizontalDivider
@@ -115,11 +116,10 @@ fun MyApp() {
 
                                 navItem("Tổng quan", Screen.AdminDashboard.route, Icons.Default.Dashboard)
                                 navItem("Danh mục", Screen.AdminCategory.route, Icons.Default.Category)
+                                navItem("Topping", Screen.AdminToppings.route, Icons.Default.Cookie)
                                 navItem("Sản phẩm", Screen.AdminProduct.createRoute(-1L), Icons.Default.Inventory2)
                                 navItem("Người dùng", Screen.AdminUsers.route, Icons.Default.People)
-                                navItem("Đơn hàng", Screen.AdminOrders.createRoute("PENDING"), Icons.Default.ReceiptLong)
-                                navItem("Khuyến mãi", Screen.AdminPromotions.route, Icons.Default.Discount)
-                                navItem("Đánh giá", Screen.AdminReviews.route, Icons.Default.Star)
+                                navItem("Đơn hàng", Screen.AdminOrders.createRoute("PENDING"), Icons.AutoMirrored.Filled.ReceiptLong)
                             }
                         }
                     }

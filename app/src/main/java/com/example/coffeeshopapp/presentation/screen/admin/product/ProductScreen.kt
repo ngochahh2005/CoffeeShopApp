@@ -321,6 +321,7 @@ private fun DetailRow(label: String, value: String) {
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
+@Suppress("DEPRECATION")
 @Composable
 private fun ProductFormScreen(
     isUpdating: Boolean,
@@ -347,6 +348,12 @@ private fun ProductFormScreen(
     var desc by rememberSaveable(initialProduct?.id) { mutableStateOf(initialProduct?.desc.orEmpty()) }
     var selectedCategoryId by rememberSaveable(initialProduct?.id) { mutableStateOf(initialProduct?.categoryId) }
     var catExpanded by remember { mutableStateOf(false) }
+
+    LaunchedEffect(initialProduct?.categoryId, categories.size) {
+        if (selectedCategoryId == null) {
+            selectedCategoryId = initialProduct?.categoryId
+        }
+    }
     
     // Size management S, M, L
     val originalSizes = initialProduct?.size ?: emptyList()
@@ -452,12 +459,12 @@ private fun ProductFormScreen(
                     if (lActive) sizes.add(ProductSizeRequestDto("L", lPriceText.toLongOrNull() ?: 0L))
                     
                     val imagePart = selectedImageUri?.let { uriToImagePart(context, it) }
-                    selectedCategoryId?.let { catId ->
+                    (selectedCategoryId ?: initialProduct?.categoryId)?.let { catId ->
                         onSubmit(name.trim(), desc.trim(), basePrice, catId, sizes, imagePart)
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),
-                enabled = name.isNotBlank() && basePriceText.isNotBlank() && selectedCategoryId != null && !isLoading
+                enabled = name.isNotBlank() && basePriceText.isNotBlank() && (selectedCategoryId != null || initialProduct?.categoryId != null) && !isLoading
             ) {
                 Text(if (isUpdating) "Cập nhật" else "Tạo sản phẩm")
             }
@@ -511,4 +518,5 @@ private fun DeleteConfirmationDialog(product: ProductDto, onConfirm: () -> Unit,
         dismissButton = { TextButton(onClick = onDismiss) { Text("Huỷ") } }
     )
 }
+
 

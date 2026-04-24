@@ -32,8 +32,8 @@ private val Card = Color(0xFFFFFFFF)
 private val Sub = Color(0xFF8E8E93)
 
 private fun moneyFmt(v: java.math.BigDecimal?): String {
-    if (v == null) return "0đ"
-    return "${NumberFormat.getInstance(Locale("vi", "VN")).format(v)}đ"
+    if (v == null) return "0Ä‘"
+    return "${NumberFormat.getInstance(Locale.forLanguageTag("vi-VN")).format(v)}Ä‘"
 }
 
 private fun formatOrderTime(raw: String): String {
@@ -48,7 +48,7 @@ private fun formatOrderTime(raw: String): String {
     }
 }
 
-private val statusTabs = listOf("PENDING" to "Chờ xác nhận", "CONFIRMED" to "Đã xác nhận", "DELIVERING" to "Đang giao", "COMPLETED" to "Hoàn tất", "CANCELLED" to "Đã huỷ")
+private val statusTabs = listOf("ALL" to "Tất cả", "PENDING" to "Chờ xác nhận", "CONFIRMED" to "Đã xác nhận", "DELIVERING" to "Đang giao", "COMPLETED" to "Hoàn tất", "CANCELLED" to "Đã huỷ")
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -200,3 +200,5 @@ private fun InfoRow(label: String, value: String, bold: Boolean = false) {
         Text(value, fontSize = 13.sp, fontWeight = if (bold) FontWeight.Bold else FontWeight.Normal, color = Brown)
     }
 }
+
+

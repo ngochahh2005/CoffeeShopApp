@@ -2,6 +2,7 @@
 
 import com.example.coffeeshopapp.data.model.dto.ApiResponseDto
 import com.example.coffeeshopapp.data.model.dto.CategoryDto
+import com.example.coffeeshopapp.data.model.dto.CategoryRequestDto
 import com.example.coffeeshopapp.data.remote.ApiService
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
@@ -17,13 +18,13 @@ class CategoryRepository(private val apiService: ApiService) {
         return apiService.getCategoryById(id)
     }
 
-    suspend fun createCategory(dto: CategoryDto, image: MultipartBody.Part?): ApiResponseDto<CategoryDto> {
+    suspend fun createCategory(dto: CategoryRequestDto, image: MultipartBody.Part?): ApiResponseDto<CategoryDto> {
         val json = com.google.gson.Gson().toJson(dto)
         val body = json.toRequestBody("application/json".toMediaTypeOrNull())
         return apiService.createCategory(body, image)
     }
 
-    suspend fun updateCategory(id: Long, dto: CategoryDto, image: MultipartBody.Part?): ApiResponseDto<CategoryDto> {
+    suspend fun updateCategory(id: Long, dto: CategoryRequestDto, image: MultipartBody.Part?): ApiResponseDto<CategoryDto> {
         val json = com.google.gson.Gson().toJson(dto)
         val body = json.toRequestBody("application/json".toMediaTypeOrNull())
         return apiService.updateCategory(id, body, image)

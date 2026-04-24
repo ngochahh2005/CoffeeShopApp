@@ -1,4 +1,4 @@
-﻿package com.example.coffeeshopapp.presentation.viewmodel
+package com.example.coffeeshopapp.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -17,12 +17,12 @@ data class OrderUiState(
     val orders: List<OrderDto> = emptyList(),
     val selectedOrder: OrderDto? = null,
     val showDetailSheet: Boolean = false,
-    val currentTab: String = "PENDING"
+    val currentTab: String = "ALL"
 )
 
 class AdminOrderViewModel(
     private val repository: AdminRepository,
-    initialTab: String = "PENDING"
+    initialTab: String = "ALL"
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(OrderUiState(currentTab = initialTab))
@@ -40,7 +40,7 @@ class AdminOrderViewModel(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }
             try {
-                val res = repository.getOrders(targetStatus)
+                val res = repository.getOrders(targetStatus.takeUnless { it == "ALL" })
                 if (isSuccess(res.code)) {
                     _uiState.update { it.copy(orders = res.result ?: emptyList(), isLoading = false) }
                 } else {
@@ -74,3 +74,4 @@ class AdminOrderViewModel(
 
     private fun isSuccess(code: Int): Boolean = code == 200 || code == 1000 || code == 0
 }
+

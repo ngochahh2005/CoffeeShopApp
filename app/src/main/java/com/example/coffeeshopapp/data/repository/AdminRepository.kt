@@ -21,7 +21,7 @@ class AdminRepository(private val api: ApiService) {
     suspend fun getRoles() = api.getAdminRoles()
 
     // ─── Orders ───
-    suspend fun getOrders(status: String) = api.getAdminOrders(status)
+    suspend fun getOrders(status: String? = null) = api.getAdminOrders(status)
     suspend fun getOrderById(id: Long) = api.getOrderById(id)
     suspend fun updateOrderStatus(orderId: Long, status: String) = api.updateOrderStatus(orderId, status)
 
@@ -36,3 +36,4 @@ class AdminRepository(private val api: ApiService) {
     suspend fun getReviews() = api.getAdminReviews()
     suspend fun deleteReview(id: Long) = api.deleteReview(id)
 }
+

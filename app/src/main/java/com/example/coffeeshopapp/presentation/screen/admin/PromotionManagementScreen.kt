@@ -50,7 +50,7 @@ fun PromotionManagementScreen(viewModel: AdminPromotionViewModel, onBackClick: (
 
     if (state.currentScreen == AdminPromotionScreenType.DETAIL && state.selectedPromotion != null) {
         ModalBottomSheet(onDismissRequest = viewModel::showList, containerColor = Card) {
-            PromotionDetailSheet(promo = state.selectedPromotion!!, onEdit = { state.selectedPromotion?.let { viewModel.showUpdateForm(it) } })
+            PromotionDetailTableSheet(promo = state.selectedPromotion!!, onEdit = { state.selectedPromotion?.let { viewModel.showUpdateForm(it) } })
         }
     }
 
@@ -270,7 +270,7 @@ private fun PromotionDetailSheet(promo: PromotionDto, onEdit: () -> Unit) {
             Text("Chi tiết khuyến mãi", fontWeight = FontWeight.Bold, fontSize = 20.sp, color = Brown)
             IconButton(onClick = onEdit) { Icon(Icons.Default.Edit, contentDescription = "Edit", tint = Purple) }
         }
-        Divider(Modifier.padding(vertical = 12.dp), color = Color(0xFFEEEEEE))
+        HorizontalDivider(Modifier.padding(vertical = 12.dp), color = Color(0xFFEEEEEE))
         
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             PDetailLine("Tên", promo.name)
@@ -303,4 +303,100 @@ private fun PDetailLine(l: String, v: String) {
         Text(l, fontSize = 14.sp, color = Sub, modifier = Modifier.width(120.dp))
         Text(v, fontSize = 15.sp, fontWeight = FontWeight.Medium, color = Color(0xFF333333), modifier = Modifier.weight(1f)) 
     } 
+}
+
+@Composable
+private fun PromotionDetailTableSheet(promo: PromotionDto, onEdit: () -> Unit) {
+    val statusColor = if (promo.status == "ACTIVE") Green else Sub
+    val rows = buildList {
+        add("Tên" to promo.name)
+        add("Mã" to promo.promotionCode)
+        add("Loại khuyến mại" to if (promo.promotionType == "LIMITED") "Có thời gian" else "Vô hạn")
+        add("Kiểu giảm" to if (promo.discountType == "PERCENTAGE") "Phần trăm" else "Cố định")
+        add("Giá trị" to if (promo.discountType == "PERCENTAGE") "${promo.discountValue.toInt()}%" else "${promo.discountValue.toInt()}đ")
+        add("Đơn tối thiểu" to "${promo.minOrderValue.toInt()}đ")
+        if (promo.promotionType == "LIMITED") {
+            add("Bắt đầu" to (promo.startDate ?: "—"))
+            add("Kết thúc" to (promo.endDate ?: "—"))
+        }
+        add("Tự động áp dụng" to if (promo.autoApply) "Có" else "Không")
+        promo.timeStart?.takeIf { it.isNotBlank() }?.let { add("Giờ bắt đầu" to it) }
+        promo.timeEnd?.takeIf { it.isNotBlank() }?.let { add("Giờ kết thúc" to it) }
+        promo.usageLimitTotal?.let { add("Giới hạn tổng" to it.toString()) }
+        promo.usageLimitPerUserTotal?.let { add("Mỗi người dùng" to it.toString()) }
+        promo.usageLimitPerUserPerDay?.let { add("Mỗi ngày / user" to it.toString()) }
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text("Chi tiết khuyến mại", fontWeight = FontWeight.Bold, fontSize = 20.sp, color = Brown)
+                Surface(shape = RoundedCornerShape(8.dp), color = statusColor.copy(alpha = 0.12f)) {
+                    Text(
+                        text = promo.status,
+                        color = statusColor,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 12.sp,
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                    )
+                }
+            }
+            FilledTonalIconButton(onClick = onEdit) {
+                Icon(Icons.Default.Edit, contentDescription = "Edit", tint = Purple)
+            }
+        }
+
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(18.dp),
+            color = Color(0xFFFAFAFA),
+            tonalElevation = 1.dp,
+            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE6E6E6))
+        ) {
+            Column(Modifier.fillMaxWidth()) {
+                rows.forEachIndexed { index, (label, value) ->
+                    PromotionDetailTableRow(
+                        label = label,
+                        value = value,
+                        isLast = index == rows.lastIndex
+                    )
+                }
+            }
+        }
+
+        Spacer(Modifier.height(20.dp))
+    }
+}
+
+@Composable
+private fun PromotionDetailTableRow(label: String, value: String, isLast: Boolean) {
+    Column {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.Top
+        ) {
+            Text(label, fontSize = 13.sp, color = Sub, modifier = Modifier.width(132.dp))
+            Text(
+                value,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium,
+                color = Color(0xFF333333),
+                modifier = Modifier.weight(1f)
+            )
+        }
+        if (!isLast) {
+            HorizontalDivider(color = Color(0xFFECECEC))
+        }
+    }
 }

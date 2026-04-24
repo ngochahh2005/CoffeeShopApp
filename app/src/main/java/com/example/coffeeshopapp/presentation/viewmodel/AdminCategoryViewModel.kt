@@ -2,6 +2,7 @@
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.coffeeshopapp.data.model.dto.CategoryRequestDto
 import com.example.coffeeshopapp.data.model.dto.CategoryDto
 import com.example.coffeeshopapp.data.model.dto.ProductDto
 import com.example.coffeeshopapp.domain.usecase.CreateCategoryUseCase
@@ -17,6 +18,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import okhttp3.MultipartBody
 import com.example.coffeeshopapp.utils.getErrorMessage
+import com.example.coffeeshopapp.utils.isActiveResolved
 
 data class CategoryUiState(
     val isLoading: Boolean = false,
@@ -96,16 +98,17 @@ class AdminCategoryViewModel(
 
     fun createCategory(
         name: String,
+        description: String?,
         displayOrder: Int,
         image: MultipartBody.Part?
     ) {
          viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }
             try {
-                val dto = CategoryDto(
+                val dto = CategoryRequestDto(
                     name = name.trim(),
                     imageUrl = null,
-                    description = null,
+                    description = description?.takeIf { it.isNotBlank() }?.trim(),
                     displayOrder = displayOrder,
                     isActive = true
                 )
@@ -125,6 +128,7 @@ class AdminCategoryViewModel(
     fun updateCategory(
         id: Long,
         name: String,
+        description: String?,
         displayOrder: Int,
         image: MultipartBody.Part?
     ) {
@@ -132,13 +136,12 @@ class AdminCategoryViewModel(
             _uiState.update { it.copy(isLoading = true, error = null) }
             try {
                 val old = uiState.value.selectedCategory
-                val dto = CategoryDto(
-                    id = id,
+                val dto = CategoryRequestDto(
                     name = name.trim(),
                     imageUrl = old?.imageUrl,
-                    description = old?.description,
+                    description = description?.takeIf { it.isNotBlank() }?.trim(),
                     displayOrder = displayOrder,
-                    isActive = old?.isActive ?: true
+                    isActive = old?.isActiveResolved() ?: true
                 )
                 val response = updateCategoryUseCase(id, dto, image)
                 if (isSuccess(response.code)) {
