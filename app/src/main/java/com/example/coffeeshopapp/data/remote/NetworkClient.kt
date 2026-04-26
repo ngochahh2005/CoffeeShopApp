@@ -1,12 +1,14 @@
 package com.example.coffeeshopapp.data.remote
 
-import com.example.coffeeshopapp.utils.AppConstants
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
 object NetworkClient {
+  // Android Emulator: 10.0.2.2 trỏ về localhost của máy tính (BE chạy cổng 8080)
+  const val BASE_URL = "http://10.0.2.2:8080/"
+
   private val logging = HttpLoggingInterceptor().apply {
     level = HttpLoggingInterceptor.Level.BODY
   }
@@ -23,7 +25,7 @@ object NetworkClient {
     .build()
 
   private val retrofit = Retrofit.Builder()
-    .baseUrl(AppConstants.baseUrl)
+    .baseUrl(BASE_URL)
     .client(okHttp)
     .addConverterFactory(GsonConverterFactory.create())
     .build()

@@ -12,7 +12,7 @@ import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.NotificationsNone
 import androidx.compose.material.icons.filled.Whatshot
 import androidx.compose.material3.Icon
@@ -179,7 +179,7 @@ private fun TitleSmall(
                     style = MaterialTheme.typography.bodyMedium
                 )
                 Icon(
-                    Icons.Default.KeyboardArrowRight,
+                    Icons.AutoMirrored.Filled.KeyboardArrowRight,
                     contentDescription = null,
                     tint = PlaceHolderColor,
                     modifier = Modifier

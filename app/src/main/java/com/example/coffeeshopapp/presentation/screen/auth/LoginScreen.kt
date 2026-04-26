@@ -120,7 +120,7 @@ fun LoginScreen(
             .imePadding()
             .verticalScroll(rememberScrollState())
     ) {
-        AuthScreenLogo(modifier = Modifier.fillMaxWidth().fillMaxHeight(0.4f))
+        AuthScreenLogo(modifier = Modifier.fillMaxWidth())
 
         Column(
             modifier = Modifier

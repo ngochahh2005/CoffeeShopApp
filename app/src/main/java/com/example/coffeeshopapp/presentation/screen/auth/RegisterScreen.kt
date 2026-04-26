@@ -50,6 +50,7 @@ import com.example.coffeeshopapp.presentation.theme.LabelColor
 import com.example.coffeeshopapp.presentation.theme.TitleColor
 import com.example.coffeeshopapp.presentation.theme.rememberScreenInfo
 import com.example.coffeeshopapp.presentation.viewmodel.AuthViewModel
+import com.example.coffeeshopapp.utils.getErrorMessage
 import kotlinx.coroutines.launch
 
 @Composable
@@ -91,7 +92,7 @@ fun RegisterScreen(
                             Toast.makeText(context, "Lỗi: ${resp.message}", Toast.LENGTH_SHORT).show()
                         }
                     } catch (e: Exception) {
-                        Toast.makeText(context, "Lỗi kết nối: ${e.message}", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, e.getErrorMessage(), Toast.LENGTH_SHORT).show()
                     } finally {
                         isRegistering = false
                     }
@@ -109,13 +110,13 @@ fun RegisterScreen(
             .imePadding()
             .verticalScroll(scrollState)
     ) {
-        AuthScreenLogo(modifier = Modifier.fillMaxWidth().fillMaxHeight(0.4f))
+        AuthScreenLogo(modifier = Modifier.fillMaxWidth())
 
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 30.dp)
-                .defaultMinSize(minHeight = (rememberScreenInfo().height * 0.6f))
+                .weight(1f)
+                .padding(start = 30.dp, end = 30.dp)
         ) {
             Text(
                 text = "Nice To\nMeet You!",

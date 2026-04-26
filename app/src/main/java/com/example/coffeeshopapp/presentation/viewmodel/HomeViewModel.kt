@@ -1,4 +1,4 @@
-package com.example.coffeeshopapp.presentation.viewmodel
+﻿package com.example.coffeeshopapp.presentation.viewmodel
 
 import android.app.Application
 import androidx.compose.runtime.mutableStateOf
@@ -12,6 +12,7 @@ import com.example.coffeeshopapp.data.model.entity.Product
 import com.example.coffeeshopapp.data.remote.NetworkClient
 import com.example.coffeeshopapp.data.trendingCoffeeList
 import com.example.coffeeshopapp.utils.toFullImageUrl
+import com.example.coffeeshopapp.utils.isActiveResolved
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -23,7 +24,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
+import com.example.coffeeshopapp.utils.getErrorMessage
 
 class HomeViewModel(application: Application) : AndroidViewModel(application) {
     private val _uiState = MutableStateFlow(HomeUiState())
@@ -82,7 +83,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                                 name = c.name,
                                 imageUrl = c.imageUrl?.toFullImageUrl(),
                                 displayOrder = c.displayOrder,
-                                isActive = c.isActive
+                                isActive = c.isActiveResolved()
                             )
                         } ?: coffeeCategories
                     } catch (ex: Exception) {
@@ -112,7 +113,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        error = e.message
+                        error = e.getErrorMessage()
                     )
                 }
             }
@@ -137,7 +138,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             try {
                 FavoritesDataStore.toggleFavorite(getApplication(), productId)
             } catch (e: Exception) {
-                _uiState.update { it.copy(error = e.message) }
+                _uiState.update { it.copy(error = e.getErrorMessage()) }
             }
 
             try {
@@ -152,7 +153,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                     }
                 }
             } catch (e: Exception) {
-                _uiState.update { it.copy(error = e.message) }
+                _uiState.update { it.copy(error = e.getErrorMessage()) }
             } finally {
                 _uiState.update { it.copy(loadingFavorites = it.loadingFavorites - productId) }
             }
@@ -179,7 +180,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     fun addToCart(coffeeId: String, offset: Offset) {
         viewModelScope.launch {
             _flyAnimationEvent.emit(Pair(coffeeId, offset))
-            println("Đã thêm món $coffeeId vào giỏ hàng tại vị trí $offset")
+            println("ÄÃ£ thÃªm mÃ³n $coffeeId vÃ o giá» hÃ ng táº¡i vá»‹ trÃ­ $offset")
         }
     }
 
