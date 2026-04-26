@@ -23,6 +23,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 
 class HomeViewModel(application: Application) : AndroidViewModel(application) {
     private val _uiState = MutableStateFlow(HomeUiState())
@@ -119,8 +120,6 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun toggleFavorite(productId: String) {
-        val previous = _uiState.value.trendingItems
-
         _uiState.update { state ->
             val updated = state.trendingItems.map { item ->
                 if (item.id == productId) item.copy(isFavorite = !item.isFavorite) else item
@@ -182,6 +181,15 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             _flyAnimationEvent.emit(Pair(coffeeId, offset))
             println("Đã thêm món $coffeeId vào giỏ hàng tại vị trí $offset")
         }
+    }
+
+    var isShowSheet by mutableStateOf(false)
+    private set
+    fun onDismiss() {
+        isShowSheet = false
+    }
+    fun onShow() {
+        isShowSheet = true
     }
 }
 

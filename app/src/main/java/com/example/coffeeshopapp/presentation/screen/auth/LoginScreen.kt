@@ -86,13 +86,11 @@ fun LoginScreen(
                             val token = resp.result.accessToken
                             AuthDataStore.setToken(context, token)
                             TokenProvider.token = token
-                            // Fetch current user info to get roles and save them
                             try {
                                 val meResp = NetworkClient.api.getMyInfo()
                                 val roles = meResp.result?.roles?.mapNotNull { it.name } ?: emptyList()
                                 AuthDataStore.setRoles(context, roles)
                             } catch (_: Exception) {
-                                // ignore role fetch error; user will default to USER
                             }
                             Toast.makeText(context, "Đăng nhập thành công!", Toast.LENGTH_SHORT)
                                 .show()

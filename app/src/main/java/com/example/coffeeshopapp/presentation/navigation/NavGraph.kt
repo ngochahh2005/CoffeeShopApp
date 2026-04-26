@@ -14,6 +14,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.NavHost
+import com.example.coffeeshopapp.data.model.entity.Product
 import com.example.coffeeshopapp.data.remote.NetworkClient
 import com.example.coffeeshopapp.data.repository.CategoryRepository
 import com.example.coffeeshopapp.domain.usecase.CreateCategoryUseCase
@@ -27,6 +28,7 @@ import com.example.coffeeshopapp.presentation.screen.auth.ForgotPasswordScreen
 import com.example.coffeeshopapp.presentation.screen.auth.LoginScreen
 import com.example.coffeeshopapp.presentation.screen.auth.RegisterScreen
 import com.example.coffeeshopapp.presentation.screen.user.CartScreen
+import com.example.coffeeshopapp.presentation.screen.user.ProductDetailScreen
 import com.example.coffeeshopapp.presentation.screen.user.ProfileScreen
 import com.example.coffeeshopapp.presentation.screen.user.favorite.FavouritesScreen
 import com.example.coffeeshopapp.presentation.screen.user.home.HomeScreen
@@ -71,7 +73,7 @@ fun NavGraph(innerPadding: PaddingValues, navController: NavHostController) {
             val homeViewModel: HomeViewModel = viewModel(backStackEntry)
             HomeScreen(
                 viewModel = homeViewModel,
-                openFavouritesScreen = { navController.navigate(Screen.Favourites.route) },
+                openProductDetailScreen = { navController.navigate(Screen.ProductDetail.route) },
                 openCartScreen = { navController.navigate(Screen.Cart.route) },
                 openProfileScreen = { navController.navigate(Screen.Profile.route) }
             )
@@ -138,5 +140,12 @@ fun NavGraph(innerPadding: PaddingValues, navController: NavHostController) {
         }
 
         composable(route = Screen.ResetPassword.route) { ForgotPasswordScreen() }
+
+        composable(route = Screen.ProductDetail.route) {
+            ProductDetailScreen(
+                product = Product("1", "Sinh tố bơ", 25000, imageUrl = "", description = "Bơ sáp Daklak xay nhuyễn"),
+                onDismiss = { sharedHomeViewModel.onDismiss() }
+            )
+        }
     }
 }

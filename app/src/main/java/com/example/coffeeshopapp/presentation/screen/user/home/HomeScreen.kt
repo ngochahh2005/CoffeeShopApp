@@ -19,14 +19,10 @@ import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.layout.onGloballyPositioned
 import com.example.coffeeshopapp.presentation.utils.CartPositionStore
 import coil.compose.AsyncImage
 import androidx.compose.ui.Alignment
@@ -51,26 +47,22 @@ import kotlinx.coroutines.launch
 fun HomeScreen(
     viewModel: HomeViewModel = viewModel(),
     navController: NavController = NavController(LocalContext.current),
-    openFavouritesScreen: () -> Unit = {},
+    openProductDetailScreen: () -> Unit = {},
     openCartScreen: () -> Unit = {},
     openProfileScreen: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    val coroutineScope = rememberCoroutineScope()
 
-    // flying image animation state
     val flyX = remember { Animatable(0f) }
     val flyY = remember { Animatable(0f) }
     val flyAlpha = remember { Animatable(0f) }
     val flyScale = remember { Animatable(1f) }
     var flyImageUrl by remember { mutableStateOf<String?>(null) }
 
-    // cart target position (published by Footer)
     val cartOffset by CartPositionStore.cartOffset.collectAsState()
 
     val animationJob = remember { mutableStateOf<Job?>(null) }
 
-    // listen to viewModel fly events
     LaunchedEffect(viewModel) {
         viewModel.flyAnimationEvent.collect { pair ->
             animationJob.value?.cancel()
@@ -142,7 +134,8 @@ fun HomeScreen(
                     },
                     onAddToCartClick = { id, offset ->
                         viewModel.addToCart(id, offset)
-                    }
+                    },
+                    openProductDetailScreen = openProductDetailScreen
                 )
 
                 uiState.error?.let { err ->
@@ -161,7 +154,7 @@ fun HomeScreen(
                 }
             }
         }
-        // overlay: flying image
+
         flyImageUrl?.let { url ->
             AsyncImage(
                 model = url,

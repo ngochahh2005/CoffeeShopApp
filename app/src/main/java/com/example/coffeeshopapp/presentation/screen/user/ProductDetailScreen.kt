@@ -3,6 +3,7 @@ package com.example.coffeeshopapp.presentation.screen.user
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -22,6 +23,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -50,15 +52,23 @@ import com.example.coffeeshopapp.presentation.theme.rememberScreenInfo
 @Composable
 fun ProductDetailScreen(
     product: Product,
-    isShowSheet: Boolean,
+    onDismiss: () -> Unit = {}
 ) {
     ModalBottomSheet(
         onDismissRequest = {
-//            isShowSheet = false
+            onDismiss()
         },
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
         shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
-        dragHandle = null,
+        dragHandle = {
+            Surface (
+                modifier = Modifier.padding(top = 8.dp, bottom = 8.dp),
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+                shape = MaterialTheme.shapes.extraLarge
+            ) {
+                Box(Modifier.size(width = 32.dp, height = 4.dp))
+            }
+        },
         scrimColor = Color.Black.copy(alpha = 0.4f),
         containerColor = BackgroundColor
     ) {
@@ -128,7 +138,6 @@ fun ProductDetailScreenPreview() {
     CoffeeShopAppTheme {
         ProductDetailScreen(
             product = Product("1", "Sinh tố bơ", 25000, imageUrl = "", description = "Bơ sáp Daklak xay nhuyễn"),
-            isShowSheet = true
         )
     }
 }

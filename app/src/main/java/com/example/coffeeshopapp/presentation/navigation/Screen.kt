@@ -13,11 +13,13 @@ sealed class Screen(val route: String) {
     object Favourites: Screen("favourites")
     object ResetPassword: Screen("reset_password")
     object Profile: Screen("profile")
+    object ProductDetail: Screen("product_detail")
 }
 
 val screenWithBottomBar = listOf(
     Screen.UserHome.route,
     Screen.Favourites.route,
     Screen.Cart.route,
-    Screen.Profile.route
+    Screen.Profile.route,
+    Screen.ProductDetail.route
 )

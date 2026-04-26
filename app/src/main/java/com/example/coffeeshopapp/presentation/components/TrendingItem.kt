@@ -49,6 +49,7 @@ import coil.compose.AsyncImage
 import com.example.coffeeshopapp.R
 import com.example.coffeeshopapp.data.model.entity.Product
 import com.example.coffeeshopapp.data.trendingCoffeeList
+import com.example.coffeeshopapp.presentation.screen.user.ProductDetailScreen
 import com.example.coffeeshopapp.presentation.theme.CardBackgroundColor
 import com.example.coffeeshopapp.presentation.theme.CardBackgroundColor2
 import com.example.coffeeshopapp.presentation.theme.CoffeeShopAppTheme
@@ -65,10 +66,16 @@ fun TrendingItem(
     coffee: Product,
     onFavoriteClick: (String) -> Unit,
     onAddToCartClick: (String, Offset) -> Unit,
+    openProductDetailScreen: () -> Unit = {},
     isLoading: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
-    Box(modifier = Modifier.wrapContentSize()) {
+    Box(modifier = Modifier
+        .wrapContentSize()
+        .clickable {
+            openProductDetailScreen()
+        }
+    ) {
         Column(
             modifier = modifier.size(200.dp, 220.dp).clip(RoundedCornerShape(16.dp))
                 .background(CardBackgroundColor).padding(6.dp),
@@ -189,6 +196,7 @@ fun TrendingItems(
     items: List<Product> = trendingCoffeeList,
     loadingFavorites: Set<String> = emptySet(),
     onFavoriteClick: (String) -> Unit,
+    openProductDetailScreen: () -> Unit,
     onAddToCartClick: (String, Offset) -> Unit
 ) {
     LazyRow(
@@ -201,6 +209,7 @@ fun TrendingItems(
                 coffee = coffee,
                 onFavoriteClick = onFavoriteClick,
                 onAddToCartClick = onAddToCartClick,
+                openProductDetailScreen = openProductDetailScreen,
                 isLoading = loadingFavorites.contains(coffee.id)
             )
         }
