@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.example.coffeeshopapp.data.TokenProvider.context
 import com.example.coffeeshopapp.presentation.components.Footer
 import com.example.coffeeshopapp.presentation.navigation.NavGraph
 import com.example.coffeeshopapp.presentation.navigation.Screen
@@ -53,6 +54,7 @@ import kotlinx.coroutines.launch
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        context = applicationContext
         enableEdgeToEdge()
         setContent {
             CoffeeShopAppTheme {

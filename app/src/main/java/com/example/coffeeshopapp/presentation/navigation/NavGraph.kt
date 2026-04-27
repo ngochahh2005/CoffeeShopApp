@@ -1,6 +1,7 @@
 package com.example.coffeeshopapp.presentation.navigation
 
 import android.annotation.SuppressLint
+import android.widget.Toast
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.PaddingValues
@@ -8,14 +9,19 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.NavHost
+import com.example.coffeeshopapp.data.local.AuthDataStore
+import com.example.coffeeshopapp.data.remote.GoogleAuthRequestDto
 import com.example.coffeeshopapp.data.remote.NetworkClient
+import com.example.coffeeshopapp.data.TokenProvider
 import com.example.coffeeshopapp.data.repository.AdminRepository
 import com.example.coffeeshopapp.data.repository.CategoryRepository
 import com.example.coffeeshopapp.data.repository.ToppingRepository
@@ -39,13 +45,17 @@ import com.example.coffeeshopapp.presentation.screen.admin.UserManagementScreen
 import com.example.coffeeshopapp.presentation.screen.admin.category.AdminCategoryScreen
 import com.example.coffeeshopapp.presentation.screen.auth.ForgotPasswordScreen
 import com.example.coffeeshopapp.presentation.screen.auth.LoginScreen
+import com.example.coffeeshopapp.presentation.screen.auth.OtpVerificationScreen
 import com.example.coffeeshopapp.presentation.screen.auth.RegisterScreen
 import com.example.coffeeshopapp.presentation.screen.user.CartScreen
+import com.example.coffeeshopapp.presentation.screen.user.ChangePasswordScreen
 import com.example.coffeeshopapp.presentation.screen.user.ProfileScreen
 import com.example.coffeeshopapp.presentation.screen.user.favorite.FavouritesScreen
 import com.example.coffeeshopapp.presentation.screen.user.home.HomeScreen
 import com.example.coffeeshopapp.presentation.theme.AdminScreenTheme
 import com.example.coffeeshopapp.presentation.viewmodel.*
+import com.example.coffeeshopapp.utils.getErrorMessage
+import kotlinx.coroutines.launch
 
 @SuppressLint("RestrictedApi")
 @Composable
@@ -84,7 +94,31 @@ fun NavGraph(innerPadding: PaddingValues, navController: NavHostController) {
         composable(route = Screen.Cart.route) { CartScreen() }
 
         composable(route = Screen.Profile.route) {
-            ProfileScreen(onOpenAdmin = { navController.navigate(Screen.AdminDashboard.route) })
+            ProfileScreen(
+                onOpenAdmin = { navController.navigate(Screen.AdminDashboard.route) },
+                onOpenChangePassword = { navController.navigate(Screen.ChangePassword.route) },
+                onLogout = {
+                    navController.navigate(Screen.Login.route) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                }
+            )
+        }
+
+        // ─── Change Password ───
+        composable(route = Screen.ChangePassword.route) {
+            ChangePasswordScreen(
+                onBack = { navController.popBackStack() },
+                onSuccess = {
+                    val returnedToProfile = navController.popBackStack(Screen.Profile.route, false)
+                    if (!returnedToProfile) {
+                        navController.navigate(Screen.Profile.route) {
+                            popUpTo(Screen.ChangePassword.route) { inclusive = true }
+                            launchSingleTop = true
+                        }
+                    }
+                }
+            )
         }
 
         // ─── Admin Dashboard ───
@@ -204,16 +238,107 @@ fun NavGraph(innerPadding: PaddingValues, navController: NavHostController) {
             AdminScreenTheme { ReviewManagementScreen(viewModel = vm, onBackClick = { navController.popBackStack() }) }
         }
 
+        // ─── Login ───
         composable(route = Screen.Login.route) {
+            val context = LocalContext.current
+            val coroutineScope = rememberCoroutineScope()
+
             LoginScreen(
-                openHomeScreen = { navController.navigate(Screen.UserHome.route) },
+                openHomeScreen = { navController.navigate(Screen.UserHome.route) {
+                    popUpTo(Screen.Login.route) { inclusive = true }
+                }},
                 openRegisterScreen = { navController.navigate(Screen.Register.route) },
-                openResetPasswordScreen = { navController.navigate(Screen.ResetPassword.route) }
+                openResetPasswordScreen = { navController.navigate(Screen.ForgotPassword.route) },
+                onGoogleLogin = {
+                    coroutineScope.launch {
+                        try {
+                            val idToken = com.example.coffeeshopapp.data.auth.GoogleSignInHelper.signIn(context)
+                            if (idToken != null) {
+                                val resp = NetworkClient.api.googleLogin(GoogleAuthRequestDto(idToken))
+                                if (resp.result != null) {
+                                    val token = resp.result.accessToken
+                                    val refreshToken = resp.result.refreshToken
+                                    AuthDataStore.setToken(context, token, refreshToken)
+                                    TokenProvider.token = token
+                                    TokenProvider.refreshToken = refreshToken
+                                    // Fetch user info
+                                    try {
+                                        val meResp = NetworkClient.api.getMyInfo()
+                                        val roles = meResp.result?.roles?.mapNotNull { it.name } ?: emptyList()
+                                        AuthDataStore.setRoles(context, roles)
+                                        AuthDataStore.setProvider(context, meResp.result?.provider ?: "GOOGLE")
+                                    } catch (_: Exception) {
+                                        AuthDataStore.setProvider(context, "GOOGLE")
+                                    }
+                                    Toast.makeText(context, "Đăng nhập Google thành công!", Toast.LENGTH_SHORT).show()
+                                    navController.navigate(Screen.UserHome.route) {
+                                        popUpTo(Screen.Login.route) { inclusive = true }
+                                    }
+                                } else {
+                                    Toast.makeText(context, "Đăng nhập thất bại: ${resp.message}", Toast.LENGTH_SHORT).show()
+                                }
+                            } else {
+                                Toast.makeText(context, "Google Sign-In bị hủy hoặc lỗi", Toast.LENGTH_SHORT).show()
+                            }
+                        } catch (e: Exception) {
+                            Toast.makeText(context, "Lỗi: ${e.getErrorMessage()}", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                }
             )
         }
 
+        // ─── Register ───
         composable(route = Screen.Register.route) {
-            RegisterScreen(openLoginScreen = { navController.navigate(Screen.Login.route) })
+            RegisterScreen(
+                openLoginScreen = { navController.navigate(Screen.Login.route) },
+                openOtpScreen = { email ->
+                    navController.navigate(Screen.OtpVerification.createRoute(email))
+                }
+            )
+        }
+
+        // ─── OTP Verification ───
+        composable(
+            route = Screen.OtpVerification.route,
+            arguments = listOf(androidx.navigation.navArgument("email") {
+                type = androidx.navigation.NavType.StringType
+            })
+        ) { backStackEntry ->
+            val email = backStackEntry.arguments?.getString("email") ?: ""
+            OtpVerificationScreen(
+                email = email,
+                onVerified = {
+                    navController.navigate(Screen.Login.route) {
+                        popUpTo(Screen.Register.route) { inclusive = true }
+                    }
+                },
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        // ─── Forgot Password (full flow) ───
+        composable(route = Screen.ForgotPassword.route) {
+            ForgotPasswordScreen(
+                onBack = { navController.popBackStack() },
+                onSuccess = {
+                    navController.navigate(Screen.Login.route) {
+                        popUpTo(Screen.ForgotPassword.route) { inclusive = true }
+                    }
+                }
+            )
+        }
+
+        // Keep old route for backward compat
+        composable(route = Screen.ResetPassword.route) {
+            ForgotPasswordScreen(
+                onBack = { navController.popBackStack() },
+                onSuccess = {
+                    navController.navigate(Screen.Login.route) {
+                        popUpTo(Screen.ResetPassword.route) { inclusive = true }
+                    }
+                }
+            )
         }
 
         composable(
@@ -249,9 +374,5 @@ fun NavGraph(innerPadding: PaddingValues, navController: NavHostController) {
                 )
             }
         }
-
-        composable(route = Screen.ResetPassword.route) { ForgotPasswordScreen() }
     }
 }
-
-

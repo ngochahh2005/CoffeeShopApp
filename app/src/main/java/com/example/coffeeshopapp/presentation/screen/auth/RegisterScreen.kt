@@ -2,10 +2,7 @@ package com.example.coffeeshopapp.presentation.screen.auth
 
 import android.widget.Toast
 import androidx.compose.runtime.getValue
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import com.example.coffeeshopapp.R
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
@@ -14,7 +11,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
@@ -24,14 +20,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
@@ -48,7 +41,6 @@ import com.example.coffeeshopapp.presentation.theme.BackgroundColor
 import com.example.coffeeshopapp.presentation.theme.CoffeeShopAppTheme
 import com.example.coffeeshopapp.presentation.theme.LabelColor
 import com.example.coffeeshopapp.presentation.theme.TitleColor
-import com.example.coffeeshopapp.presentation.theme.rememberScreenInfo
 import com.example.coffeeshopapp.presentation.viewmodel.AuthViewModel
 import com.example.coffeeshopapp.utils.getErrorMessage
 import kotlinx.coroutines.launch
@@ -56,7 +48,8 @@ import kotlinx.coroutines.launch
 @Composable
 fun RegisterScreen(
     viewModel: AuthViewModel = viewModel(),
-    openLoginScreen: () -> Unit
+    openLoginScreen: () -> Unit,
+    openOtpScreen: (String) -> Unit = {}
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
@@ -64,12 +57,15 @@ fun RegisterScreen(
     val focusManager = LocalFocusManager.current
 
     var isRegistering by remember { mutableStateOf(false) }
+    var email by remember { mutableStateOf("") }
 
     val handleRegister = {
-        if (viewModel.username.isEmpty() || viewModel.password.isEmpty() || viewModel.confirmPassword.isEmpty()) {
+        if (viewModel.username.isEmpty() || viewModel.password.isEmpty() || viewModel.confirmPassword.isEmpty() || email.isEmpty()) {
             Toast.makeText(context, "Vui lòng nhập đầy đủ thông tin!", Toast.LENGTH_SHORT).show()
         } else if (viewModel.password != viewModel.confirmPassword) {
             Toast.makeText(context, "Mật khẩu không khớp!", Toast.LENGTH_SHORT).show()
+        } else if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+            Toast.makeText(context, "Email không đúng định dạng!", Toast.LENGTH_SHORT).show()
         } else {
             if (!isRegistering) {
                 isRegistering = true
@@ -81,13 +77,14 @@ fun RegisterScreen(
                             RegisterRequestDto(
                                 viewModel.username,
                                 viewModel.password,
-                                viewModel.confirmPassword
+                                viewModel.confirmPassword,
+                                email
                             )
                         )
 
                         if (resp.result != null) {
-                            Toast.makeText(context, "Đăng ký thành công!", Toast.LENGTH_SHORT).show()
-                            openLoginScreen()
+                            Toast.makeText(context, "Đăng ký thành công! Vui lòng nhập mã OTP.", Toast.LENGTH_SHORT).show()
+                            openOtpScreen(email)
                         } else {
                             Toast.makeText(context, "Lỗi: ${resp.message}", Toast.LENGTH_SHORT).show()
                         }
@@ -138,6 +135,25 @@ fun RegisterScreen(
                 UsernameTextField(
                     username = viewModel.username,
                     onValueChange = { viewModel.onUsernameChange(it) },
+                    onAction = { focusManager.moveFocus(FocusDirection.Down) },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+
+            CommonSpace()
+
+            // Email
+            Column {
+                Text(
+                    text = "Email",
+                    color = LabelColor,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(horizontal = 4.dp)
+                )
+                UsernameTextField(
+                    username = email,
+                    onValueChange = { email = it },
                     onAction = { focusManager.moveFocus(FocusDirection.Down) },
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -200,6 +216,6 @@ fun RegisterScreen(
 @Preview(name = "Register Screen", showSystemUi = true)
 fun RegisterScreenPreview() {
     CoffeeShopAppTheme {
-        RegisterScreen(openLoginScreen = {})
+        RegisterScreen(openLoginScreen = {}, openOtpScreen = {})
     }
 }

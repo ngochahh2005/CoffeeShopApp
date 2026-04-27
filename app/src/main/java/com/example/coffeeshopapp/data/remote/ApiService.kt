@@ -47,6 +47,7 @@ data class UserDto(
     val id: Long? = null,
     val username: String? = null,
     val email: String? = null,
+    val provider: String? = null,
     val roles: List<RoleDto>? = null
 )
 
@@ -213,4 +214,75 @@ interface ApiService {
 
     @DELETE("api/v1/admin/reviews/{reviewId}")
     suspend fun deleteReview(@Path("reviewId") reviewId: Long): ApiResponseDto<Any>
+
+    // ─── OTP, Auth & Refresh ───
+    @POST("api/v1/auth/verify-email")
+    suspend fun verifyEmailOtp(@Body request: VerifyOtpRequestDto): ApiResponseDto<Any>
+
+    @POST("api/v1/auth/forgot-password")
+    suspend fun forgotPassword(@Body request: ForgotPasswordRequestDto): ApiResponseDto<Any>
+
+    @POST("api/v1/auth/verify-reset-password-otp")
+    suspend fun verifyResetPasswordOtp(@Body request: VerifyOtpRequestDto): ApiResponseDto<Any>
+
+    @POST("api/v1/auth/reset-password")
+    suspend fun resetPassword(@Body request: ResetPasswordRequestDto): ApiResponseDto<Any>
+
+    @POST("api/v1/auth/google")
+    suspend fun googleLogin(@Body request: GoogleAuthRequestDto): ApiResponseDto<AuthResponseDto>
+
+    @POST("api/v1/auth/refresh")
+    fun refreshToken(@Body request: RefreshRequestDto): retrofit2.Call<ApiResponseDto<AuthResponseDto>>
+
+    @POST("api/v1/auth/logout")
+    suspend fun logout(@Body request: LogoutRequestDto): ApiResponseDto<Any>
+
+    // ─── User Profile ───
+    @GET("api/v1/users/me")
+    suspend fun getMyInfoFull(): ApiResponseDto<UserResponseDto>
+
+    @Multipart
+    @PUT("api/v1/users/me")
+    suspend fun updateMyInfo(
+        @Part("firstName") firstName: RequestBody? = null,
+        @Part("lastName") lastName: RequestBody? = null,
+        @Part("phoneNumber") phoneNumber: RequestBody? = null,
+        @Part("dob") dob: RequestBody? = null,
+        @Part multipartFile: MultipartBody.Part? = null
+    ): ApiResponseDto<UserResponseDto>
+
+    @POST("api/v1/users/me/change-password")
+    suspend fun changePassword(@Body request: ChangePasswordRequestDto): ApiResponseDto<Any>
 }
+
+data class VerifyOtpRequestDto(
+    val email: String,
+    val otp: String
+)
+
+data class ForgotPasswordRequestDto(
+    val email: String
+)
+
+data class ResetPasswordRequestDto(
+    val email: String,
+    val otp: String,
+    val newPassword: String
+)
+
+data class GoogleAuthRequestDto(
+    val idToken: String
+)
+
+data class RefreshRequestDto(
+    val refreshToken: String
+)
+
+data class LogoutRequestDto(
+    val token: String
+)
+
+data class ChangePasswordRequestDto(
+    val oldPassword: String,
+    val newPassword: String
+)

@@ -23,6 +23,11 @@ sealed class Screen(val route: String) {
     object Favourites: Screen("favourites")
     object ResetPassword: Screen("reset_password")
     object Profile: Screen("profile")
+    object OtpVerification: Screen("otp_verification/{email}") {
+        fun createRoute(email: String) = "otp_verification/$email"
+    }
+    object ForgotPassword: Screen("forgot_password")
+    object ChangePassword: Screen("change_password")
 }
 
 val screenWithBottomBar = listOf(
@@ -31,5 +36,3 @@ val screenWithBottomBar = listOf(
     Screen.Cart.route,
     Screen.Profile.route
 )
-
-

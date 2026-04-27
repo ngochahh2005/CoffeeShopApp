@@ -12,6 +12,7 @@ data class UserResponseDto(
     val phoneNumber: String? = null,
     val dob: String? = null,
     val avt: String? = null,
+    val provider: String? = null,
     val roles: List<RoleDto>? = null
 )
 
