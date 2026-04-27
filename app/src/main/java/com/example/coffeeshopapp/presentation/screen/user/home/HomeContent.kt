@@ -55,6 +55,7 @@ fun HomeContent(
     loadingFavorites: Set<String> = emptySet(),
     onCategoryClick: (String) -> Unit,
     onFavoriteClick: (String) -> Unit,
+    openProductDetailScreen: (Product) -> Unit = {},
     onAddToCartClick: (String, Offset) -> Unit
 ) {
     LazyColumn(modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 56.dp)) {
@@ -130,7 +131,8 @@ fun HomeContent(
                 loadingFavorites =
                     loadingFavorites,
                 onFavoriteClick = onFavoriteClick,
-                onAddToCartClick = onAddToCartClick
+                onAddToCartClick = onAddToCartClick,
+                openProductDetailScreen = openProductDetailScreen
             )
         }
     }

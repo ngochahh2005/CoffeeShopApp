@@ -5,6 +5,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.geometry.Offset
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.coffeeshopapp.data.local.CartDataStore
 import com.example.coffeeshopapp.data.local.FavoritesDataStore
 import com.example.coffeeshopapp.data.coffeeCategories
 import com.example.coffeeshopapp.data.model.entity.Category
@@ -25,6 +26,14 @@ import kotlinx.coroutines.launch
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
 import com.example.coffeeshopapp.utils.getErrorMessage
+
+data class HomeUiState(
+    val isLoading: Boolean = false,
+    val categories: List<Category> = emptyList(),
+    val trendingItems: List<Product> = emptyList(),
+    val loadingFavorites: Set<String> = emptySet(),
+    val error: String? = null
+)
 
 class HomeViewModel(application: Application) : AndroidViewModel(application) {
     private val _uiState = MutableStateFlow(HomeUiState())
@@ -47,9 +56,9 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     // Tai du lieu tu server
-     fun loadData() {
+     fun loadData(forceRefresh: Boolean = false) {
         viewModelScope.launch {
-            if (_uiState.value.trendingItems.isNotEmpty()) return@launch
+            if (_uiState.value.trendingItems.isNotEmpty() && !forceRefresh) return@launch
 
             _uiState.update { it.copy(isLoading = true) }
 
@@ -68,6 +77,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                             id = p.id.toString(),
                             name = p.name,
                             price = p.basePrice.toLong(),
+                            description = p.description.orEmpty(),
                             imageUrl = p.imageUrl.toFullImageUrl(),
                             rating = 0.0,
                             reviewers = 0,
@@ -121,8 +131,6 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun toggleFavorite(productId: String) {
-        val previous = _uiState.value.trendingItems
-
         _uiState.update { state ->
             val updated = state.trendingItems.map { item ->
                 if (item.id == productId) item.copy(isFavorite = !item.isFavorite) else item
@@ -181,17 +189,38 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
     fun addToCart(coffeeId: String, offset: Offset) {
         viewModelScope.launch {
+            addToCartById(coffeeId)
             _flyAnimationEvent.emit(Pair(coffeeId, offset))
-            println("ÄÃ£ thÃªm mÃ³n $coffeeId vÃ o giá» hÃ ng táº¡i vá»‹ trÃ­ $offset")
         }
     }
+
+    fun addToCart(product: Product) {
+        viewModelScope.launch {
+            try {
+                CartDataStore.addProduct(getApplication(), product)
+            } catch (e: Exception) {
+                _uiState.update { it.copy(error = e.getErrorMessage()) }
+            }
+        }
+    }
+
+    fun addToCartById(productId: String) {
+        val product = _uiState.value.trendingItems.find { it.id == productId } ?: return
+        addToCart(product)
+    }
+
+    var isShowSheet by mutableStateOf(false)
+    private set
+    var selectedProduct by mutableStateOf<Product?>(null)
+    private set
+
+    fun onDismiss() {
+        selectedProduct = null
+        isShowSheet = false
+    }
+
+    fun showProduct(product: Product) {
+        selectedProduct = product
+        isShowSheet = true
+    }
 }
-
-
-data class HomeUiState(
-    val isLoading: Boolean = true,
-    val categories: List<Category> = emptyList(),
-    val trendingItems: List<Product> = emptyList(),
-    val loadingFavorites: Set<String> = emptySet(),
-    val error: String? = null
-)

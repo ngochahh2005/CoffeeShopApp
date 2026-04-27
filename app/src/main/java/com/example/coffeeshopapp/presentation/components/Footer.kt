@@ -16,13 +16,20 @@ import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.ShoppingBag
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.platform.LocalContext
+import com.example.coffeeshopapp.data.local.CartDataStore
 import com.example.coffeeshopapp.presentation.utils.CartPositionStore
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
@@ -38,6 +45,8 @@ fun Footer(
     navController: NavController,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
+    val cartCount by CartDataStore.cartCountFlow(context).collectAsState(initial = 0)
     val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
     Box(modifier = modifier
         .fillMaxWidth()
@@ -86,17 +95,27 @@ fun Footer(
                     restoreState = true
                 }
             }) {
-                Icon(
-                    imageVector = if (currentRoute == Screen.Cart.route) Icons.Default.ShoppingBag else Icons.Outlined.ShoppingBag,
-                    contentDescription = null,
-                    tint = LabelColor,
-                    modifier = Modifier
-                        .fillMaxSize(.75f)
-                        .onGloballyPositioned { coords ->
-                            val pos = coords.positionInRoot()
-                            CartPositionStore.update(Offset(pos.x, pos.y))
+                BadgedBox(
+                    badge = {
+                        if (cartCount > 0) {
+                            Badge {
+                                Text(text = if (cartCount > 99) "99+" else cartCount.toString())
+                            }
                         }
-                )
+                    }
+                ) {
+                    Icon(
+                        imageVector = if (currentRoute == Screen.Cart.route) Icons.Default.ShoppingBag else Icons.Outlined.ShoppingBag,
+                        contentDescription = null,
+                        tint = LabelColor,
+                        modifier = Modifier
+                            .fillMaxSize(.75f)
+                            .onGloballyPositioned { coords ->
+                                val pos = coords.positionInRoot()
+                                CartPositionStore.update(Offset(pos.x, pos.y))
+                            }
+                    )
+                }
             }
 
             FooterIcon(

@@ -62,13 +62,19 @@ import com.example.coffeeshopapp.utils.getFullImageUrl
 
 @Composable
 fun TrendingItem(
-    coffee: Product,
+    product: Product,
     onFavoriteClick: (String) -> Unit,
     onAddToCartClick: (String, Offset) -> Unit,
+    openProductDetailScreen: (Product) -> Unit = {},
     isLoading: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
-    Box(modifier = Modifier.wrapContentSize()) {
+    Box(modifier = Modifier
+        .wrapContentSize()
+        .clickable {
+            openProductDetailScreen(product)
+        }
+    ) {
         Column(
             modifier = modifier.size(200.dp, 220.dp).clip(RoundedCornerShape(16.dp))
                 .background(CardBackgroundColor).padding(6.dp),
@@ -83,8 +89,8 @@ fun TrendingItem(
                     .background(CardBackgroundColor2)
             ) {
                 AsyncImage(
-                    model = coffee.getFullImageUrl(),
-                    contentDescription = coffee.name,
+                    model = product.getFullImageUrl(),
+                    contentDescription = product.name,
                     modifier = Modifier.align(Alignment.Center).fillMaxSize(),
                     contentScale = ContentScale.Crop,
                     placeholder = painterResource(R.drawable.loading_img),
@@ -105,7 +111,7 @@ fun TrendingItem(
                         )
 
                         Text(
-                            text = coffee.name,
+                            text = product.name,
                             color = TitleSmallColor,
                             fontWeight = FontWeight.Bold,
                             style = MaterialTheme.typography.bodyMedium,
@@ -126,7 +132,7 @@ fun TrendingItem(
                             modifier = Modifier.size(13.dp).align(Alignment.CenterVertically)
                         )
                         Text(
-                            text = coffee.rating.toString() + " (" + coffee.reviewers.toString() + " người đánh giá)",
+                            text = product.rating.toString() + " (" + product.reviewers.toString() + " người đánh giá)",
                             color = CoffeeTextColor,
                             style = MaterialTheme.typography.labelMedium,
                             fontFamily = k2d,
@@ -139,14 +145,14 @@ fun TrendingItem(
                     CommonSpace(4.dp)
 
                     Text(
-                        text = coffee.getPrice(),
+                        text = product.getPrice(),
                         color = TitleSmallColor,
                         style = MaterialTheme.typography.labelMedium
                     )
                 }
 
                 IconButton(
-                    onClick = { if (!isLoading) onFavoriteClick(coffee.id) },
+                    onClick = { if (!isLoading) onFavoriteClick(product.id) },
                     modifier = Modifier.size(24.dp).align(Alignment.TopEnd).padding(top = 4.dp)
                 ) {
                     if (isLoading) {
@@ -157,7 +163,7 @@ fun TrendingItem(
                         )
                     } else {
                         Icon(
-                            imageVector = if (coffee.isFavorite) Icons.Filled.Favorite else Icons.Default.FavoriteBorder,
+                            imageVector = if (product.isFavorite) Icons.Filled.Favorite else Icons.Default.FavoriteBorder,
                             contentDescription = null,
                             tint = PlaceHolderColor
                         )
@@ -175,7 +181,7 @@ fun TrendingItem(
             .align(Alignment.BottomEnd)
             .onGloballyPositioned { itemOffset = it.positionInRoot() }
             .clickable {
-                onAddToCartClick(coffee.id, itemOffset)
+                onAddToCartClick(product.id, itemOffset)
             }
         ) {
             Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.align(Alignment.Center), tint = CardBackgroundColor)
@@ -189,6 +195,7 @@ fun TrendingItems(
     items: List<Product> = trendingCoffeeList,
     loadingFavorites: Set<String> = emptySet(),
     onFavoriteClick: (String) -> Unit,
+    openProductDetailScreen: (Product) -> Unit,
     onAddToCartClick: (String, Offset) -> Unit
 ) {
     LazyRow(
@@ -198,9 +205,10 @@ fun TrendingItems(
     ) {
         items(items, key = { it.id }) { coffee ->
             TrendingItem(
-                coffee = coffee,
+                product = coffee,
                 onFavoriteClick = onFavoriteClick,
                 onAddToCartClick = onAddToCartClick,
+                openProductDetailScreen = openProductDetailScreen,
                 isLoading = loadingFavorites.contains(coffee.id)
             )
         }
@@ -212,7 +220,7 @@ fun TrendingItems(
 fun TrendingItemPreview() {
     CoffeeShopAppTheme {
         TrendingItem(
-            coffee = Product(
+            product = Product(
                 id = "1",
                 name = "Nước ép giải nhiệt mùa hè",
                 price = 35000,

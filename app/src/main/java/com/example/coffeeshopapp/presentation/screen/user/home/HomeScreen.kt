@@ -19,27 +19,20 @@ import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.layout.onGloballyPositioned
 import com.example.coffeeshopapp.presentation.utils.CartPositionStore
 import coil.compose.AsyncImage
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavController
+import com.example.coffeeshopapp.presentation.screen.user.ProductDetailScreen
 import com.example.coffeeshopapp.presentation.theme.BackgroundColor
-import com.example.coffeeshopapp.presentation.theme.CoffeeShopAppTheme
 import com.example.coffeeshopapp.presentation.theme.CoffeeTextColor
 import com.example.coffeeshopapp.presentation.viewmodel.HomeViewModel
 import com.example.coffeeshopapp.utils.getFullImageUrl
@@ -49,28 +42,20 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun HomeScreen(
-    viewModel: HomeViewModel = viewModel(),
-    navController: NavController = NavController(LocalContext.current),
-    openFavouritesScreen: () -> Unit = {},
-    openCartScreen: () -> Unit = {},
-    openProfileScreen: () -> Unit = {}
+    viewModel: HomeViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    val coroutineScope = rememberCoroutineScope()
 
-    // flying image animation state
     val flyX = remember { Animatable(0f) }
     val flyY = remember { Animatable(0f) }
     val flyAlpha = remember { Animatable(0f) }
     val flyScale = remember { Animatable(1f) }
     var flyImageUrl by remember { mutableStateOf<String?>(null) }
 
-    // cart target position (published by Footer)
     val cartOffset by CartPositionStore.cartOffset.collectAsState()
 
     val animationJob = remember { mutableStateOf<Job?>(null) }
 
-    // listen to viewModel fly events
     LaunchedEffect(viewModel) {
         viewModel.flyAnimationEvent.collect { pair ->
             animationJob.value?.cancel()
@@ -140,9 +125,11 @@ fun HomeScreen(
                     onFavoriteClick = { coffeeId ->
                         viewModel.toggleFavorite(coffeeId)
                     },
+                    openProductDetailScreen = { product -> viewModel.showProduct(product) },
                     onAddToCartClick = { id, offset ->
                         viewModel.addToCart(id, offset)
-                    }
+                    },
+                    
                 )
 
                 uiState.error?.let { err ->
@@ -161,7 +148,7 @@ fun HomeScreen(
                 }
             }
         }
-        // overlay: flying image
+
         flyImageUrl?.let { url ->
             AsyncImage(
                 model = url,
@@ -180,16 +167,15 @@ fun HomeScreen(
                 contentScale = androidx.compose.ui.layout.ContentScale.Crop
             )
         }
-    }
-}
 
-@Composable
-@Preview(name = "Home Screen", showSystemUi = true)
-fun HomeScreePreview() {
-    CoffeeShopAppTheme {
-        Box(modifier = Modifier.fillMaxSize().background(BackgroundColor)) {
-            Text("Preview HomeScreen (Tạm thời ẩn ViewModel để tránh Crash)",
-                modifier = Modifier.align(Alignment.Center))
+        if (viewModel.isShowSheet && viewModel.selectedProduct != null) {
+            ProductDetailScreen(
+                product = viewModel.selectedProduct!!,
+                onAddToCartClick = {
+                    viewModel.selectedProduct?.let { viewModel.addToCart(it) }
+                },
+                onDismiss = { viewModel.onDismiss() }
+            )
         }
     }
 }

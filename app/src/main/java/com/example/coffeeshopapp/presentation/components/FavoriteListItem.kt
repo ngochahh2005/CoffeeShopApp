@@ -37,23 +37,25 @@ import com.example.coffeeshopapp.utils.getFullImageUrl
 
 @Composable
 fun FavoriteListItem(
-    coffee: Product,
+    product: Product,
     isLoading: Boolean = false,
     onFavoriteClick: (String) -> Unit,
-    onAddToCartClick: (String) -> Unit
+    openProductDetailScreen: (Product) -> Unit = {}
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
             .background(CardBackgroundColor)
-            .clickable { /* mở chi tiết */ }
+            .clickable {
+                openProductDetailScreen(product)
+            }
             .padding(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         AsyncImage(
-            model = coffee.getFullImageUrl(),
-            contentDescription = coffee.name,
+            model = product.getFullImageUrl(),
+            contentDescription = product.name,
             modifier = Modifier
                 .size(68.dp)
                 .clip(RoundedCornerShape(8.dp)),
@@ -67,23 +69,23 @@ fun FavoriteListItem(
             .padding(start = 12.dp)
         ) {
             Text(
-                text = coffee.name,
+                text = product.name,
                 fontWeight = FontWeight.Bold,
                 color = TitleSmallColor,
                 style = MaterialTheme.typography.bodyMedium
             )
             CommonSpace(4.dp)
-            Text(text = coffee.getPrice(), color = CoffeeTextColor)
+            Text(text = product.getPrice(), color = CoffeeTextColor)
         }
 
         IconButton(onClick = {
-            if (!isLoading) onFavoriteClick(coffee.id) }
+            if (!isLoading) onFavoriteClick(product.id) }
         ) {
             if (isLoading) {
                 CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
             } else {
                 Icon(
-                    imageVector = if (coffee.isFavorite) Icons.Filled.Favorite else Icons.Default.FavoriteBorder,
+                    imageVector = if (product.isFavorite) Icons.Filled.Favorite else Icons.Default.FavoriteBorder,
                     contentDescription = null,
                     tint = PlaceHolderColor
                 )
@@ -97,9 +99,9 @@ fun FavoriteListItem(
 fun FavoriteListItemPreview() {
     CoffeeShopAppTheme {
         FavoriteListItem(
-            coffee = Product(id = "1", name = "Cà phê Muối", price = 35000, isFavorite = true),
+            product = Product(id = "1", name = "Cà phê Muối", price = 35000, isFavorite = true),
             onFavoriteClick = {},
-            onAddToCartClick = {}
+
         )
     }
 }

@@ -10,8 +10,3 @@ data class ToppingDto(
     @SerializedName(value = "isActive", alternate = ["active", "is_active"]) val isActive: Boolean? = null
 )
 
-data class ToppingRequestDto(
-    @SerializedName("name") val name: String,
-    @SerializedName("imageUrl") val imageUrl: String? = null,
-    @SerializedName("price") val price: Long
-)

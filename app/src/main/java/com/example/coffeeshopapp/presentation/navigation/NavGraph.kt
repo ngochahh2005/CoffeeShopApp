@@ -19,6 +19,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.NavHost
 import com.example.coffeeshopapp.data.local.AuthDataStore
+import com.example.coffeeshopapp.data.model.entity.Product
 import com.example.coffeeshopapp.data.remote.GoogleAuthRequestDto
 import com.example.coffeeshopapp.data.remote.NetworkClient
 import com.example.coffeeshopapp.data.TokenProvider
@@ -47,8 +48,9 @@ import com.example.coffeeshopapp.presentation.screen.auth.ForgotPasswordScreen
 import com.example.coffeeshopapp.presentation.screen.auth.LoginScreen
 import com.example.coffeeshopapp.presentation.screen.auth.OtpVerificationScreen
 import com.example.coffeeshopapp.presentation.screen.auth.RegisterScreen
-import com.example.coffeeshopapp.presentation.screen.user.CartScreen
 import com.example.coffeeshopapp.presentation.screen.user.ChangePasswordScreen
+import com.example.coffeeshopapp.presentation.screen.user.cart.CartScreen
+import com.example.coffeeshopapp.presentation.screen.user.ProductDetailScreen
 import com.example.coffeeshopapp.presentation.screen.user.ProfileScreen
 import com.example.coffeeshopapp.presentation.screen.user.favorite.FavouritesScreen
 import com.example.coffeeshopapp.presentation.screen.user.home.HomeScreen
@@ -66,28 +68,50 @@ fun NavGraph(innerPadding: PaddingValues, navController: NavHostController) {
         navController = navController,
         startDestination = Screen.Login.route,
         modifier = Modifier.fillMaxSize().padding(innerPadding),
+
+        enterTransition = {
+            slideIntoContainer(
+                towards = AnimatedContentTransitionScope.SlideDirection.Left,
+                animationSpec = tween(500)
+            )
+        },
+        exitTransition = {
+            slideOutOfContainer(
+                towards = AnimatedContentTransitionScope.SlideDirection.Left,
+                animationSpec = tween(500)
+            )
+        },
+        popEnterTransition = {
+            slideIntoContainer(
+                towards = AnimatedContentTransitionScope.SlideDirection.Right,
+                animationSpec = tween(500)
+            )
+        },
+        popExitTransition = {
+            slideOutOfContainer(
+                towards = AnimatedContentTransitionScope.SlideDirection.Right,
+                animationSpec = tween(500)
+            )
+        }
     ) {
         composable(route = Screen.UserHome.route) { backStackEntry ->
             val homeViewModel: HomeViewModel = viewModel(backStackEntry)
-            HomeScreen(
-                viewModel = homeViewModel,
-                openFavouritesScreen = { navController.navigate(Screen.Favourites.route) },
-                openCartScreen = { navController.navigate(Screen.Cart.route) },
-                openProfileScreen = { navController.navigate(Screen.Profile.route) }
-            )
+            HomeScreen(viewModel = homeViewModel)
         }
 
         composable(route = Screen.Favourites.route) {
-            val homeBackStackEntry = remember(it) {
+            val homeBackStackEntry = remember {
                 navController.currentBackStack.value.find { entry ->
                     entry.destination.route == Screen.UserHome.route
                 }
             }
+
             val homeViewModel: HomeViewModel = if (homeBackStackEntry != null) {
                 viewModel(homeBackStackEntry)
             } else {
                 sharedHomeViewModel
             }
+
             FavouritesScreen(viewModel = homeViewModel)
         }
 
@@ -373,6 +397,12 @@ fun NavGraph(innerPadding: PaddingValues, navController: NavHostController) {
                     onBackClick = { navController.popBackStack() }
                 )
             }
+        }
+        composable(route = Screen.ProductDetail.route) {
+            ProductDetailScreen(
+                product = Product("1", "Sinh tố bơ", 25000, imageUrl = "", description = "Bơ sáp Daklak xay nhuyễn"),
+                onDismiss = { sharedHomeViewModel.onDismiss() }
+            )
         }
     }
 }
