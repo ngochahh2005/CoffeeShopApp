@@ -16,28 +16,3 @@ data class OrderDto(
     val payment: PaymentDto? = null,
     val orderItems: List<OrderItemDto>? = null
 )
-
-data class OrderItemDto(
-    val productName: String = "",
-    val size: String? = null,
-    val unitPrice: BigDecimal = BigDecimal.ZERO,
-    val quantity: Int = 0,
-    val note: String? = null,
-    val toppings: List<OrderItemToppingDto>? = null
-)
-
-data class OrderItemToppingDto(
-    val toppingName: String = "",
-    val price: BigDecimal = BigDecimal.ZERO
-)
-
-data class PaymentDto(
-    val id: Long? = null,
-    val method: String? = null,
-    val status: String? = null,
-    val amount: BigDecimal? = null,
-    val transactionId: String? = null,
-    val paymentUrl: String? = null,
-    val createdAt: String? = null,
-    val updatedAt: String? = null
-)

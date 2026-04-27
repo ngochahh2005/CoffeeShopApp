@@ -41,7 +41,7 @@ import com.example.coffeeshopapp.presentation.screen.admin.category.AdminCategor
 import com.example.coffeeshopapp.presentation.screen.auth.ForgotPasswordScreen
 import com.example.coffeeshopapp.presentation.screen.auth.LoginScreen
 import com.example.coffeeshopapp.presentation.screen.auth.RegisterScreen
-import com.example.coffeeshopapp.presentation.screen.user.CartScreen
+import com.example.coffeeshopapp.presentation.screen.user.cart.CartScreen
 import com.example.coffeeshopapp.presentation.screen.user.ProductDetailScreen
 import com.example.coffeeshopapp.presentation.screen.user.ProfileScreen
 import com.example.coffeeshopapp.presentation.screen.user.favorite.FavouritesScreen
@@ -58,28 +58,50 @@ fun NavGraph(innerPadding: PaddingValues, navController: NavHostController) {
         navController = navController,
         startDestination = Screen.Login.route,
         modifier = Modifier.fillMaxSize().padding(innerPadding),
+
+        enterTransition = {
+            slideIntoContainer(
+                towards = AnimatedContentTransitionScope.SlideDirection.Left,
+                animationSpec = tween(500)
+            )
+        },
+        exitTransition = {
+            slideOutOfContainer(
+                towards = AnimatedContentTransitionScope.SlideDirection.Left,
+                animationSpec = tween(500)
+            )
+        },
+        popEnterTransition = {
+            slideIntoContainer(
+                towards = AnimatedContentTransitionScope.SlideDirection.Right,
+                animationSpec = tween(500)
+            )
+        },
+        popExitTransition = {
+            slideOutOfContainer(
+                towards = AnimatedContentTransitionScope.SlideDirection.Right,
+                animationSpec = tween(500)
+            )
+        }
     ) {
         composable(route = Screen.UserHome.route) { backStackEntry ->
             val homeViewModel: HomeViewModel = viewModel(backStackEntry)
-            HomeScreen(
-                viewModel = homeViewModel,
-                openProductDetailScreen = { navController.navigate(Screen.ProductDetail.route) },
-                openCartScreen = { navController.navigate(Screen.Cart.route) },
-                openProfileScreen = { navController.navigate(Screen.Profile.route) }
-            )
+            HomeScreen(viewModel = homeViewModel)
         }
 
         composable(route = Screen.Favourites.route) {
-            val homeBackStackEntry = remember(it) {
+            val homeBackStackEntry = remember {
                 navController.currentBackStack.value.find { entry ->
                     entry.destination.route == Screen.UserHome.route
                 }
             }
+
             val homeViewModel: HomeViewModel = if (homeBackStackEntry != null) {
                 viewModel(homeBackStackEntry)
             } else {
                 sharedHomeViewModel
             }
+
             FavouritesScreen(viewModel = homeViewModel)
         }
 

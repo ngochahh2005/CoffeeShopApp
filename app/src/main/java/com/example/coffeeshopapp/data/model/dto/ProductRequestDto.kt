@@ -8,7 +8,4 @@ data class ProductRequestDto(
     val sizes: List<ProductSizeRequestDto>
 )
 
-data class ProductSizeRequestDto(
-    val sizeName: String, // "S", "M", "L"
-    val priceExtra: Long
-)
+

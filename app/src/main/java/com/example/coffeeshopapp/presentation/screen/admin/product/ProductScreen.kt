@@ -295,7 +295,7 @@ fun ProductDetailScreen(
             DetailRow("Tên sản phẩm", product.name)
             DetailRow("Danh mục", categoryName)
             DetailRow("Giá cơ bản", "${product.basePrice.formatGrouped()} đ")
-            DetailRow("Mô tả", product.desc ?: "Không có")
+            DetailRow("Mô tả", product.description ?: "Không có")
             DetailRow("Trạng thái", if (product.isActiveResolved()) "Đang kinh doanh" else "Ngừng kinh doanh")
             
             Text("Các size và phụ thu", fontSize = 17.sp, lineHeight = 21.sp, fontWeight = FontWeight.Bold)
@@ -345,7 +345,7 @@ private fun ProductFormScreen(
 
     var name by rememberSaveable(initialProduct?.id) { mutableStateOf(initialProduct?.name.orEmpty()) }
     var basePriceText by rememberSaveable(initialProduct?.id) { mutableStateOf(initialProduct?.basePrice?.toLong()?.toString() ?: "") }
-    var desc by rememberSaveable(initialProduct?.id) { mutableStateOf(initialProduct?.desc.orEmpty()) }
+    var desc by rememberSaveable(initialProduct?.id) { mutableStateOf(initialProduct?.description.orEmpty()) }
     var selectedCategoryId by rememberSaveable(initialProduct?.id) { mutableStateOf(initialProduct?.categoryId) }
     var catExpanded by remember { mutableStateOf(false) }
 

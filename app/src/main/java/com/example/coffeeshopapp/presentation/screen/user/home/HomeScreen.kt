@@ -29,13 +29,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavController
+import com.example.coffeeshopapp.presentation.screen.user.ProductDetailScreen
 import com.example.coffeeshopapp.presentation.theme.BackgroundColor
-import com.example.coffeeshopapp.presentation.theme.CoffeeShopAppTheme
 import com.example.coffeeshopapp.presentation.theme.CoffeeTextColor
 import com.example.coffeeshopapp.presentation.viewmodel.HomeViewModel
 import com.example.coffeeshopapp.utils.getFullImageUrl
@@ -45,11 +42,7 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun HomeScreen(
-    viewModel: HomeViewModel = viewModel(),
-    navController: NavController = NavController(LocalContext.current),
-    openProductDetailScreen: () -> Unit = {},
-    openCartScreen: () -> Unit = {},
-    openProfileScreen: () -> Unit = {}
+    viewModel: HomeViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
@@ -132,10 +125,11 @@ fun HomeScreen(
                     onFavoriteClick = { coffeeId ->
                         viewModel.toggleFavorite(coffeeId)
                     },
+                    openProductDetailScreen = { product -> viewModel.showProduct(product) },
                     onAddToCartClick = { id, offset ->
                         viewModel.addToCart(id, offset)
                     },
-                    openProductDetailScreen = openProductDetailScreen
+                    
                 )
 
                 uiState.error?.let { err ->
@@ -173,16 +167,15 @@ fun HomeScreen(
                 contentScale = androidx.compose.ui.layout.ContentScale.Crop
             )
         }
-    }
-}
 
-@Composable
-@Preview(name = "Home Screen", showSystemUi = true)
-fun HomeScreePreview() {
-    CoffeeShopAppTheme {
-        Box(modifier = Modifier.fillMaxSize().background(BackgroundColor)) {
-            Text("Preview HomeScreen (Tạm thời ẩn ViewModel để tránh Crash)",
-                modifier = Modifier.align(Alignment.Center))
+        if (viewModel.isShowSheet && viewModel.selectedProduct != null) {
+            ProductDetailScreen(
+                product = viewModel.selectedProduct!!,
+                onAddToCartClick = {
+                    viewModel.selectedProduct?.let { viewModel.addToCart(it) }
+                },
+                onDismiss = { viewModel.onDismiss() }
+            )
         }
     }
 }
