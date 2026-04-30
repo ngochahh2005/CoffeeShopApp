@@ -1,5 +1,6 @@
 package com.example.coffeeshopapp.data.remote
 
+import android.os.Build
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -14,7 +15,14 @@ import com.example.coffeeshopapp.data.TokenProvider
 import com.example.coffeeshopapp.data.local.AuthDataStore
 
 object NetworkClient {
-  const val BASE_URL = "http://10.0.2.2:8080/"
+  private const val EMULATOR_BASE_URL = "http://10.0.2.2:8080/"
+  private const val USB_REVERSE_BASE_URL = "http://127.0.0.1:8080/"
+
+  val BASE_URL: String = if (isRunningOnEmulator()) {
+    EMULATOR_BASE_URL
+  } else {
+    USB_REVERSE_BASE_URL
+  }
 
   private val logging = HttpLoggingInterceptor().apply {
     level = HttpLoggingInterceptor.Level.BODY
@@ -113,4 +121,15 @@ object NetworkClient {
     .build()
 
   val api: ApiService = retrofit.create(ApiService::class.java)
+
+  private fun isRunningOnEmulator(): Boolean {
+    return Build.FINGERPRINT.startsWith("generic") ||
+      Build.FINGERPRINT.startsWith("unknown") ||
+      Build.MODEL.contains("google_sdk", ignoreCase = true) ||
+      Build.MODEL.contains("Emulator", ignoreCase = true) ||
+      Build.MODEL.contains("Android SDK built for", ignoreCase = true) ||
+      Build.MANUFACTURER.contains("Genymotion", ignoreCase = true) ||
+      Build.BRAND.startsWith("generic", ignoreCase = true) && Build.DEVICE.startsWith("generic", ignoreCase = true) ||
+      Build.PRODUCT == "google_sdk"
+  }
 }
