@@ -15,6 +15,7 @@ private val Context.authDataStore: DataStore<Preferences> by preferencesDataStor
 object AuthDataStore {
     private val TOKEN_KEY = stringPreferencesKey("access_token")
     private val REFRESH_TOKEN_KEY = stringPreferencesKey("refresh_token")
+    private val USER_ID_KEY = stringPreferencesKey("user_id")
     private val ROLES_KEY = stringPreferencesKey("roles")
     private val PROVIDER_KEY = stringPreferencesKey("provider")
 
@@ -34,6 +35,18 @@ object AuthDataStore {
         context.authDataStore.edit { prefs ->
             if (token == null) prefs.remove(TOKEN_KEY) else prefs[TOKEN_KEY] = token
             if (refreshToken == null) prefs.remove(REFRESH_TOKEN_KEY) else prefs[REFRESH_TOKEN_KEY] = refreshToken
+        }
+    }
+
+    fun userIdFlow(context: Context): Flow<String?> {
+        return context.authDataStore.data.map { prefs ->
+            prefs[USER_ID_KEY]
+        }
+    }
+
+    suspend fun setUserId(context: Context, userId: String?) {
+        context.authDataStore.edit { prefs ->
+            if (userId.isNullOrBlank()) prefs.remove(USER_ID_KEY) else prefs[USER_ID_KEY] = userId
         }
     }
 
@@ -75,6 +88,10 @@ object AuthDataStore {
 
     suspend fun readRefreshTokenBlocking(context: Context): String? {
         return context.authDataStore.data.first()[REFRESH_TOKEN_KEY]
+    }
+
+    suspend fun readUserIdBlocking(context: Context): String? {
+        return context.authDataStore.data.first()[USER_ID_KEY]
     }
 
     suspend fun clearAll(context: Context) {

@@ -7,6 +7,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.coffeeshopapp.data.local.CartDataStore
 import com.example.coffeeshopapp.data.local.FavoritesDataStore
+import com.example.coffeeshopapp.data.local.AuthDataStore
 import com.example.coffeeshopapp.data.coffeeCategories
 import com.example.coffeeshopapp.data.model.entity.Category
 import com.example.coffeeshopapp.data.model.entity.Product
@@ -47,8 +48,26 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     init {
+        // When the authenticated user changes, force refresh data so favorites are user-specific
+        viewModelScope.launch {
+            AuthDataStore.userIdFlow(getApplication()).collect {
+                loadData(forceRefresh = true)
+            }
+        }
+
         loadData()
-        observeFavorites()
+        // Observe local favorites and keep trendingItems' isFavorite in sync
+        viewModelScope.launch {
+            FavoritesDataStore.favoritesFlow(getApplication()).collect { favs ->
+                _uiState.update { state ->
+                    val updated = state.trendingItems.map { item ->
+                        if (favs.contains(item.id)) item.copy(isFavorite = true) else item.copy(isFavorite = false)
+                    }
+                    state.copy(trendingItems = updated)
+                }
+                android.util.Log.d("HomeViewModel", "favoritesFlow collected, applied to trendingItems: $favs")
+            }
+        }
     }
 
     fun clearError() {
@@ -71,6 +90,9 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                     } catch (ex: Exception) {
                         emptySet<String>()
                     }
+                    android.util.Log.d("HomeViewModel", "loadData: savedFavs=$savedFavs")
+                    // debug toast removed: rely on logs instead
+                    android.util.Log.d("HomeViewModel", "loadData: loaded favorites size=${savedFavs.size}")
 
                     val productMap = products.map { p ->
                         Product(
@@ -131,66 +153,83 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun toggleFavorite(productId: String) {
+        // save original state to revert on error
+        val originalState = _uiState.value
+        
+        // toggle isFavorite immediately in trendingItems for instant UI feedback
         _uiState.update { state ->
             val updated = state.trendingItems.map { item ->
                 if (item.id == productId) item.copy(isFavorite = !item.isFavorite) else item
             }
             state.copy(trendingItems = updated, loadingFavorites = state.loadingFavorites + productId)
         }
+        android.util.Log.d("HomeViewModel", "toggleFavorite START: productId=$productId, originalIsFavorite=${originalState.trendingItems.find { it.id == productId }?.isFavorite}")
 
+        var hadError = false
         viewModelScope.launch {
             val idLong = productId.toLongOrNull()
             if (idLong == null) {
                 _uiState.update { it.copy(error = "Invalid product id") }
-                return@launch
+                hadError = true
             }
 
             try {
                 FavoritesDataStore.toggleFavorite(getApplication(), productId)
             } catch (e: Exception) {
+                android.util.Log.e("HomeViewModel", "toggleFavorite: FavoritesDataStore.toggleFavorite failed for productId=$productId", e)
+                hadError = true
                 _uiState.update { it.copy(error = e.getErrorMessage()) }
             }
 
+            // read back local favorites after write to observe key and set
             try {
-                val resp = NetworkClient.api.toggleFavorite(idLong)
-                resp.result?.let { favStatus ->
-                    _uiState.update { state ->
-                        val synced = state.trendingItems.map { item ->
-                            if (item.id == favStatus.productId.toString()) item.copy(isFavorite = favStatus.favorited)
-                            else item
-                        }
-                        state.copy(trendingItems = synced)
-                    }
-                }
+                val localFavs = FavoritesDataStore.favoritesFlow(getApplication()).first()
+                android.util.Log.d("HomeViewModel", "toggleFavorite: local favorites after write for productId=$productId => $localFavs")
             } catch (e: Exception) {
-                _uiState.update { it.copy(error = e.getErrorMessage()) }
-            } finally {
+                android.util.Log.e("HomeViewModel", "toggleFavorite: reading local favorites failed", e)
+            }
+
+            if (idLong != null) {
+                try {
+                    val resp = NetworkClient.api.toggleFavorite(idLong)
+                    resp.result?.let { favStatus ->
+                        // trust API response as source of truth
+                        _uiState.update { state ->
+                            val synced = state.trendingItems.map { item ->
+                                if (item.id == favStatus.productId.toString()) item.copy(isFavorite = favStatus.favorited)
+                                else item
+                            }
+                            state.copy(trendingItems = synced)
+                        }
+                        hadError = false
+                    }
+                } catch (e: Exception) {
+                    hadError = true
+                    _uiState.update { it.copy(error = e.getErrorMessage()) }
+                }
+            }
+
+            // always run cleanup to remove loading state and revert on error
+            if (hadError) {
+                _uiState.update { it.copy(
+                    trendingItems = originalState.trendingItems,
+                    loadingFavorites = it.loadingFavorites - productId
+                ) }
+            } else {
                 _uiState.update { it.copy(loadingFavorites = it.loadingFavorites - productId) }
             }
         }
     }
 
-    private fun observeFavorites() {
-        viewModelScope.launch {
-            FavoritesDataStore.favoritesFlow(getApplication()).collect { favSet ->
-                _uiState.update { state ->
-                    val updated = state.trendingItems.map { item ->
-                        item.copy(isFavorite = favSet.contains(item.id))
-                    }
-                    state.copy(trendingItems = updated)
-                }
-            }
-        }
-    }
 
 
     private val _flyAnimationEvent = MutableSharedFlow<Pair<String, Offset>>()
     val flyAnimationEvent = _flyAnimationEvent.asSharedFlow()
 
-    fun addToCart(coffeeId: String, offset: Offset) {
+    fun addToCart(productId: String, offset: Offset) {
         viewModelScope.launch {
-            addToCartById(coffeeId)
-            _flyAnimationEvent.emit(Pair(coffeeId, offset))
+            addToCartById(productId)
+            _flyAnimationEvent.emit(Pair(productId, offset))
         }
     }
 
@@ -211,16 +250,16 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
     var isShowSheet by mutableStateOf(false)
     private set
-    var selectedProduct by mutableStateOf<Product?>(null)
+    var selectedProductId by mutableStateOf<String?>(null)
     private set
 
     fun onDismiss() {
-        selectedProduct = null
+        selectedProductId = null
         isShowSheet = false
     }
 
     fun showProduct(product: Product) {
-        selectedProduct = product
+        selectedProductId = product.id
         isShowSheet = true
     }
 }

@@ -23,7 +23,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AddCircle
-import androidx.compose.material.icons.filled.AddShoppingCart
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.Button
@@ -49,13 +48,11 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.style.TextAlign
 import com.example.coffeeshopapp.utils.getFullImageUrl
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.coffeeshopapp.R
 import com.example.coffeeshopapp.data.model.entity.Product
-import com.example.coffeeshopapp.presentation.components.CommonSpace
 import com.example.coffeeshopapp.presentation.theme.BackgroundColor
 import com.example.coffeeshopapp.presentation.theme.CoffeeShopAppTheme
 import com.example.coffeeshopapp.presentation.theme.CoffeeTextColor
@@ -66,31 +63,30 @@ import com.example.coffeeshopapp.presentation.theme.rememberScreenInfo
 @Composable
 fun ProductDetailScreen(
     product: Product,
+    isFavorite: Boolean = product.isFavorite,
+    onToggleFavorite: (String) -> Unit = {},
     onAddToCartClick: () -> Unit = {},
     onDismiss: () -> Unit = {}
 ) {
-    ModalBottomSheet(
-        onDismissRequest = {
-            onDismiss()
-        },
-        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
-        dragHandle = {
-            Surface (
-                modifier = Modifier.padding(top = 8.dp, bottom = 8.dp),
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
-                shape = MaterialTheme.shapes.extraLarge
-            ) {
-                Box(Modifier.size(width = 32.dp, height = 4.dp))
-            }
-        },
-        scrimColor = Color.Black.copy(alpha = 0.4f),
-        containerColor = BackgroundColor,
-    ) {
-        Box(modifier = Modifier
-            .fillMaxHeight(0.85f)
-            .background(BackgroundColor)
-        ) {
+//    ModalBottomSheet(
+//        onDismissRequest = {
+//            onDismiss()
+//        },
+//        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+//        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+//        dragHandle = {
+//            Surface (
+//                modifier = Modifier.padding(top = 8.dp, bottom = 8.dp),
+//                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+//                shape = MaterialTheme.shapes.extraLarge
+//            ) {
+//                Box(Modifier.size(width = 32.dp, height = 4.dp))
+//            }
+//        },
+//        scrimColor = Color.Black.copy(alpha = 0.4f),
+//        containerColor = BackgroundColor,
+//    ) {
+        Box(modifier = Modifier.fillMaxHeight(0.85f).background(BackgroundColor)) {
             Column(
                 modifier = Modifier
                     .wrapContentSize()
@@ -122,10 +118,8 @@ fun ProductDetailScreen(
                         color = CoffeeTextColor
                     )
 
-                    var isFavorite by remember { mutableStateOf(product.isFavorite) }
-
                     IconButton(
-                        onClick = { isFavorite = !isFavorite },
+                        onClick = { onToggleFavorite(product.id) },
                         modifier = Modifier.align(Alignment.CenterVertically).size(36.dp)
                     ) {
                         if (isFavorite) Icon(
@@ -153,29 +147,36 @@ fun ProductDetailScreen(
                     Text(
                         text = product.description,
                         style = MaterialTheme.typography.bodyMedium,
-                        color = CoffeeTextColor,
-                        textAlign = TextAlign.Justify
+                        color = CoffeeTextColor
                     )
                 }
 
-                CommonSpace(52.dp)
+                // Button Add
+                FloatingActionButton(
+                    onClick = { onAddToCartClick() },
+                    modifier = Modifier.wrapContentSize(),
+                    shape = RoundedCornerShape(24.dp)
+                ) {
+                    Icon(
+                        Icons.Default.Add,
+                        contentDescription = null,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
             }
 
-            // Button Add to cart
-            FloatingActionButton (
+            Button(
                 onClick = { onAddToCartClick() },
                 modifier = Modifier
-                    .padding(end = 24.dp, bottom = 52.dp)
                     .align(Alignment.BottomEnd)
-                    .size(48.dp),
-                shape = RoundedCornerShape(16.dp),
-                containerColor = PlaceHolderColor,
-                contentColor = BackgroundColor
+                    .size(24.dp)
+                    .padding(24.dp),
+                shape = RoundedCornerShape(16.dp)
             ) {
-                Icon(Icons.Default.AddShoppingCart, contentDescription = null)
+                Icon(Icons.Default.Add, contentDescription = null)
             }
         }
-    }
+//    }
 }
 
 @Composable
@@ -183,9 +184,7 @@ fun ProductDetailScreen(
 fun ProductDetailScreenPreview() {
     CoffeeShopAppTheme {
         ProductDetailScreen(
-            product = Product("1", "Sinh tố bơ", 25000, imageUrl = "", description = "Bơ sáp Daklak xay nhuyễn\nHiệu ứng phụ là sự thay đổi về trạng thái của ứng dụng diễn ra bên ngoài phạm vi của một hàm có khả năng kết hợp. Do vòng đời và các thuộc tính của thành phần kết hợp như các thành phần kết hợp lại không thể đoán trước, việc thực thi các thành phần kết hợp lại theo thứ tự khác nhau hoặc các thành phần kết hợp có thể bị loại bỏ, nên thành phần kết hợp tốt nhất là không có hiệu ứng phụ .\n" +
-                    "\n" +
-                    "Tuy nhiên, đôi khi cũng cần có các hiệu ứng phụ, chẳng hạn để kích hoạt các sự kiện một lần như hiển thị thanh thông báo nhanh hoặc điều hướng đến một màn hình khác trong điều kiện trạng thái nhất định. Các hành động này nên được gọi từ một môi trường được kiểm soát và có nhận thức về vòng đời của thành phần kết hợp đó. Trong trang này, bạn sẽ tìm hiểu về một số hiệu ứng phụ khác của API Jetpack Compose."),
+            product = Product("1", "Sinh tố bơ", 25000, imageUrl = "", description = "Bơ sáp Daklak xay nhuyễn"),
         )
     }
 }

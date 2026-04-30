@@ -9,33 +9,33 @@ import androidx.datastore.preferences.preferencesDataStore
 import com.example.coffeeshopapp.data.model.entity.CartItem
 import com.example.coffeeshopapp.data.model.entity.Product
 import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
+import org.json.JSONArray
 
 private val Context.cartDataStore: DataStore<Preferences> by preferencesDataStore(name = "cart_prefs")
 
 object CartDataStore {
-    private val CART_ITEMS_KEY = stringPreferencesKey("cart_items")
     private val gson = Gson()
-    private val cartItemListType = object : TypeToken<List<CartItem>>() {}.type
 
     fun cartItemsFlow(context: Context): Flow<List<CartItem>> {
-        return context.cartDataStore.data.map { prefs ->
-            deserialize(prefs[CART_ITEMS_KEY])
+        return AuthDataStore.userIdFlow(context).combine(context.cartDataStore.data) { userId, prefs ->
+            deserialize(prefs[cartItemsKey(userId)])
         }
     }
 
     fun cartCountFlow(context: Context): Flow<Int> {
         return cartItemsFlow(context).map { items ->
-            items.sumOf { it.quantity }
+            items.size
         }
     }
 
     suspend fun addProduct(context: Context, product: Product, quantity: Int = 1) {
         if (quantity <= 0) return
+        val key = cartItemsKey(AuthDataStore.readUserIdBlocking(context))
         context.cartDataStore.edit { prefs ->
-            val currentItems = deserialize(prefs[CART_ITEMS_KEY]).toMutableList()
+            val currentItems = deserialize(prefs[key]).toMutableList()
             val index = currentItems.indexOfFirst { it.productId == product.id }
             if (index >= 0) {
                 val existing = currentItems[index]
@@ -44,20 +44,21 @@ object CartDataStore {
                 currentItems.add(
                     CartItem(
                         productId = product.id,
-                        name = product.name,
-                        price = product.price,
-                        imageUrl = product.imageUrl,
+                        nameAtAdd = product.name,
+                        priceAtAdd = product.price,
+                        imageUrlAtAdd = product.imageUrl,
                         quantity = quantity
                     )
                 )
             }
-            prefs[CART_ITEMS_KEY] = serialize(currentItems)
+            prefs[key] = serialize(currentItems)
         }
     }
 
     suspend fun updateQuantity(context: Context, productId: String, quantity: Int) {
+        val key = cartItemsKey(AuthDataStore.readUserIdBlocking(context))
         context.cartDataStore.edit { prefs ->
-            val currentItems = deserialize(prefs[CART_ITEMS_KEY]).toMutableList()
+            val currentItems = deserialize(prefs[key]).toMutableList()
             val updatedItems = if (quantity <= 0) {
                 currentItems.filterNot { it.productId == productId }
             } else {
@@ -65,7 +66,7 @@ object CartDataStore {
                     if (item.productId == productId) item.copy(quantity = quantity) else item
                 }
             }
-            prefs[CART_ITEMS_KEY] = serialize(updatedItems)
+            prefs[key] = serialize(updatedItems)
         }
     }
 
@@ -74,8 +75,9 @@ object CartDataStore {
     }
 
     suspend fun clear(context: Context) {
+        val key = cartItemsKey(AuthDataStore.readUserIdBlocking(context))
         context.cartDataStore.edit { prefs ->
-            prefs.remove(CART_ITEMS_KEY)
+            prefs.remove(key)
         }
     }
 
@@ -84,7 +86,43 @@ object CartDataStore {
     private fun deserialize(raw: String?): List<CartItem> {
         if (raw.isNullOrBlank()) return emptyList()
         return runCatching {
-            gson.fromJson<List<CartItem>>(raw, cartItemListType) ?: emptyList()
+            val arr = JSONArray(raw)
+            buildList {
+                for (i in 0 until arr.length()) {
+                    val obj = arr.optJSONObject(i) ?: continue
+                    val productId = obj.optString("productId").trim()
+                    if (productId.isBlank()) continue
+
+                    val quantity = obj.optInt("quantity", 1)
+                    val nameAtAdd = when {
+                        obj.has("nameAtAdd") -> obj.optString("nameAtAdd")
+                        else -> obj.optString("name")
+                    }
+                    val priceAtAdd = when {
+                        obj.has("priceAtAdd") -> obj.optLong("priceAtAdd", 0L)
+                        else -> obj.optLong("price", 0L)
+                    }
+                    val imageUrlAtAdd = when {
+                        obj.has("imageUrlAtAdd") -> obj.optString("imageUrlAtAdd").takeIf { it.isNotBlank() }
+                        else -> obj.optString("imageUrl").takeIf { it.isNotBlank() }
+                    }
+
+                    add(
+                        CartItem(
+                            productId = productId,
+                            nameAtAdd = nameAtAdd,
+                            priceAtAdd = priceAtAdd,
+                            imageUrlAtAdd = imageUrlAtAdd,
+                            quantity = quantity
+                        )
+                    )
+                }
+            }
         }.getOrElse { emptyList() }
+    }
+
+    private fun cartItemsKey(userId: String?): Preferences.Key<String> {
+        val suffix = userId?.trim().takeUnless { it.isNullOrBlank() } ?: "guest"
+        return stringPreferencesKey("cart_items_$suffix")
     }
 }

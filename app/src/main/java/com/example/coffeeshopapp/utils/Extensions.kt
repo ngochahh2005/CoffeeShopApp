@@ -3,6 +3,7 @@ package com.example.coffeeshopapp.utils
 import com.example.coffeeshopapp.data.model.dto.CategoryDto
 import com.example.coffeeshopapp.data.model.dto.ProductDto
 import com.example.coffeeshopapp.data.model.dto.ToppingDto
+import com.example.coffeeshopapp.data.model.entity.CartItem
 import com.example.coffeeshopapp.data.model.entity.Product
 import com.example.coffeeshopapp.data.remote.NetworkClient
 import org.json.JSONObject
@@ -85,4 +86,13 @@ fun CategoryDto.isActiveResolved(): Boolean {
 
 fun ToppingDto.isActiveResolved(): Boolean {
     return this.isActive ?: true
+}
+
+fun CartItem.toProduct(): Product {
+    return Product(
+        id = this.productId,
+        name = this.nameAtAdd,
+        price = this.priceAtAdd,
+        imageUrl = this.imageUrlAtAdd
+    )
 }

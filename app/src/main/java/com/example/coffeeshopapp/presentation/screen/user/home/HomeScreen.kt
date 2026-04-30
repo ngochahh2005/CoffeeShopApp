@@ -119,6 +119,7 @@ fun HomeScreen(
                     categories = uiState.categories,
                     trendingItems = uiState.trendingItems,
                     loadingFavorites = uiState.loadingFavorites,
+                    favorites = uiState.trendingItems.filter { it.isFavorite }.map { it.id }.toSet(),
                     onCategoryClick = { categoryId ->
 
                     },
@@ -168,13 +169,16 @@ fun HomeScreen(
             )
         }
 
-        if (viewModel.isShowSheet && viewModel.selectedProduct != null) {
+        val selectedProduct = viewModel.selectedProductId?.let { id -> uiState.trendingItems.find { it.id == id } }
+        if (viewModel.isShowSheet && selectedProduct != null) {
             ProductDetailScreen(
-                product = viewModel.selectedProduct!!,
-                onAddToCartClick = {
-                    viewModel.selectedProduct?.let { viewModel.addToCart(it) }
-                },
-                onDismiss = { viewModel.onDismiss() }
+            product = selectedProduct,
+            isFavorite = selectedProduct.isFavorite,
+            onToggleFavorite = { id -> viewModel.toggleFavorite(id) },
+            onAddToCartClick = {
+                viewModel.addToCart(selectedProduct)
+            },
+            onDismiss = { viewModel.onDismiss() }
             )
         }
     }

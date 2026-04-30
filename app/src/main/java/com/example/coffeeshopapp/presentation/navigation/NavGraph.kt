@@ -8,6 +8,9 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
@@ -62,11 +65,20 @@ import kotlinx.coroutines.launch
 @SuppressLint("RestrictedApi")
 @Composable
 fun NavGraph(innerPadding: PaddingValues, navController: NavHostController) {
+    val context = LocalContext.current
+    val savedToken by AuthDataStore.tokenFlow(context).collectAsState(initial = null)
+    val savedRefreshToken by AuthDataStore.refreshTokenFlow(context).collectAsState(initial = null)
+    val startRoute = if (savedToken.isNullOrBlank()) Screen.Login.route else Screen.UserHome.route
     val sharedHomeViewModel: HomeViewModel = viewModel()
+
+    LaunchedEffect(savedToken, savedRefreshToken) {
+        TokenProvider.token = savedToken
+        TokenProvider.refreshToken = savedRefreshToken
+    }
 
     NavHost(
         navController = navController,
-        startDestination = Screen.Login.route,
+        startDestination = startRoute,
         modifier = Modifier.fillMaxSize().padding(innerPadding),
 
         enterTransition = {
@@ -94,25 +106,12 @@ fun NavGraph(innerPadding: PaddingValues, navController: NavHostController) {
             )
         }
     ) {
-        composable(route = Screen.UserHome.route) { backStackEntry ->
-            val homeViewModel: HomeViewModel = viewModel(backStackEntry)
-            HomeScreen(viewModel = homeViewModel)
+        composable(route = Screen.UserHome.route) {
+            HomeScreen(viewModel = sharedHomeViewModel)
         }
 
         composable(route = Screen.Favourites.route) {
-            val homeBackStackEntry = remember {
-                navController.currentBackStack.value.find { entry ->
-                    entry.destination.route == Screen.UserHome.route
-                }
-            }
-
-            val homeViewModel: HomeViewModel = if (homeBackStackEntry != null) {
-                viewModel(homeBackStackEntry)
-            } else {
-                sharedHomeViewModel
-            }
-
-            FavouritesScreen(viewModel = homeViewModel)
+            FavouritesScreen(viewModel = sharedHomeViewModel)
         }
 
         composable(route = Screen.Cart.route) { CartScreen() }
@@ -291,8 +290,10 @@ fun NavGraph(innerPadding: PaddingValues, navController: NavHostController) {
                                         val roles = meResp.result?.roles?.mapNotNull { it.name } ?: emptyList()
                                         AuthDataStore.setRoles(context, roles)
                                         AuthDataStore.setProvider(context, meResp.result?.provider ?: "GOOGLE")
+                                        AuthDataStore.setUserId(context, meResp.result?.id?.toString())
                                     } catch (_: Exception) {
                                         AuthDataStore.setProvider(context, "GOOGLE")
+                                        AuthDataStore.setUserId(context, null)
                                     }
                                     Toast.makeText(context, "Đăng nhập Google thành công!", Toast.LENGTH_SHORT).show()
                                     navController.navigate(Screen.UserHome.route) {

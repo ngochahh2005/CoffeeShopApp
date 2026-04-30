@@ -109,7 +109,12 @@ fun LoginScreen(
                                 val roles = meResp.result?.roles?.mapNotNull { it.name } ?: emptyList()
                                 AuthDataStore.setRoles(context, roles)
                                 AuthDataStore.setProvider(context, meResp.result?.provider ?: "LOCAL")
-                            } catch (_: Exception) {
+                                val userId = meResp.result?.id?.toString()
+                                AuthDataStore.setUserId(context, userId)
+//                                android.util.Log.d("LoginScreen", "User logged in: userId=$userId")
+                            } catch (e: Exception) {
+//                                android.util.Log.e("LoginScreen", "getMyInfo() failed", e)
+                                AuthDataStore.setUserId(context, null)
                             }
                             Toast.makeText(context, "Đăng nhập thành công!", Toast.LENGTH_SHORT)
                                 .show()

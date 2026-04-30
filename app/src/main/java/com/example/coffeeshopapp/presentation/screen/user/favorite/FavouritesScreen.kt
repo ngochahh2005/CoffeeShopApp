@@ -75,11 +75,14 @@ fun FavouritesScreen(viewModel: HomeViewModel = viewModel()) {
             }
         }
 
-        if (viewModel.isShowSheet && viewModel.selectedProduct != null) {
+        val selectedProduct = viewModel.selectedProductId?.let { id -> uiState.trendingItems.find { it.id == id } }
+        if (viewModel.isShowSheet && selectedProduct != null) {
             ProductDetailScreen(
-                product = viewModel.selectedProduct!!,
+                product = selectedProduct,
+                isFavorite = selectedProduct.isFavorite,
+                onToggleFavorite = { id -> viewModel.toggleFavorite(id) },
                 onAddToCartClick = {
-                    viewModel.selectedProduct?.let { viewModel.addToCart(it) }
+                    viewModel.addToCart(selectedProduct)
                 },
                 onDismiss = { viewModel.onDismiss() }
             )

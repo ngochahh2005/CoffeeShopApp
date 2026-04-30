@@ -71,15 +71,15 @@ fun FavoriteContent(
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     modifier = Modifier.fillMaxSize()
                 ) {
-                    items(favorites, key = { it.id }) { coffee ->
+                    items(favorites, key = { it.id }) { product ->
                         TrendingItem(
-                            product = coffee,
+                            product = product,
                             onFavoriteClick = { id -> onToggleFavorite(id) },
                             onAddToCartClick = { id, _ ->
                                 onAddToCartClick(id)
                             },
                             openProductDetailScreen = openProductDetailScreen,
-                            isLoading = loadingFavorites.contains(coffee.id)
+                            isLoading = loadingFavorites.contains(product.id)
                         )
                     }
                 }

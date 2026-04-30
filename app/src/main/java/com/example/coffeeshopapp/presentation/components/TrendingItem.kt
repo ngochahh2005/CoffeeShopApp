@@ -192,8 +192,9 @@ fun TrendingItem(
 
 @Composable
 fun TrendingItems(
-    items: List<Product> = trendingCoffeeList,
+    items: List<Product> = emptyList(),
     loadingFavorites: Set<String> = emptySet(),
+    favorites: Set<String> = emptySet(),
     onFavoriteClick: (String) -> Unit,
     openProductDetailScreen: (Product) -> Unit,
     onAddToCartClick: (String, Offset) -> Unit
@@ -203,13 +204,14 @@ fun TrendingItems(
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         contentPadding = PaddingValues(start = 24.dp, end = 24.dp)
     ) {
-        items(items, key = { it.id }) { coffee ->
+        items(items, key = { it.id }) { product ->
+            val rendered = product.copy(isFavorite = favorites.contains(product.id))
             TrendingItem(
-                product = coffee,
+                product = rendered,
                 onFavoriteClick = onFavoriteClick,
                 onAddToCartClick = onAddToCartClick,
                 openProductDetailScreen = openProductDetailScreen,
-                isLoading = loadingFavorites.contains(coffee.id)
+                isLoading = loadingFavorites.contains(product.id)
             )
         }
     }

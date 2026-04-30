@@ -53,6 +53,7 @@ fun HomeContent(
     categories: List<Category>,
     trendingItems: List<Product>,
     loadingFavorites: Set<String> = emptySet(),
+    favorites: Set<String> = emptySet(),
     onCategoryClick: (String) -> Unit,
     onFavoriteClick: (String) -> Unit,
     openProductDetailScreen: (Product) -> Unit = {},
@@ -130,6 +131,7 @@ fun HomeContent(
                 items = trendingItems,
                 loadingFavorites =
                     loadingFavorites,
+                favorites = favorites,
                 onFavoriteClick = onFavoriteClick,
                 onAddToCartClick = onAddToCartClick,
                 openProductDetailScreen = openProductDetailScreen

@@ -7,36 +7,49 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "app_prefs")
 
 object FavoritesDataStore {
-    private val FAVORITES_KEY = stringPreferencesKey("favorites")
-
     fun favoritesFlow(context: Context): Flow<Set<String>> {
-        return context.dataStore.data
-            .map { prefs ->
-                val raw = prefs[FAVORITES_KEY] ?: ""
-                if (raw.isBlank()) emptySet() else raw.split(",").toSet()
-            }
+        return AuthDataStore.userIdFlow(context).combine(context.dataStore.data) { userId, prefs ->
+            val key = favoritesKey(userId)
+            val raw = prefs[key] ?: ""
+            val result = if (raw.isBlank()) emptySet() else raw.split(",").toSet()
+//            android.util.Log.d("FavoritesDataStore", "favoritesFlow: userId=$userId, key=$key, favorites=$result")
+            result
+        }
     }
 
     suspend fun toggleFavorite(context: Context, id: String) {
-        val current = context.dataStore.data.first()[FAVORITES_KEY] ?: ""
-        val set = if (current.isBlank()) mutableSetOf<String>() else current.split(",").toMutableSet()
-        if (set.contains(id)) set.remove(id) else set.add(id)
-        val newRaw = set.joinToString(",")
+        val userId = AuthDataStore.userIdFlow(context).first()
+        val key = favoritesKey(userId)
+        var newSet: Set<String> = emptySet()
+        // perform atomic read-modify-write inside edit to avoid race between concurrent toggles
         context.dataStore.edit { prefs ->
-            prefs[FAVORITES_KEY] = newRaw
+            val current = prefs[key] ?: ""
+            val mutable = if (current.isBlank()) mutableSetOf<String>() else current.split(",").toMutableSet()
+            if (mutable.contains(id)) mutable.remove(id) else mutable.add(id)
+            prefs[key] = mutable.joinToString(",")
+            newSet = mutable.toSet()
         }
+//        android.util.Log.d("FavoritesDataStore", "toggleFavorite: userId=$userId, key=$key, id=$id, favorites=$newSet")
+        // debug toast removed: prefer logging only
+    //        android.util.Log.d("FavoritesDataStore", "toggleFavorite: userId=$userId, key=$key, id=$id, favorites=$newSet")
     }
 
     suspend fun setFavorites(context: Context, ids: Set<String>) {
-        val newRaw = ids.joinToString(",")
+        val userId = AuthDataStore.userIdFlow(context).first()
+        val key = favoritesKey(userId)
         context.dataStore.edit { prefs ->
-            prefs[FAVORITES_KEY] = newRaw
+            prefs[key] = ids.joinToString(",")
         }
+    }
+
+    private fun favoritesKey(userId: String?): Preferences.Key<String> {
+        val suffix = userId?.trim().takeUnless { it.isNullOrBlank() } ?: "guest"
+        return stringPreferencesKey("favorites_$suffix")
     }
 }

@@ -7,5 +7,5 @@ data class Cart(
         get() = items.sumOf { it.quantity }
 
     val totalAmount: Long
-        get() = items.sumOf { it.price * it.quantity }
+        get() = items.sumOf { it.priceAtAdd * it.quantity }
 }
