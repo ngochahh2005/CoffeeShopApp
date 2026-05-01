@@ -27,10 +27,10 @@ import com.example.coffeeshopapp.presentation.viewmodel.HomeViewModel
 @Composable
 fun FavouritesScreen(viewModel: HomeViewModel = viewModel()) {
     val uiState by viewModel.uiState.collectAsState()
-    val favorites: List<Product> = uiState.trendingItems.filter { it.isFavorite }
+    val favorites: List<Product> = uiState.favoriteItems
     val loadingFavorites = uiState.loadingFavorites
 
-    LaunchedEffect(Unit) { viewModel.loadData() }
+    LaunchedEffect(Unit) { viewModel.loadData(forceRefresh = true) }
 
     Box(
         modifier = Modifier
@@ -75,7 +75,9 @@ fun FavouritesScreen(viewModel: HomeViewModel = viewModel()) {
             }
         }
 
-        val selectedProduct = viewModel.selectedProductId?.let { id -> uiState.trendingItems.find { it.id == id } }
+        val selectedProduct = viewModel.selectedProductId?.let { id ->
+            uiState.favoriteItems.find { it.id == id } ?: uiState.trendingItems.find { it.id == id }
+        }
         if (viewModel.isShowSheet && selectedProduct != null) {
             ProductDetailScreen(
                 product = selectedProduct,

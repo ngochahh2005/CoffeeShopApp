@@ -3,6 +3,7 @@ package com.example.coffeeshopapp.data.remote
 import com.example.coffeeshopapp.data.model.dto.ApiResponseDto
 import com.example.coffeeshopapp.data.model.dto.CategoryDto
 import com.example.coffeeshopapp.data.model.dto.DashboardOverviewDto
+import com.example.coffeeshopapp.data.model.dto.FavoriteDto
 import com.example.coffeeshopapp.data.model.dto.FavoriteStatusDto
 import com.example.coffeeshopapp.data.model.dto.LoginRequestDto
 import com.example.coffeeshopapp.data.model.dto.OrderDto
@@ -60,6 +61,9 @@ interface ApiService {
 
     @POST("api/v1/favorites/{productId}/toggle")
     suspend fun toggleFavorite(@Path("productId") productId: Long): ApiResponseDto<FavoriteStatusDto>
+
+    @GET("api/v1/favorites")
+    suspend fun getFavorites(): ApiResponseDto<List<FavoriteDto>>
 
     @GET("api/v1/categories/{id}")
     suspend fun getCategoryById(@Path("id") id: Long): ApiResponseDto<CategoryDto>
