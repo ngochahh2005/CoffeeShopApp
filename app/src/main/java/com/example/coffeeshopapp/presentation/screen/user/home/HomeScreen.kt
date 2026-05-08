@@ -62,7 +62,7 @@ fun HomeScreen(
 
             animationJob.value = launch {
                 val (coffeeId, start) = pair
-                val item = uiState.trendingItems.find { it.id == coffeeId }
+                val item = uiState.allProduct.find { it.id == coffeeId }
                 flyImageUrl = item?.getFullImageUrl()
 
                 flyX.snapTo(start.x)
@@ -169,7 +169,7 @@ fun HomeScreen(
             )
         }
 
-        val selectedProduct = viewModel.selectedProductId?.let { id -> uiState.trendingItems.find { it.id == id } }
+        val selectedProduct = viewModel.selectedProductId?.let { id -> uiState.allProduct.find { it.id == id } }
         if (viewModel.isShowSheet && selectedProduct != null) {
             ProductDetailScreen(
             product = selectedProduct,

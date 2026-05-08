@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -64,7 +65,7 @@ fun ListItem(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .height(80.dp)
+            .height(100.dp)
             .clip(RoundedCornerShape(12.dp))
             .background(CardBackgroundColor)
             .clickable {
@@ -75,8 +76,7 @@ fun ListItem(
         AsyncImage(
             model = product.getFullImageUrl(),
             contentDescription = product.name,
-            modifier = Modifier
-                .size(80.dp)
+            modifier = Modifier.size(100.dp).padding(4.dp)
                 .clip(RoundedCornerShape(8.dp)),
             contentScale = ContentScale.Crop,
             error = painterResource(R.drawable.error_img),
@@ -93,7 +93,7 @@ fun ListItem(
                 text = product.name,
                 fontWeight = FontWeight.Bold,
                 color = TitleSmallColor,
-                style = MaterialTheme.typography.labelLarge
+                style = MaterialTheme.typography.bodyLarge,
             )
 
             Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -108,7 +108,7 @@ fun ListItem(
                     color = CoffeeTextColor,
                     fontFamily = k2d,
                     fontWeight = FontWeight.Normal,
-                    fontSize = 12.sp,
+                    fontSize = 14.sp,
                     maxLines = 1,
                     softWrap = true,
                     overflow = TextOverflow.Ellipsis
@@ -120,7 +120,7 @@ fun ListItem(
                 color = TitleSmallColor,
                 fontFamily = k2d,
                 fontWeight = FontWeight.Normal,
-                fontSize = 14.sp
+                fontSize = 16.sp
             )
         }
 
@@ -130,10 +130,10 @@ fun ListItem(
         ) {
             IconButton(onClick = {
                 if (!isLoading) onFavoriteClick(product.id) },
-                modifier = Modifier.padding(top = 8.dp).size(20.dp).align(Alignment.CenterHorizontally)
+                modifier = Modifier.padding(top = 8.dp).size(24.dp).align(Alignment.CenterHorizontally)
             ) {
                 if (isLoading) {
-                    CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                    CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
                 } else {
                     Icon(
                         imageVector = if (product.isFavorite) Icons.Filled.Favorite else Icons.Default.FavoriteBorder,
@@ -164,7 +164,7 @@ fun ListItem(
 fun FavoriteListItemPreview() {
     CoffeeShopAppTheme {
         ListItem(
-            product = Product(id = "1", name = "Cà phê Muối", price = 35000, isFavorite = true),
+            product = Product(id = "1", name = "Hồng trà sữa khoai môn trân châu đường đen", price = 35000, isFavorite = true),
             onFavoriteClick = {},
 
         )

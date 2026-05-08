@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
@@ -41,6 +42,7 @@ import com.example.coffeeshopapp.presentation.theme.BackgroundColor
 import com.example.coffeeshopapp.presentation.theme.CoffeeShopAppTheme
 import com.example.coffeeshopapp.presentation.theme.LabelColor
 import com.example.coffeeshopapp.presentation.theme.TitleColor
+import com.example.coffeeshopapp.presentation.theme.rememberScreenInfo
 import com.example.coffeeshopapp.presentation.viewmodel.AuthViewModel
 import com.example.coffeeshopapp.utils.getErrorMessage
 import kotlinx.coroutines.launch
@@ -98,22 +100,20 @@ fun RegisterScreen(
         }
     }
 
-    var scrollState = rememberScrollState()
-
     Column (
         modifier = Modifier
             .fillMaxSize()
             .background(color = BackgroundColor)
             .imePadding()
-            .verticalScroll(scrollState)
+            .verticalScroll(rememberScrollState())
     ) {
         AuthScreenLogo(modifier = Modifier.fillMaxWidth())
 
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .weight(1f)
-                .padding(start = 30.dp, end = 30.dp)
+                .padding(horizontal = 30.dp)
+                .heightIn(min = (rememberScreenInfo().height * 0.58f))
         ) {
             Text(
                 text = "Nice To\nMeet You!",
@@ -124,46 +124,43 @@ fun RegisterScreen(
             CommonSpace()
 
             // Username
-            Column {
-                Text(
-                    text = "Username",
-                    color = LabelColor,
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(horizontal = 4.dp)
-                )
-                UsernameTextField(
-                    username = viewModel.username,
-                    onValueChange = { viewModel.onUsernameChange(it) },
-                    onAction = { focusManager.moveFocus(FocusDirection.Down) },
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
+            Text(
+                text = "Tên đăng nhập",
+                color = LabelColor,
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(horizontal = 4.dp)
+            )
+            UsernameTextField(
+                username = viewModel.username,
+                onValueChange = { viewModel.onUsernameChange(it) },
+                onAction = { focusManager.moveFocus(FocusDirection.Down) },
+                modifier = Modifier.fillMaxWidth(),
+            )
 
             CommonSpace()
 
             // Email
-            Column {
-                Text(
-                    text = "Email",
-                    color = LabelColor,
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(horizontal = 4.dp)
-                )
-                UsernameTextField(
-                    username = email,
-                    onValueChange = { email = it },
-                    onAction = { focusManager.moveFocus(FocusDirection.Down) },
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
+            Text(
+                text = "Email",
+                color = LabelColor,
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(horizontal = 4.dp)
+            )
+            UsernameTextField(
+                username = email,
+                text = "example123@gmail.com",
+                onValueChange = { email = it },
+                onAction = { focusManager.moveFocus(FocusDirection.Down) },
+                modifier = Modifier.fillMaxWidth(),
+            )
 
             CommonSpace()
 
             // Password
             Text(
-                text = "Password",
+                text = "Mật khẩu",
                 color = LabelColor,
                 fontWeight = FontWeight.Bold,
                 style = MaterialTheme.typography.bodyMedium,
@@ -183,7 +180,7 @@ fun RegisterScreen(
 
             // Confirm password
             Text(
-                text = "Confirm password",
+                text = "Xác nhận mật khẩu",
                 color = LabelColor,
                 fontWeight = FontWeight.Bold,
                 style = MaterialTheme.typography.bodyMedium,
@@ -203,7 +200,7 @@ fun RegisterScreen(
 
             // Nút register
             MainButton(
-                text = "Register",
+                text = "Đăng ký",
                 onClick = { handleRegister() },
                 modifier = Modifier.padding(bottom = 18.dp)
             )

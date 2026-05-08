@@ -21,6 +21,7 @@ import com.example.coffeeshopapp.presentation.theme.TextColor
 @Composable
 fun UsernameTextField(
     username: String,
+    text: String = "example123",
     onValueChange: (String) -> Unit,
     onAction: () -> Unit = {},
     modifier: Modifier = Modifier,
@@ -33,7 +34,7 @@ fun UsernameTextField(
 
         placeholder = {
             Text(
-                text = "example123@gmail.com",
+                text = text,
                 style = MaterialTheme.typography.bodyMedium
             )
         },

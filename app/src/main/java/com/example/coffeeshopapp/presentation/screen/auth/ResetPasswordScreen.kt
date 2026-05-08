@@ -21,6 +21,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -28,6 +29,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -46,6 +48,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.coffeeshopapp.data.remote.ForgotPasswordRequestDto
@@ -53,7 +56,9 @@ import com.example.coffeeshopapp.data.remote.NetworkClient
 import com.example.coffeeshopapp.data.remote.ResetPasswordRequestDto
 import com.example.coffeeshopapp.data.remote.VerifyOtpRequestDto
 import com.example.coffeeshopapp.presentation.theme.BackgroundColor
+import com.example.coffeeshopapp.presentation.theme.CoffeeShopAppTheme
 import com.example.coffeeshopapp.presentation.theme.LabelColor
+import com.example.coffeeshopapp.presentation.theme.PlaceHolderColor
 import com.example.coffeeshopapp.presentation.theme.TitleColor
 import com.example.coffeeshopapp.utils.getErrorMessage
 import kotlinx.coroutines.launch
@@ -103,7 +108,12 @@ fun ForgotPasswordScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        Text("🔐", fontSize = 64.sp)
+//        Text("🔐", fontSize = 64.sp)
+        Icon(Icons.Default.Lock,
+            contentDescription = null,
+            modifier = Modifier.size(64.dp),
+            tint = TitleColor
+        )
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -113,7 +123,7 @@ fun ForgotPasswordScreen(
                 ForgotStep.OTP -> "Xác nhận OTP"
                 ForgotStep.RESET_PASSWORD -> "Đặt lại mật khẩu"
             },
-            style = MaterialTheme.typography.headlineSmall,
+            style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
             color = TitleColor
         )
@@ -124,7 +134,7 @@ fun ForgotPasswordScreen(
             ForgotStep.EMAIL -> {
                 Text(
                     text = "Nhập email đã đăng ký để nhận mã OTP",
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.bodyLarge,
                     color = LabelColor,
                     textAlign = TextAlign.Center
                 )
@@ -138,7 +148,11 @@ fun ForgotPasswordScreen(
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Done),
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = LabelColor,
+                        unfocusedTextColor = PlaceHolderColor
+                    )
                 )
 
                 Spacer(modifier = Modifier.height(24.dp))
@@ -393,4 +407,12 @@ private fun OtpBoxes(
             }
         }
     )
+}
+
+@Composable
+@Preview(name = "Reset Password Preview", showSystemUi = true)
+private fun preview() {
+    CoffeeShopAppTheme() {
+        ForgotPasswordScreen {  }
+    }
 }

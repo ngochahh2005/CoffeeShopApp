@@ -9,6 +9,7 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Email
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -22,13 +23,17 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.coffeeshopapp.data.remote.NetworkClient
 import com.example.coffeeshopapp.data.remote.VerifyOtpRequestDto
 import com.example.coffeeshopapp.presentation.theme.BackgroundColor
+import com.example.coffeeshopapp.presentation.theme.CoffeeShopAppTheme
 import com.example.coffeeshopapp.presentation.theme.LabelColor
+import com.example.coffeeshopapp.presentation.theme.PlaceHolderColor
 import com.example.coffeeshopapp.presentation.theme.TitleColor
+import com.example.coffeeshopapp.presentation.theme.k2d
 import com.example.coffeeshopapp.utils.getErrorMessage
 import kotlinx.coroutines.launch
 
@@ -36,8 +41,8 @@ import kotlinx.coroutines.launch
 @Composable
 fun OtpVerificationScreen(
     email: String,
-    onVerified: () -> Unit,
-    onBack: () -> Unit
+    onVerified: () -> Unit = {},
+    onBack: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
@@ -70,13 +75,13 @@ fun OtpVerificationScreen(
         Spacer(modifier = Modifier.height(40.dp))
 
         // Icon
-        Text("✉️", fontSize = 64.sp)
+        Icon(Icons.Default.Email, contentDescription = null, tint = TitleColor, modifier = Modifier.size(64.dp))
 
         Spacer(modifier = Modifier.height(24.dp))
 
         Text(
             text = "Xác thực Email",
-            style = MaterialTheme.typography.headlineSmall,
+            style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
             color = TitleColor
         )
@@ -85,14 +90,14 @@ fun OtpVerificationScreen(
 
         Text(
             text = "Chúng tôi đã gửi mã 6 số đến",
-            style = MaterialTheme.typography.bodyMedium,
+            style = MaterialTheme.typography.bodyLarge,
             color = LabelColor
         )
         Text(
             text = email,
             style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.Bold,
-            color = TitleColor
+            color = LabelColor
         )
 
         Spacer(modifier = Modifier.height(32.dp))
@@ -131,6 +136,7 @@ fun OtpVerificationScreen(
                                 text = char,
                                 style = TextStyle(
                                     fontSize = 24.sp,
+                                    fontFamily = k2d,
                                     fontWeight = FontWeight.Bold,
                                     textAlign = TextAlign.Center,
                                     color = TitleColor
@@ -192,5 +198,13 @@ fun OtpVerificationScreen(
             style = MaterialTheme.typography.bodySmall,
             color = LabelColor
         )
+    }
+}
+
+@Composable
+@Preview(name = "otp verification screen", showSystemUi = true)
+private fun preview() {
+    CoffeeShopAppTheme() {
+        OtpVerificationScreen("example123@gmail.com") { }
     }
 }

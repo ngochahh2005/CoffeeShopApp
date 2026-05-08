@@ -5,6 +5,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -60,6 +62,7 @@ import com.example.coffeeshopapp.presentation.components.SubButton
 import com.example.coffeeshopapp.presentation.components.UsernameTextField
 import com.example.coffeeshopapp.presentation.theme.BackgroundColor
 import com.example.coffeeshopapp.presentation.theme.CoffeeShopAppTheme
+import com.example.coffeeshopapp.presentation.theme.CoffeeTextColor
 import com.example.coffeeshopapp.presentation.theme.LabelColor
 import com.example.coffeeshopapp.presentation.theme.PlaceHolderColor
 import com.example.coffeeshopapp.presentation.theme.TitleColor
@@ -71,6 +74,7 @@ import kotlinx.coroutines.launch
 fun LoginScreen(
     viewModel: AuthViewModel = viewModel(),
     openHomeScreen: () -> Unit,
+    openAdminScreen: () -> Unit = openHomeScreen,
     openRegisterScreen: () -> Unit,
     openResetPasswordScreen: () -> Unit,
     onGoogleLogin: () -> Unit = {}
@@ -104,9 +108,11 @@ fun LoginScreen(
                             AuthDataStore.setToken(context, token, refreshToken)
                             TokenProvider.token = token
                             TokenProvider.refreshToken = refreshToken
+                            var isAdmin = false
                             try {
                                 val meResp = NetworkClient.api.getMyInfo()
-                                val roles = meResp.result?.roles?.mapNotNull { it.name } ?: emptyList()
+                                val roles = meResp.result?.roles?.mapNotNull { it.name ?: it.code } ?: emptyList()
+                                isAdmin = roles.any { it.equals("ADMIN", ignoreCase = true) }
                                 AuthDataStore.setRoles(context, roles)
                                 AuthDataStore.setProvider(context, meResp.result?.provider ?: "LOCAL")
                                 val userId = meResp.result?.id?.toString()
@@ -118,7 +124,7 @@ fun LoginScreen(
                             }
                             Toast.makeText(context, "Đăng nhập thành công!", Toast.LENGTH_SHORT)
                                 .show()
-                            openHomeScreen()
+                            if (isAdmin) openAdminScreen() else openHomeScreen()
                         } else {
                             Toast.makeText(
                                 context,
@@ -137,34 +143,34 @@ fun LoginScreen(
         }
     }
 
-    Column (
-        modifier = Modifier
-            .fillMaxSize()
-            .background(color = BackgroundColor)
-            .imePadding()
-            .verticalScroll(rememberScrollState())
-    ) {
-        AuthScreenLogo(modifier = Modifier.fillMaxWidth())
-
+    Box(modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 30.dp)
-                .heightIn(min = (rememberScreenInfo().height * 0.58f))
+                .fillMaxSize()
+                .background(color = BackgroundColor)
+                .imePadding()
+                .verticalScroll(rememberScrollState())
         ) {
-            // Title
-            Text(
-                text = "Welcome\nBack!",
-                color = TitleColor,
-                style = MaterialTheme.typography.titleLarge
-            )
+            AuthScreenLogo(modifier = Modifier.fillMaxWidth())
 
-            CommonSpace()
-
-            // Username
-            Column {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 30.dp)
+                    .heightIn(min = (rememberScreenInfo().height * 0.58f)),
+            ) {
+                // Title
                 Text(
-                    text = "Username",
+                    text = "Welcome\nBack!",
+                    color = TitleColor,
+                    style = MaterialTheme.typography.titleLarge
+                )
+
+                CommonSpace()
+
+                // Username
+                Text(
+                    text = "Tên đăng nhập",
                     color = LabelColor,
                     style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.Bold,
@@ -176,108 +182,86 @@ fun LoginScreen(
                     onAction = { focusManager.moveFocus(FocusDirection.Down) },
                     modifier = Modifier.fillMaxWidth(),
                 )
-            }
 
-            CommonSpace()
+                CommonSpace()
 
-            // Password
-            Text(
-                text = "Password",
-                color = LabelColor,
-                fontWeight = FontWeight.Bold,
-                style = MaterialTheme.typography.bodyMedium,
-            )
-
-            PasswordTextField(
-                password = viewModel.password,
-                onValueChange = {viewModel.onPasswordChange(it)},
-                imeAction = ImeAction.Done,
-                isShowPassword = viewModel.isShowPassword,
-                onShowPasswordChange = { viewModel.onShowPasswordChange() },
-                onAction = { handleLogin() },
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            // Forgot Password - nhỏ gọn ngay dưới ô mật khẩu
-            TextButton(
-                onClick = { openResetPasswordScreen() },
-                modifier = Modifier.align(alignment = Alignment.End)
-            ) {
+                // Password
                 Text(
-                    text = "Quên mật khẩu?",
-                    color = PlaceHolderColor,
-                    fontSize = 13.sp,
-                )
-            }
-
-            CommonSpace(16.dp)
-
-            MainButton(
-                text = "Đăng nhập",
-                onClick = { handleLogin() }
-            )
-
-            if (isLogging) {
-                CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
-            }
-
-            CommonSpace(16.dp)
-
-            // Divider with "hoặc"
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                HorizontalDivider(modifier = Modifier.weight(1f), color = PlaceHolderColor.copy(alpha = 0.4f))
-                Text(
-                    text = "  hoặc  ",
-                    color = PlaceHolderColor,
-                    fontSize = 13.sp
-                )
-                HorizontalDivider(modifier = Modifier.weight(1f), color = PlaceHolderColor.copy(alpha = 0.4f))
-            }
-
-            CommonSpace(16.dp)
-
-            // Google Login button
-            Button(
-                onClick = { onGoogleLogin() },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(48.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.White,
-                    contentColor = Color(0xFF333333)
-                ),
-                shape = RoundedCornerShape(8.dp),
-                elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
-            ) {
-                Text(
-                    text = "G",
+                    text = "Mật khẩu",
+                    color = LabelColor,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 20.sp,
-                    color = Color(0xFF4285F4)
+                    style = MaterialTheme.typography.bodyMedium,
                 )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "Đăng nhập với Google",
-                    fontWeight = FontWeight.Medium,
-                    fontSize = 15.sp
+
+                PasswordTextField(
+                    password = viewModel.password,
+                    onValueChange = { viewModel.onPasswordChange(it) },
+                    imeAction = ImeAction.Done,
+                    isShowPassword = viewModel.isShowPassword,
+                    onShowPasswordChange = { viewModel.onShowPasswordChange() },
+                    onAction = { handleLogin() },
+                    modifier = Modifier.fillMaxWidth()
                 )
-            }
 
-            CommonSpace(16.dp)
-
-            SubButton(
-                text = "Tạo tài khoản mới",
-                onClick = {
-                    openRegisterScreen()
+                // Forgot Password - nhỏ gọn ngay dưới ô mật khẩu
+                TextButton(
+                    onClick = { openResetPasswordScreen() },
+                    modifier = Modifier.align(alignment = Alignment.End)
+                ) {
+                    Text(
+                        text = "Quên mật khẩu?",
+                        color = PlaceHolderColor,
+                        fontSize = 13.sp,
+                    )
                 }
-            )
 
-            CommonSpace(18.dp)
+                MainButton(
+                    text = "Đăng nhập",
+                    onClick = { handleLogin() }
+                )
+
+                CommonSpace(16.dp)
+
+                // Google Login button
+                Button(
+                    onClick = { onGoogleLogin() },
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.White,
+                        contentColor = Color(0xFF333333)
+                    ),
+                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
+                ) {
+                    Text(
+                        text = "G",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 20.sp,
+                        color = Color(0xFF4285F4)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Đăng nhập với Google",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = PlaceHolderColor
+                    )
+                }
+
+                CommonSpace(16.dp)
+
+                SubButton(
+                    text = "Tạo tài khoản mới",
+                    onClick = {
+                        openRegisterScreen()
+                    }
+                )
+
+                CommonSpace(18.dp)
+            }
         }
-
+        if (isLogging) {
+            CircularProgressIndicator(modifier = Modifier.align(Alignment.Center), color = CoffeeTextColor)
+        }
     }
 }
 

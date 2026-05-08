@@ -4,15 +4,16 @@ import android.annotation.SuppressLint
 import android.widget.Toast
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.ViewModel
@@ -62,19 +63,35 @@ import com.example.coffeeshopapp.presentation.viewmodel.*
 import com.example.coffeeshopapp.utils.getErrorMessage
 import kotlinx.coroutines.launch
 
+private data class AuthSnapshot(
+    val token: String?,
+    val refreshToken: String?
+)
+
 @SuppressLint("RestrictedApi")
 @Composable
 fun NavGraph(innerPadding: PaddingValues, navController: NavHostController) {
     val context = LocalContext.current
-    val savedToken by AuthDataStore.tokenFlow(context).collectAsState(initial = null)
-    val savedRefreshToken by AuthDataStore.refreshTokenFlow(context).collectAsState(initial = null)
-    val startRoute = if (savedToken.isNullOrBlank()) Screen.Login.route else Screen.UserHome.route
-    val sharedHomeViewModel: HomeViewModel = viewModel()
-
-    LaunchedEffect(savedToken, savedRefreshToken) {
-        TokenProvider.token = savedToken
-        TokenProvider.refreshToken = savedRefreshToken
+    val authSnapshot by produceState<AuthSnapshot?>(initialValue = null, context) {
+        val token = AuthDataStore.readTokenBlocking(context)
+        val refreshToken = AuthDataStore.readRefreshTokenBlocking(context)
+        TokenProvider.token = token
+        TokenProvider.refreshToken = refreshToken
+        value = AuthSnapshot(token, refreshToken)
     }
+
+    if (authSnapshot == null) {
+        Box(
+            modifier = Modifier.fillMaxSize().padding(innerPadding),
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator()
+        }
+        return
+    }
+
+    val startRoute = if (authSnapshot?.token.isNullOrBlank()) Screen.Login.route else Screen.UserHome.route
+    val sharedHomeViewModel: HomeViewModel = viewModel()
 
     NavHost(
         navController = navController,
@@ -106,16 +123,20 @@ fun NavGraph(innerPadding: PaddingValues, navController: NavHostController) {
             )
         }
     ) {
+        // home
         composable(route = Screen.UserHome.route) {
             HomeScreen(viewModel = sharedHomeViewModel)
         }
 
+        // favorite
         composable(route = Screen.Favourites.route) {
             FavouritesScreen(viewModel = sharedHomeViewModel)
         }
 
+        // cart
         composable(route = Screen.Cart.route) { CartScreen() }
 
+        // profile
         composable(route = Screen.Profile.route) {
             ProfileScreen(
                 onOpenAdmin = { navController.navigate(Screen.AdminDashboard.route) },
@@ -128,7 +149,7 @@ fun NavGraph(innerPadding: PaddingValues, navController: NavHostController) {
             )
         }
 
-        // ─── Change Password ───
+        // change password
         composable(route = Screen.ChangePassword.route) {
             ChangePasswordScreen(
                 onBack = { navController.popBackStack() },
@@ -144,7 +165,7 @@ fun NavGraph(innerPadding: PaddingValues, navController: NavHostController) {
             )
         }
 
-        // ─── Admin Dashboard ───
+        // admin dashboard
         composable(route = Screen.AdminDashboard.route) {
             val vm: DashboardViewModel = viewModel(factory = object : ViewModelProvider.Factory {
                 @Suppress("UNCHECKED_CAST")
@@ -167,7 +188,7 @@ fun NavGraph(innerPadding: PaddingValues, navController: NavHostController) {
             }
         }
 
-        // ─── Admin Category ───
+        // admin category
         composable(route = Screen.AdminCategory.route) {
             val viewModel: AdminCategoryViewModel = viewModel(factory = object : ViewModelProvider.Factory {
                 @Suppress("UNCHECKED_CAST")
@@ -193,7 +214,7 @@ fun NavGraph(innerPadding: PaddingValues, navController: NavHostController) {
             }
         }
 
-        // ─── Admin Users ───
+        // admin users
         composable(route = Screen.AdminUsers.route) {
             val vm: AdminUserViewModel = viewModel(factory = object : ViewModelProvider.Factory {
                 @Suppress("UNCHECKED_CAST")
@@ -204,7 +225,7 @@ fun NavGraph(innerPadding: PaddingValues, navController: NavHostController) {
             AdminScreenTheme { UserManagementScreen(viewModel = vm, onBackClick = { navController.popBackStack() }) }
         }
 
-        // ─── Admin Orders ───
+        // admin orders
         composable(
             route = Screen.AdminOrders.route,
             arguments = listOf(androidx.navigation.navArgument("initialTab") {
@@ -222,7 +243,7 @@ fun NavGraph(innerPadding: PaddingValues, navController: NavHostController) {
             AdminScreenTheme { OrderManagementScreen(viewModel = vm, onBackClick = { navController.popBackStack() }) }
         }
 
-        // ─── Admin Promotions ───
+        // admin promotions
         composable(route = Screen.AdminPromotions.route) {
             val vm: AdminPromotionViewModel = viewModel(factory = object : ViewModelProvider.Factory {
                 @Suppress("UNCHECKED_CAST")
@@ -233,6 +254,7 @@ fun NavGraph(innerPadding: PaddingValues, navController: NavHostController) {
             AdminScreenTheme { PromotionManagementScreen(viewModel = vm, onBackClick = { navController.popBackStack() }) }
         }
 
+        // admin topping
         composable(route = Screen.AdminToppings.route) {
             val vm: AdminToppingViewModel = viewModel(factory = object : ViewModelProvider.Factory {
                 @Suppress("UNCHECKED_CAST")
@@ -250,7 +272,7 @@ fun NavGraph(innerPadding: PaddingValues, navController: NavHostController) {
             AdminScreenTheme { ToppingManagementScreen(viewModel = vm, onBackClick = { navController.popBackStack() }) }
         }
 
-        // ─── Admin Reviews ───
+        // admin reviewers
         composable(route = Screen.AdminReviews.route) {
             val vm: AdminReviewViewModel = viewModel(factory = object : ViewModelProvider.Factory {
                 @Suppress("UNCHECKED_CAST")
@@ -261,13 +283,16 @@ fun NavGraph(innerPadding: PaddingValues, navController: NavHostController) {
             AdminScreenTheme { ReviewManagementScreen(viewModel = vm, onBackClick = { navController.popBackStack() }) }
         }
 
-        // ─── Login ───
+        // login
         composable(route = Screen.Login.route) {
             val context = LocalContext.current
             val coroutineScope = rememberCoroutineScope()
 
             LoginScreen(
                 openHomeScreen = { navController.navigate(Screen.UserHome.route) {
+                    popUpTo(Screen.Login.route) { inclusive = true }
+                }},
+                openAdminScreen = { navController.navigate(Screen.AdminDashboard.route) {
                     popUpTo(Screen.Login.route) { inclusive = true }
                 }},
                 openRegisterScreen = { navController.navigate(Screen.Register.route) },
@@ -285,9 +310,11 @@ fun NavGraph(innerPadding: PaddingValues, navController: NavHostController) {
                                     TokenProvider.token = token
                                     TokenProvider.refreshToken = refreshToken
                                     // Fetch user info
+                                    var isAdmin = false
                                     try {
                                         val meResp = NetworkClient.api.getMyInfo()
-                                        val roles = meResp.result?.roles?.mapNotNull { it.name } ?: emptyList()
+                                        val roles = meResp.result?.roles?.mapNotNull { it.name ?: it.code } ?: emptyList()
+                                        isAdmin = roles.any { it.equals("ADMIN", ignoreCase = true) }
                                         AuthDataStore.setRoles(context, roles)
                                         AuthDataStore.setProvider(context, meResp.result?.provider ?: "GOOGLE")
                                         AuthDataStore.setUserId(context, meResp.result?.id?.toString())
@@ -296,7 +323,7 @@ fun NavGraph(innerPadding: PaddingValues, navController: NavHostController) {
                                         AuthDataStore.setUserId(context, null)
                                     }
                                     Toast.makeText(context, "Đăng nhập Google thành công!", Toast.LENGTH_SHORT).show()
-                                    navController.navigate(Screen.UserHome.route) {
+                                    navController.navigate(if (isAdmin) Screen.AdminDashboard.route else Screen.UserHome.route) {
                                         popUpTo(Screen.Login.route) { inclusive = true }
                                     }
                                 } else {
@@ -313,7 +340,7 @@ fun NavGraph(innerPadding: PaddingValues, navController: NavHostController) {
             )
         }
 
-        // ─── Register ───
+        // register
         composable(route = Screen.Register.route) {
             RegisterScreen(
                 openLoginScreen = { navController.navigate(Screen.Login.route) },
@@ -323,7 +350,7 @@ fun NavGraph(innerPadding: PaddingValues, navController: NavHostController) {
             )
         }
 
-        // ─── OTP Verification ───
+        // otp verification
         composable(
             route = Screen.OtpVerification.route,
             arguments = listOf(androidx.navigation.navArgument("email") {
@@ -342,7 +369,7 @@ fun NavGraph(innerPadding: PaddingValues, navController: NavHostController) {
             )
         }
 
-        // ─── Forgot Password (full flow) ───
+        // forgot password
         composable(route = Screen.ForgotPassword.route) {
             ForgotPasswordScreen(
                 onBack = { navController.popBackStack() },
@@ -366,6 +393,7 @@ fun NavGraph(innerPadding: PaddingValues, navController: NavHostController) {
             )
         }
 
+        // admin product
         composable(
             route = Screen.AdminProduct.route,
             arguments = listOf(androidx.navigation.navArgument("productId") { type = androidx.navigation.NavType.LongType })
@@ -399,6 +427,8 @@ fun NavGraph(innerPadding: PaddingValues, navController: NavHostController) {
                 )
             }
         }
+
+        // product detail
         composable(route = Screen.ProductDetail.route) {
             ProductDetailScreen(
                 product = Product("1", "Sinh tố bơ", 25000, imageUrl = "", description = "Bơ sáp Daklak xay nhuyễn"),

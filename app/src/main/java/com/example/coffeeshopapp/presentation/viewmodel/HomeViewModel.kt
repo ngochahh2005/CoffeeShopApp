@@ -26,6 +26,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
+import com.example.coffeeshopapp.data.TokenProvider
 import com.example.coffeeshopapp.utils.getErrorMessage
 import kotlin.math.ln
 
@@ -74,9 +75,14 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                 val productResponse = NetworkClient.api.getProduct()
                 if (productResponse.result != null) {
                     val products = productResponse.result
-                    val serverFavorites = try {
-                        fetchFavoriteProductsFromServer()
-                    } catch (ex: Exception) {
+                    val hasToken = !TokenProvider.token.isNullOrBlank()
+                    val serverFavorites = if (hasToken) {
+                        try {
+                            fetchFavoriteProductsFromServer()
+                        } catch (ex: Exception) {
+                            null
+                        }
+                    } else {
                         null
                     }
                     val favoriteIds = serverFavorites

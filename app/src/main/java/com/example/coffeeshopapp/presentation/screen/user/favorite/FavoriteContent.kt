@@ -30,6 +30,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
@@ -50,7 +51,7 @@ fun FavoriteContent(
     favorites: List<Product>,
     loadingFavorites: Set<String> = emptySet(),
     onToggleFavorite: (String) -> Unit = {},
-    onAddToCartClick: (String) -> Unit = {},
+    onAddToCartClick: (String, Offset) -> Unit = { _, _ -> },
     openProductDetailScreen : (Product) -> Unit = {}
 ) {
     var isGrid by remember { mutableStateOf(true) }
@@ -75,9 +76,7 @@ fun FavoriteContent(
                         BoxItem(
                             product = product,
                             onFavoriteClick = { id -> onToggleFavorite(id) },
-                            onAddToCartClick = { id, _ ->
-                                onAddToCartClick(id)
-                            },
+                            onAddToCartClick = onAddToCartClick,
                             openProductDetailScreen = openProductDetailScreen,
                             isLoading = loadingFavorites.contains(product.id)
                         )
@@ -94,9 +93,7 @@ fun FavoriteContent(
                             product = product,
                             isLoading = loadingFavorites.contains(product.id),
                             onFavoriteClick = { id -> onToggleFavorite(id) },
-                            onAddToCartClick = { id, _ ->
-                                onAddToCartClick(id)
-                            },
+                            onAddToCartClick = onAddToCartClick,
                             openProductDetailScreen = openProductDetailScreen,
                         )
                     }
