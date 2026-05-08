@@ -5,7 +5,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -13,13 +12,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.StarRate
 import androidx.compose.material.icons.filled.Whatshot
 import androidx.compose.material3.CircularProgressIndicator
@@ -48,7 +46,6 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.example.coffeeshopapp.R
 import com.example.coffeeshopapp.data.model.entity.Product
-import com.example.coffeeshopapp.data.trendingCoffeeList
 import com.example.coffeeshopapp.presentation.theme.CardBackgroundColor
 import com.example.coffeeshopapp.presentation.theme.CardBackgroundColor2
 import com.example.coffeeshopapp.presentation.theme.CoffeeShopAppTheme
@@ -61,7 +58,7 @@ import com.example.coffeeshopapp.presentation.theme.k2d
 import com.example.coffeeshopapp.utils.getFullImageUrl
 
 @Composable
-fun TrendingItem(
+fun BoxItem(
     product: Product,
     onFavoriteClick: (String) -> Unit,
     onAddToCartClick: (String, Offset) -> Unit,
@@ -104,7 +101,7 @@ fun TrendingItem(
                     verticalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
                     Row() {
-                        Icon(
+                        if (product.isTrending) Icon(
                             Icons.Default.Whatshot,
                             tint = IconWhatshotColor,
                             contentDescription = null
@@ -126,7 +123,7 @@ fun TrendingItem(
 
                     Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
                         Icon(
-                            Icons.Default.StarRate,
+                            Icons.Default.Star,
                             tint = IconStarRateColor,
                             contentDescription = null,
                             modifier = Modifier.size(13.dp).align(Alignment.CenterVertically)
@@ -191,37 +188,10 @@ fun TrendingItem(
 }
 
 @Composable
-fun TrendingItems(
-    items: List<Product> = emptyList(),
-    loadingFavorites: Set<String> = emptySet(),
-    favorites: Set<String> = emptySet(),
-    onFavoriteClick: (String) -> Unit,
-    openProductDetailScreen: (Product) -> Unit,
-    onAddToCartClick: (String, Offset) -> Unit
-) {
-    LazyRow(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        contentPadding = PaddingValues(start = 24.dp, end = 24.dp)
-    ) {
-        items(items, key = { it.id }) { product ->
-            val rendered = product.copy(isFavorite = favorites.contains(product.id))
-            TrendingItem(
-                product = rendered,
-                onFavoriteClick = onFavoriteClick,
-                onAddToCartClick = onAddToCartClick,
-                openProductDetailScreen = openProductDetailScreen,
-                isLoading = loadingFavorites.contains(product.id)
-            )
-        }
-    }
-}
-
-@Composable
 @Preview(name = "Trending Item Preview", showSystemUi = true)
 fun TrendingItemPreview() {
     CoffeeShopAppTheme {
-        TrendingItem(
+        BoxItem(
             product = Product(
                 id = "1",
                 name = "Nước ép giải nhiệt mùa hè",

@@ -123,8 +123,8 @@ fun HomeScreen(
                     onCategoryClick = { categoryId ->
 
                     },
-                    onFavoriteClick = { coffeeId ->
-                        viewModel.toggleFavorite(coffeeId)
+                    onFavoriteClick = { productId ->
+                        viewModel.toggleFavorite(productId)
                     },
                     openProductDetailScreen = { product -> viewModel.showProduct(product) },
                     onAddToCartClick = { id, offset ->

@@ -82,7 +82,7 @@ fun FavouritesScreen(viewModel: HomeViewModel = viewModel()) {
             ProductDetailScreen(
                 product = selectedProduct,
                 isFavorite = selectedProduct.isFavorite,
-                onToggleFavorite = { id -> viewModel.toggleFavorite(id) },
+                onToggleFavorite = { productId -> viewModel.toggleFavorite(productId) },
                 onAddToCartClick = {
                     viewModel.addToCart(selectedProduct)
                 },

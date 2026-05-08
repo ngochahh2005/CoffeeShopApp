@@ -37,8 +37,8 @@ import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.coffeeshopapp.data.model.entity.Product
-import com.example.coffeeshopapp.presentation.components.FavoriteListItem
-import com.example.coffeeshopapp.presentation.components.TrendingItem
+import com.example.coffeeshopapp.presentation.components.ListItem
+import com.example.coffeeshopapp.presentation.components.BoxItem
 import com.example.coffeeshopapp.presentation.theme.BackgroundColor
 import com.example.coffeeshopapp.presentation.theme.CoffeeShopAppTheme
 import com.example.coffeeshopapp.presentation.theme.CoffeeTextColor
@@ -72,7 +72,7 @@ fun FavoriteContent(
                     modifier = Modifier.fillMaxSize()
                 ) {
                     items(favorites, key = { it.id }) { product ->
-                        TrendingItem(
+                        BoxItem(
                             product = product,
                             onFavoriteClick = { id -> onToggleFavorite(id) },
                             onAddToCartClick = { id, _ ->
@@ -87,14 +87,17 @@ fun FavoriteContent(
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(bottom = 80.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    items(favorites, key = { it.id }) { coffee ->
-                        FavoriteListItem (
-                            product = coffee,
-                            isLoading = loadingFavorites.contains(coffee.id),
+                    items(favorites, key = { it.id }) { product ->
+                        ListItem (
+                            product = product,
+                            isLoading = loadingFavorites.contains(product.id),
                             onFavoriteClick = { id -> onToggleFavorite(id) },
-                            openProductDetailScreen = openProductDetailScreen
+                            onAddToCartClick = { id, _ ->
+                                onAddToCartClick(id)
+                            },
+                            openProductDetailScreen = openProductDetailScreen,
                         )
                     }
                 }

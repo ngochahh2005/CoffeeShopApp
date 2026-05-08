@@ -13,7 +13,6 @@ import com.example.coffeeshopapp.data.model.dto.FavoriteDto
 import com.example.coffeeshopapp.data.model.entity.Category
 import com.example.coffeeshopapp.data.model.entity.Product
 import com.example.coffeeshopapp.data.remote.NetworkClient
-import com.example.coffeeshopapp.data.trendingCoffeeList
 import com.example.coffeeshopapp.utils.toFullImageUrl
 import com.example.coffeeshopapp.utils.isActiveResolved
 import kotlinx.coroutines.delay
@@ -28,6 +27,7 @@ import kotlinx.coroutines.launch
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
 import com.example.coffeeshopapp.utils.getErrorMessage
+import kotlin.math.ln
 
 data class HomeUiState(
     val isLoading: Boolean = false,
@@ -35,6 +35,7 @@ data class HomeUiState(
     val trendingItems: List<Product> = emptyList(),
     val favoriteItems: List<Product> = emptyList(),
     val loadingFavorites: Set<String> = emptySet(),
+    val allProduct: List<Product> = emptyList(),
     val error: String? = null
 )
 
@@ -50,7 +51,6 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     init {
-        // When the authenticated user changes, force refresh data so favorites are user-specific
         viewModelScope.launch {
             AuthDataStore.userIdFlow(getApplication()).collect {
                 loadData(forceRefresh = true)
@@ -84,28 +84,40 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                         ?.toSet()
                         ?: FavoritesDataStore.favoritesFlow(getApplication()).first()
 
-                    val productMap = products.map { p ->
+                    val allProduct = products.map { product ->
                         Product(
-                            id = p.id.toString(),
-                            name = p.name,
-                            price = p.basePrice.toLong(),
-                            description = p.description.orEmpty(),
-                            imageUrl = p.imageUrl.toFullImageUrl(),
+                            id = product.id.toString(),
+                            name = product.name,
+                            price = product.basePrice.toLong(),
+                            description = product.description.orEmpty(),
+                            imageUrl = product.imageUrl.toFullImageUrl(),
+                            categoryId = product.categoryId,
                             rating = 0.0,
                             reviewers = 0,
-                            isFavorite = favoriteIds.contains(p.id.toString())
+                            isFavorite = favoriteIds.contains(product.id.toString()),
                         )
                     }
 
-                    val categoryMap = try {
+                    val trendingProduct = allProduct.sortedByDescending { product ->
+                        val normalizedRating = product.rating / 5.0
+                        val popularityScore = ln(product.reviewers.toDouble() + 1.0)
+                        (normalizedRating * 0.5) + (popularityScore * 0.5)
+                    }.take(10)
+
+                    val trendingIds = trendingProduct.map { it.id }.toSet()
+                    val finalAllProduct = allProduct.map { product ->
+                        product.copy(isTrending = trendingIds.contains(product.id))
+                    }
+
+                    val allCategory = try {
                         val catResp = NetworkClient.api.getCategories()
-                        catResp.result?.map { c ->
+                        catResp.result?.map { category ->
                             Category(
-                                id = c.id,
-                                name = c.name,
-                                imageUrl = c.imageUrl?.toFullImageUrl(),
-                                displayOrder = c.displayOrder,
-                                isActive = c.isActiveResolved()
+                                id = category.id,
+                                name = category.name,
+                                imageUrl = category.imageUrl?.toFullImageUrl(),
+                                displayOrder = category.displayOrder,
+                                isActive = category.isActiveResolved()
                             )
                         } ?: coffeeCategories
                     } catch (ex: Exception) {
@@ -114,9 +126,10 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
                     _uiState.update {
                         it.copy(
-                            categories = categoryMap,
-                            trendingItems = productMap,
-                            favoriteItems = serverFavorites ?: productMap.filter { product -> product.isFavorite },
+                            categories = allCategory,
+                            trendingItems = finalAllProduct.filter { trendingIds.contains(it.id) },
+                            allProduct = finalAllProduct,
+                            favoriteItems = serverFavorites ?: finalAllProduct.filter { product -> product.isFavorite },
                             isLoading = false,
                             error = null
                         )
@@ -125,9 +138,9 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                     delay(1000)
                     _uiState.update {
                         it.copy(
-                            categories = coffeeCategories,
-                            trendingItems = trendingCoffeeList,
-                            favoriteItems = trendingCoffeeList.filter { product -> product.isFavorite },
+                            categories = emptyList(),
+                            trendingItems = emptyList(),
+                            favoriteItems = emptyList(),
                             isLoading = false,
                             error = null
                         )
@@ -175,6 +188,9 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         _uiState.update { state ->
             state.copy(
                 favoriteItems = favoriteProducts,
+                allProduct = state.allProduct.map { product ->
+                    product.copy(isFavorite = favoriteIds.contains(product.id))
+                },
                 trendingItems = state.trendingItems.map { product ->
                     product.copy(isFavorite = favoriteIds.contains(product.id))
                 }
@@ -189,7 +205,8 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             context = getApplication(),
             ids = favorites.map { it.productId.toString() }.toSet()
         )
-        return favorites.map { favorite -> favorite.toProduct() }
+        val currentTrendingIds = _uiState.value.trendingItems.map { it.id }.toSet()
+        return favorites.map { favorite -> favorite.toProduct().copy(isTrending = currentTrendingIds.contains(favorite.productId.toString())) }
     }
 
     private fun FavoriteDto.toProduct(): Product {
@@ -225,7 +242,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun addToCartById(productId: String) {
-        val product = _uiState.value.trendingItems.find { it.id == productId } ?: return
+        val product = _uiState.value.allProduct.find { it.id == productId } ?: return
         addToCart(product)
     }
 

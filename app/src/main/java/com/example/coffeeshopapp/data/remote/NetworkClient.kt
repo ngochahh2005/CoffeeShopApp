@@ -123,13 +123,36 @@ object NetworkClient {
   val api: ApiService = retrofit.create(ApiService::class.java)
 
   private fun isRunningOnEmulator(): Boolean {
-    return Build.FINGERPRINT.startsWith("generic") ||
-      Build.FINGERPRINT.startsWith("unknown") ||
-      Build.MODEL.contains("google_sdk", ignoreCase = true) ||
-      Build.MODEL.contains("Emulator", ignoreCase = true) ||
-      Build.MODEL.contains("Android SDK built for", ignoreCase = true) ||
-      Build.MANUFACTURER.contains("Genymotion", ignoreCase = true) ||
-      Build.BRAND.startsWith("generic", ignoreCase = true) && Build.DEVICE.startsWith("generic", ignoreCase = true) ||
-      Build.PRODUCT == "google_sdk"
+      val checks = listOf(
+          Build.FINGERPRINT.startsWith("generic"),
+          Build.FINGERPRINT.startsWith("unknown"),
+          Build.FINGERPRINT.contains("goldfish", ignoreCase = true),
+          Build.MODEL.contains("google_sdk", ignoreCase = true),
+          Build.MODEL.contains("Emulator", ignoreCase = true),
+          Build.MODEL.contains("Android SDK built for", ignoreCase = true),
+          Build.MANUFACTURER.contains("Genymotion", ignoreCase = true),
+          Build.BRAND.startsWith("generic", ignoreCase = true) && Build.DEVICE.startsWith("generic", ignoreCase = true),
+          Build.PRODUCT == "google_sdk",
+          Build.HARDWARE == "ranchu",
+          Build.HARDWARE == "goldfish",
+          Build.HOST.contains("vbox", ignoreCase = true),
+          Build.HOST.contains("kvm", ignoreCase = true),
+          Build.HOST.contains("vmware", ignoreCase = true)
+      )
+
+      val result = checks.any { it }
+      android.util.Log.d("NetworkClient", """
+      Emulator detection:
+        FINGERPRINT=${Build.FINGERPRINT}
+        PRODUCT=${Build.PRODUCT}
+        HARDWARE=${Build.HARDWARE}
+        MANUFACTURER=${Build.MANUFACTURER}
+        BRAND=${Build.BRAND}
+        DEVICE=${Build.DEVICE}
+        MODEL=${Build.MODEL}
+        isEmulator=$result
+    """.trimIndent())
+
+      return result
   }
 }

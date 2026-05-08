@@ -8,7 +8,7 @@ data class ProductDto(
     @SerializedName("description") val description: String?,
     @SerializedName("basePrice") val basePrice: Double,
     @SerializedName("imageUrl") val imageUrl: String?,
-    @SerializedName("categoryId") val categoryId: Long,
+    @SerializedName(value = "categoryId", alternate = ["category_id"]) val categoryId: Long,
     @SerializedName(value = "isActive", alternate = ["active", "is_active"]) val isActive: Boolean?,
     @SerializedName(value = "isDeleted", alternate = ["deleted", "is_deleted"]) val isDeleted: Boolean? = null,
     @SerializedName("sizes") val size: List<ProductSizeDto>

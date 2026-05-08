@@ -2,6 +2,7 @@ package com.example.coffeeshopapp.presentation.screen.user.home
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -11,6 +12,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.NotificationsNone
@@ -21,22 +24,29 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.coffeeshopapp.data.coffeeCategories
 import com.example.coffeeshopapp.data.model.entity.Category
 import com.example.coffeeshopapp.data.model.entity.Product
-import com.example.coffeeshopapp.data.trendingCoffeeList
 import com.example.coffeeshopapp.presentation.components.Categories
+import com.example.coffeeshopapp.presentation.components.CommonSpace
+import com.example.coffeeshopapp.presentation.components.ListItem
 import com.example.coffeeshopapp.presentation.components.SearchingTextField
 import com.example.coffeeshopapp.presentation.components.TrendingItems
 import com.example.coffeeshopapp.presentation.theme.CoffeeShopAppTheme
@@ -45,7 +55,9 @@ import com.example.coffeeshopapp.presentation.theme.IconWhatshotColor
 import com.example.coffeeshopapp.presentation.theme.LabelColor
 import com.example.coffeeshopapp.presentation.theme.PlaceHolderColor
 import com.example.coffeeshopapp.presentation.theme.TitleSmallColor
+import com.example.coffeeshopapp.presentation.theme.k2d
 import com.example.coffeeshopapp.presentation.viewmodel.HomeViewModel
+import kotlinx.coroutines.launch
 
 @Composable
 fun HomeContent(
@@ -59,7 +71,45 @@ fun HomeContent(
     openProductDetailScreen: (Product) -> Unit = {},
     onAddToCartClick: (String, Offset) -> Unit
 ) {
-    LazyColumn(modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 56.dp)) {
+    val listState = rememberLazyListState()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val coroutineScope = rememberCoroutineScope()
+    
+
+
+    val categoryPositions by remember {
+        derivedStateOf {
+            val positions = mutableMapOf<Long, Int>()
+            var currentIdx = 4
+            val grouped = uiState.allProduct.groupBy { product ->
+                uiState.categories.find { it.id == product.categoryId }?.name
+            }
+            uiState.categories.forEach { category ->
+                val productsInCat = grouped[category.name] ?: emptyList()
+                if (productsInCat.isNotEmpty()) {
+                    positions[category.id] = currentIdx
+                    currentIdx += 1 + productsInCat.size // 1 cho tiêu đề + n cho sản phẩm
+                }
+            }
+            positions to grouped
+        }
+    }
+
+    val (positionsMap, groupedProducts) = categoryPositions
+
+    val scrollToCategory = { clickedCategoryId: Long ->
+        coroutineScope.launch {
+            positionsMap[clickedCategoryId]?.let { targetIndex ->
+                listState.animateScrollToItem(targetIndex)
+            }
+        }
+    }
+
+    LazyColumn(
+        state = listState,
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(bottom = 56.dp)
+    ) {
         item {
             Box(
                 modifier = Modifier
@@ -116,14 +166,18 @@ fun HomeContent(
         }
 
         item {
-            TitleSmall("Danh Mục", onClickSeeMore = {})
-            Categories(categories = categories, onCategoryClick = onCategoryClick)
+            TitleSmall("Danh Mục")
+            Categories(
+                categories = categories,
+                onCategoryClick = { categoryId ->
+                    scrollToCategory(categoryId)
+                }
+            )
         }
 
         item {
             TitleSmall(
                 "Xu Hướng",
-                onClickSeeMore = {},
                 icon = Icons.Default.Whatshot,
                 iconColor = IconWhatshotColor
             )
@@ -137,13 +191,53 @@ fun HomeContent(
                 openProductDetailScreen = openProductDetailScreen
             )
         }
+
+        item {
+            TitleSmall("Danh sách sản phẩm")
+            CommonSpace(12.dp)
+        }
+        groupedProducts.forEach { (categoryName, products) ->
+            item {
+                Text(
+                    text = categoryName ?: "Khác",
+                    fontSize = 20.sp,
+                    fontFamily = k2d,
+                    fontWeight = FontWeight.Bold,
+                    color = PlaceHolderColor,
+                    modifier = Modifier.padding(horizontal = 24.dp)
+                )
+                CommonSpace(12.dp)
+            }
+
+            items(products, key = {it.id}) { product ->
+                ListItem(
+                    product = product,
+                    isLoading = loadingFavorites.contains(product.id),
+                    onFavoriteClick = onFavoriteClick,
+                    onAddToCartClick = onAddToCartClick,
+                    openProductDetailScreen = openProductDetailScreen,
+                    modifier = Modifier.padding(horizontal = 24.dp)
+                )
+                CommonSpace(12.dp)
+            }
+        }
+
+    }
+}
+
+@Composable
+private fun listProduct(
+    categoryName: String? = null,
+    products: List<Product> = emptyList()
+) {
+    Column (modifier = Modifier.fillMaxWidth()) {
+
     }
 }
 
 @Composable
 private fun TitleSmall(
     titleContent: String,
-    onClickSeeMore: () -> Unit,
     icon: ImageVector? = null,
     iconColor: Color = LabelColor,
 ) {
@@ -169,27 +263,6 @@ private fun TitleSmall(
                     modifier = Modifier.align(Alignment.CenterVertically)
                 )
         }
-        TextButton(
-            onClick = onClickSeeMore,
-            modifier = Modifier.align(Alignment.CenterEnd),
-            contentPadding = PaddingValues(0.dp)
-        ) {
-            Row(modifier = Modifier.wrapContentWidth()) {
-                Text(
-                    text = "Xem thêm",
-                    color = PlaceHolderColor,
-                    style = MaterialTheme.typography.bodyMedium
-                )
-                Icon(
-                    Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                    contentDescription = null,
-                    tint = PlaceHolderColor,
-                    modifier = Modifier
-                        .size(20.dp)
-                        .align(Alignment.Bottom)
-                )
-            }
-        }
     }
 }
 
@@ -197,19 +270,6 @@ private fun TitleSmall(
 @Preview(showSystemUi = true)
 fun HomeContentPreview() {
     CoffeeShopAppTheme {
-        HomeContent(
-            categories = coffeeCategories,
-            trendingItems = trendingCoffeeList,
-            loadingFavorites = setOf("1"),
-            onCategoryClick = { id ->
-                println("Category $id clicked")
-            },
-            onFavoriteClick = { id ->
-                println("Favorite $id clicked")
-            },
-            onAddToCartClick = { id, offset ->
-                println("Add $id at $offset")
-            }
-        )
+        listProduct()
     }
 }

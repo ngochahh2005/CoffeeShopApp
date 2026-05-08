@@ -36,8 +36,28 @@ import com.example.coffeeshopapp.presentation.theme.LabelColor
 
 @Composable
 fun Categories(
-    categories: List<Category> = coffeeCategories,
-    onCategoryClick: (String) -> Unit
+    categories: List<Category> = emptyList(),
+    onCategoryClick: (Long) -> Unit
+) {
+    if (categories.size < 10) {
+        SignleRowCategories(categories, onCategoryClick)
+    } else {
+        val halfIndex = (categories.size+1)/2
+        val row1 = categories.subList(0, halfIndex)
+        val row2 = categories.subList(halfIndex, categories.size)
+
+        Column {
+            SignleRowCategories(row1, onCategoryClick)
+            CommonSpace(8.dp)
+            SignleRowCategories(row2, onCategoryClick)
+        }
+    }
+}
+
+@Composable
+private fun SignleRowCategories(
+    categories: List<Category>,
+    onCategoryClick: (Long) -> Unit
 ) {
     LazyRow(
         modifier = Modifier.fillMaxWidth(),
@@ -48,7 +68,7 @@ fun Categories(
             ItemOfCategories(
                 imageUrl = category.imageUrl,
                 coffeeName = category.name,
-                onClick = { onCategoryClick(category.id.toString()) }
+                onClick = { onCategoryClick(category.id) }
             )
         }
     }
