@@ -26,6 +26,10 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.snapshotFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
 import com.example.coffeeshopapp.data.TokenProvider
 import com.example.coffeeshopapp.utils.getErrorMessage
 import kotlin.math.ln
@@ -45,11 +49,21 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
     var searchKeyWords by mutableStateOf("")
-    private set
+        private set
 
     fun onSearchKeyWordsChange(newValue: String) {
         searchKeyWords = newValue
     }
+
+    val filteredProducts: StateFlow<List<Product>> = _uiState
+        .combine(snapshotFlow { searchKeyWords }) { state, query ->
+            if (query.isBlank()) {
+                state.allProduct
+            } else {
+                state.allProduct.filter { it.name.contains(query, ignoreCase = true) }
+            }
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     init {
         viewModelScope.launch {
@@ -98,6 +112,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                             description = product.description.orEmpty(),
                             imageUrl = product.imageUrl.toFullImageUrl(),
                             categoryId = product.categoryId,
+                            sizes = product.size,
                             rating = 0.0,
                             reviewers = 0,
                             isFavorite = favoriteIds.contains(product.id.toString()),
@@ -237,10 +252,10 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun addToCart(product: Product) {
+    fun addToCart(product: Product, quantity: Int = 1) {
         viewModelScope.launch {
             try {
-                CartDataStore.addProduct(getApplication(), product)
+                CartDataStore.addProduct(getApplication(), product, quantity)
             } catch (e: Exception) {
                 _uiState.update { it.copy(error = e.getErrorMessage()) }
             }

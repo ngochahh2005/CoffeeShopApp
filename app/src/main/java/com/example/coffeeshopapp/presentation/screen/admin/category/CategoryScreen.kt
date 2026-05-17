@@ -64,10 +64,15 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.example.coffeeshopapp.data.model.dto.CategoryDto
+import com.example.coffeeshopapp.presentation.theme.CoffeeShopAppTheme
+import com.example.coffeeshopapp.presentation.theme.TitleColor
+import com.example.coffeeshopapp.presentation.theme.k2d
 import com.example.coffeeshopapp.presentation.viewmodel.AdminCategoryScreenType
 import com.example.coffeeshopapp.presentation.viewmodel.AdminCategoryViewModel
 import com.example.coffeeshopapp.presentation.viewmodel.CategoryUiState
@@ -78,8 +83,8 @@ import okhttp3.MultipartBody
 
 @Composable
 fun AdminCategoryScreen(
-    viewModel: AdminCategoryViewModel,
-    onBackClick: () -> Unit,
+    viewModel: AdminCategoryViewModel = viewModel(),
+    onBackClick: () -> Unit = {},
     onProductClick: (Long) -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -159,10 +164,9 @@ private fun CategoryListScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "Quan ly danh muc",
-                        fontSize = 20.sp,
-                        lineHeight = 24.sp,
-                        fontWeight = FontWeight.SemiBold
+                        text = "Quản lý danh mục",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = TitleColor,
                     )
                 },
                 navigationIcon = {
@@ -197,7 +201,7 @@ private fun CategoryListScreen(
                         .padding(padding),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("Loi: ${uiState.error}", color = MaterialTheme.colorScheme.error, fontSize = 14.sp)
+                    Text("Lỗi: ${uiState.error}", color = MaterialTheme.colorScheme.error, fontSize = 14.sp)
                 }
             }
 
@@ -208,7 +212,7 @@ private fun CategoryListScreen(
                         .padding(padding),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("Chua co danh muc nao.", fontSize = 14.sp)
+                    Text("Chưa có danh mục nào.", fontSize = 14.sp)
                 }
             }
 
@@ -268,12 +272,12 @@ private fun CategoryCard(
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "Thu tu hien thi: ${category.displayOrder}",
+                    text = "Thứ tự hiển thị: ${category.displayOrder}",
                     fontSize = 13.sp,
                     color = Color(0xFF757575)
                 )
                 Text(
-                    text = if (category.isActiveResolved()) "Dang hien thi" else "Da an",
+                    text = if (category.isActiveResolved()) "Đang hiển thị" else "Đã ẩn",
                     fontSize = 13.sp,
                     color = if (category.isActiveResolved()) Color(0xFF2E7D32) else Color(0xFF9E9E9E)
                 )
@@ -302,17 +306,17 @@ private fun CategoryCard(
 @Composable
 private fun CategoryDetailScreen(
     category: CategoryDto?,
-    onBack: () -> Unit,
-    onEdit: () -> Unit
+    onBack: () -> Unit = {},
+    onEdit: () -> Unit = {}
 ) {
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
                     Text(
-                        text = "Chi tiet danh muc",
-                        fontSize = 20.sp,
-                        lineHeight = 24.sp,
+                        text = "Chi tiết danh mục",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = TitleColor,
                         fontWeight = FontWeight.SemiBold
                     )
                 },
@@ -323,7 +327,7 @@ private fun CategoryDetailScreen(
                 },
                 actions = {
                     IconButton(onClick = onEdit) {
-                        Icon(Icons.Default.Edit, contentDescription = "Edit")
+                        Icon(Icons.Default.Edit, contentDescription = "Edit", tint = TitleColor)
                     }
                 }
             )
@@ -336,7 +340,7 @@ private fun CategoryDetailScreen(
                     .padding(padding),
                 contentAlignment = Alignment.Center
             ) {
-                Text("Khong tim thay danh muc.", fontSize = 14.sp)
+                Text("Không tìm thấy danh mục.", fontSize = 14.sp)
             }
             return@Scaffold
         }
@@ -354,10 +358,10 @@ private fun CategoryDetailScreen(
                     .fillMaxWidth()
                     .height(180.dp)
             )
-            DetailRow("Ten", category.name)
-            DetailRow("Thu tu hien thi", category.displayOrder.toString())
-            DetailRow("Trang thai", if (category.isActiveResolved()) "Dang hien thi" else "Da an")
-            DetailRow("Mo ta", category.description ?: "Khong co")
+            DetailRow("Tên", category.name)
+            DetailRow("Thứ tự hiển thị", category.displayOrder.toString())
+            DetailRow("Trạng thái", if (category.isActiveResolved()) "Đang hiển thị" else "Đã ẩn")
+            DetailRow("Mô tả", category.description ?: "Không có")
         }
     }
 }
@@ -373,12 +377,12 @@ private fun DetailRow(label: String, value: String) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun CategoryFormScreen(
-    isUpdating: Boolean,
+    isUpdating: Boolean = false,
     initialCategory: CategoryDto?,
-    isLoading: Boolean,
+    isLoading: Boolean = false,
     errorMessage: String?,
-    onSubmit: (String, String, Int, MultipartBody.Part?) -> Unit,
-    onBack: () -> Unit
+    onSubmit: (String, String, Int, MultipartBody.Part?) -> Unit = {_, _, _, _ -> },
+    onBack: () -> Unit = {}
 ) {
     val context = LocalContext.current
     var lastError by remember { mutableStateOf<String?>(null) }
@@ -403,7 +407,7 @@ private fun CategoryFormScreen(
         selectedImageUri = uri
     }
 
-    val title = if (isUpdating) "Cap nhat danh muc" else "Tao danh muc"
+    val title = if (isUpdating) "Cập nhật danh mục" else "Tạo danh mục"
 
     Scaffold(
         topBar = {
@@ -411,9 +415,10 @@ private fun CategoryFormScreen(
                 title = {
                     Text(
                         text = title,
-                        fontSize = 20.sp,
+                        style = MaterialTheme.typography.titleMedium,
                         lineHeight = 24.sp,
-                        fontWeight = FontWeight.SemiBold
+                        fontWeight = FontWeight.Bold,
+                        color = TitleColor
                     )
                 },
                 navigationIcon = {
@@ -445,7 +450,7 @@ private fun CategoryFormScreen(
                 value = name,
                 onValueChange = { name = it },
                 modifier = Modifier.fillMaxWidth(),
-                label = { Text("Ten danh muc", fontSize = 14.sp) },
+                label = { Text("Tên danh mục", fontSize = 14.sp) },
                 singleLine = true
             )
 
@@ -457,7 +462,7 @@ private fun CategoryFormScreen(
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),
-                label = { Text("Thu tu hien thi", fontSize = 14.sp) },
+                label = { Text("Thứ tự hiển thị", fontSize = 14.sp) },
                 keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
                 singleLine = true
             )
@@ -466,12 +471,12 @@ private fun CategoryFormScreen(
                 value = description,
                 onValueChange = { description = it },
                 modifier = Modifier.fillMaxWidth(),
-                label = { Text("Mo ta", fontSize = 14.sp) },
+                label = { Text("Mô tả", fontSize = 14.sp) },
                 minLines = 3
             )
 
             Text(
-                text = "Anh danh muc",
+                text = "Ảnh danh mục",
                 fontSize = 16.sp,
                 fontWeight = FontWeight.SemiBold
             )
@@ -500,7 +505,7 @@ private fun CategoryFormScreen(
                                 tint = Color(0xFF757575)
                             )
                             Spacer(modifier = Modifier.height(6.dp))
-                            Text("Nhan de chon anh", color = Color(0xFF757575), fontSize = 14.sp)
+                            Text("Nhấn để chọn ảnh", color = Color(0xFF757575), fontSize = 14.sp)
                         }
                     }
                 }
@@ -508,7 +513,7 @@ private fun CategoryFormScreen(
 
             if (selectedImageUri != null) {
                 Text(
-                    text = "Da chon anh moi",
+                    text = "Đã chọn ảnh mới",
                     color = Color(0xFF2E7D32),
                     fontSize = 12.sp
                 )
@@ -527,7 +532,7 @@ private fun CategoryFormScreen(
                 modifier = Modifier.fillMaxWidth(),
                 enabled = name.isNotBlank() && !isLoading
             ) {
-                Text(if (isUpdating) "Cap nhat" else "Tao danh muc", fontSize = 15.sp)
+                Text(if (isUpdating) "Cập nhật" else "Tạo danh mục", fontSize = 15.sp)
             }
         }
     }
@@ -569,15 +574,15 @@ private fun resolveImageUrl(raw: String?): String? {
 @Composable
 private fun DeleteConfirmationDialog(
     category: CategoryDto,
-    onConfirm: () -> Unit,
-    onDismiss: () -> Unit
+    onConfirm: () -> Unit = {},
+    onDismiss: () -> Unit = {}
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Xoa danh muc", fontSize = 18.sp, fontWeight = FontWeight.SemiBold) },
+        title = { Text("Xóa danh mục", fontSize = 18.sp, fontWeight = FontWeight.SemiBold, fontFamily = k2d) },
         text = {
             Text(
-                text = "Ban co chac muon xoa \"${category.name}\" khong?",
+                text = "Bạn có chắc muốn xóa \"${category.name}\" không?",
                 maxLines = 3,
                 overflow = TextOverflow.Ellipsis,
                 fontSize = 14.sp
@@ -585,13 +590,92 @@ private fun DeleteConfirmationDialog(
         },
         confirmButton = {
             TextButton(onClick = onConfirm) {
-                Text("Xoa", color = MaterialTheme.colorScheme.error, fontSize = 14.sp)
+                Text("Xóa", color = MaterialTheme.colorScheme.error, fontSize = 14.sp)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Huy", fontSize = 14.sp)
+                Text("Hủy", fontSize = 14.sp)
             }
         }
     )
+}
+
+@Composable
+@Preview(showSystemUi = true)
+private fun DeleteConfirmationDialogPreview() {
+    CoffeeShopAppTheme() {
+        DeleteConfirmationDialog(
+            CategoryDto(
+                id = 1,
+                name = "Cà phê",
+                description = "Các dòng cà phê mới nhất",
+                displayOrder = 1,
+                imageUrl = null,
+                isActive = true
+            )
+        )
+    }
+}
+
+@Composable
+@Preview(showSystemUi = true)
+private fun CategoryFormScreenPreview() {
+    CoffeeShopAppTheme() {
+        CategoryFormScreen(
+            isUpdating = true,
+            initialCategory = CategoryDto(
+                id = 1,
+                name = "Cà phê",
+                description = "Các dòng cà phê mới nhất",
+                displayOrder = 1,
+                imageUrl = null,
+                isActive = true
+            ),
+            isLoading = false,
+            errorMessage = null
+        )
+    }
+}
+
+@Composable
+@Preview(showSystemUi = true)
+private fun CategoryDetailScreenPreview() {
+    CoffeeShopAppTheme() {
+        CategoryDetailScreen(
+            CategoryDto(
+                id = 1,
+                name = "Cà phê",
+                description = "Các dòng cà phê mới nhất",
+                displayOrder = 1,
+                imageUrl = null,
+                isActive = true
+            )
+        )
+    }
+}
+
+@Preview(showBackground = true, showSystemUi = true, name = "Danh sách đầy đủ")
+@Composable
+fun PreviewCategoryListSuccess() {
+    val mockCategories = listOf(
+        CategoryDto(id = 1, name = "Cà phê", description = "Mô tả 1", displayOrder = 1),
+        CategoryDto(id = 2, name = "Sinh tố", description = "Mô tả 2", displayOrder = 2),
+        CategoryDto(id = 3, name = "Bánh kem", description = "Mô tả 3", displayOrder = 3)
+    )
+
+    CoffeeShopAppTheme() {
+        CategoryListScreen(
+            uiState = CategoryUiState(
+                categories = mockCategories,
+                isLoading = false,
+                error = null
+            ),
+            onAddClick = {},
+            onDetailClick = {},
+            onEditClick = {},
+            onDeleteClick = {},
+            onBackClick = {}
+        )
+    }
 }

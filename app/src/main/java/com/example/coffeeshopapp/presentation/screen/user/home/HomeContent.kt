@@ -1,8 +1,8 @@
 package com.example.coffeeshopapp.presentation.screen.user.home
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -10,19 +10,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.NotificationsNone
 import androidx.compose.material.icons.filled.Whatshot
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -33,6 +28,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -42,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.coffeeshopapp.R
 import com.example.coffeeshopapp.data.model.entity.Category
 import com.example.coffeeshopapp.data.model.entity.Product
 import com.example.coffeeshopapp.presentation.components.Categories
@@ -62,33 +59,33 @@ import kotlinx.coroutines.launch
 @Composable
 fun HomeContent(
     viewModel: HomeViewModel = viewModel(),
-    categories: List<Category>,
-    trendingItems: List<Product>,
+    categories: List<Category> = emptyList(),
+    trendingItems: List<Product> = emptyList(),
     loadingFavorites: Set<String> = emptySet(),
     favorites: Set<String> = emptySet(),
-    onCategoryClick: (String) -> Unit,
-    onFavoriteClick: (String) -> Unit,
+    onFavoriteClick: (String) -> Unit = {},
     openProductDetailScreen: (Product) -> Unit = {},
-    onAddToCartClick: (String, Offset) -> Unit
+    onAddToCartClick: (String, Offset) -> Unit = {_, _ ->}
 ) {
     val listState = rememberLazyListState()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val filteredProducts by viewModel.filteredProducts.collectAsStateWithLifecycle()
     val coroutineScope = rememberCoroutineScope()
-    
 
+    val isSearching = viewModel.searchKeyWords.isNotBlank()
 
-    val categoryPositions by remember {
+    val categoryPositions by remember(filteredProducts, uiState.categories) {
         derivedStateOf {
             val positions = mutableMapOf<Long, Int>()
             var currentIdx = 4
-            val grouped = uiState.allProduct.groupBy { product ->
+            val grouped = filteredProducts.groupBy { product ->
                 uiState.categories.find { it.id == product.categoryId }?.name
             }
             uiState.categories.forEach { category ->
                 val productsInCat = grouped[category.name] ?: emptyList()
                 if (productsInCat.isNotEmpty()) {
                     positions[category.id] = currentIdx
-                    currentIdx += 1 + productsInCat.size // 1 cho tiêu đề + n cho sản phẩm
+                    currentIdx += 1 + productsInCat.size
                 }
             }
             positions to grouped
@@ -135,19 +132,13 @@ fun HomeContent(
                     textAlign = TextAlign.Left,
                 )
 
-                IconButton(
-                    onClick = {},
-                    modifier = Modifier.align(Alignment.CenterEnd)
-                ) {
-                    Icon(
-                        Icons.Default.NotificationsNone,
-                        contentDescription = null,
-                        tint = LabelColor,
-                        modifier = Modifier
-                            .align(Alignment.CenterEnd)
-                            .size(36.dp)
-                    )
-                }
+                Image(
+                    painter = painterResource(id = R.drawable.ic_home),
+                    contentDescription = null,
+                    modifier = Modifier
+                        .align(Alignment.CenterEnd)
+                        .size(80.dp)
+                )
             }
 
             Row(
@@ -165,37 +156,44 @@ fun HomeContent(
             }
         }
 
-        item {
-            TitleSmall("Danh Mục")
-            Categories(
-                categories = categories,
-                onCategoryClick = { categoryId ->
-                    scrollToCategory(categoryId)
-                }
-            )
+        if (!isSearching) {
+            item {
+                TitleSmall("Danh Mục")
+                Categories(
+                    categories = categories,
+                    onCategoryClick = { categoryId ->
+                        scrollToCategory(categoryId)
+                    }
+                )
+            }
+
+            item {
+                TitleSmall(
+                    "Xu Hướng",
+                    icon = Icons.Default.Whatshot,
+                    iconColor = IconWhatshotColor
+                )
+                TrendingItems(
+                    items = trendingItems,
+                    loadingFavorites = loadingFavorites,
+                    favorites = favorites,
+                    onFavoriteClick = onFavoriteClick,
+                    onAddToCartClick = onAddToCartClick,
+                    openProductDetailScreen = openProductDetailScreen
+                )
+            }
+
+            item {
+                TitleSmall("Danh sách sản phẩm")
+                CommonSpace(12.dp)
+            }
+        } else {
+            item {
+                TitleSmall("Kết quả tìm kiếm cho \"${viewModel.searchKeyWords}\"")
+                CommonSpace(12.dp)
+            }
         }
 
-        item {
-            TitleSmall(
-                "Xu Hướng",
-                icon = Icons.Default.Whatshot,
-                iconColor = IconWhatshotColor
-            )
-            TrendingItems(
-                items = trendingItems,
-                loadingFavorites =
-                    loadingFavorites,
-                favorites = favorites,
-                onFavoriteClick = onFavoriteClick,
-                onAddToCartClick = onAddToCartClick,
-                openProductDetailScreen = openProductDetailScreen
-            )
-        }
-
-        item {
-            TitleSmall("Danh sách sản phẩm")
-            CommonSpace(12.dp)
-        }
         groupedProducts.forEach { (categoryName, products) ->
             item {
                 Text(
@@ -209,7 +207,7 @@ fun HomeContent(
                 CommonSpace(12.dp)
             }
 
-            items(products, key = {it.id}) { product ->
+            items(products, key = { it.id }) { product ->
                 ListItem(
                     product = product,
                     isLoading = loadingFavorites.contains(product.id),
@@ -221,20 +219,8 @@ fun HomeContent(
                 CommonSpace(12.dp)
             }
         }
-
     }
 }
-
-@Composable
-private fun listProduct(
-    categoryName: String? = null,
-    products: List<Product> = emptyList()
-) {
-    Column (modifier = Modifier.fillMaxWidth()) {
-
-    }
-}
-
 @Composable
 private fun TitleSmall(
     titleContent: String,
@@ -270,6 +256,37 @@ private fun TitleSmall(
 @Preview(showSystemUi = true)
 fun HomeContentPreview() {
     CoffeeShopAppTheme {
-        listProduct()
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 24.dp, start = 24.dp, end = 24.dp)
+        ) {
+            Text(
+                text = buildAnnotatedString {
+                    withStyle(
+                        style = MaterialTheme.typography.titleMedium.toSpanStyle()
+                            .copy(color = LabelColor)
+                    ) {
+                        append("Enjoy your\nMorning ")
+                    }
+                    withStyle(
+                        style = MaterialTheme.typography.titleMedium.toSpanStyle()
+                            .copy(color = CoffeeTextColor)
+                    ) {
+                        append("Coffee!!")
+                    }
+
+                },
+                textAlign = TextAlign.Left,
+            )
+
+            Image(
+                painter = painterResource(id = R.drawable.ic_home),
+                contentDescription = null,
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .size(80.dp)
+            )
+        }
     }
 }

@@ -9,6 +9,8 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBackIos
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
@@ -23,10 +25,12 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.coffeeshopapp.data.remote.ChangePasswordRequestDto
 import com.example.coffeeshopapp.data.remote.NetworkClient
+import com.example.coffeeshopapp.presentation.theme.CoffeeShopAppTheme
 import com.example.coffeeshopapp.presentation.theme.LabelColor
 import com.example.coffeeshopapp.presentation.theme.TitleColor
 import com.example.coffeeshopapp.utils.getErrorMessage
@@ -53,14 +57,20 @@ fun ChangePasswordScreen(
     Scaffold(
         containerColor = Color(0xFFF7F8FA),
         topBar = {
-            TopAppBar(
-                title = { Text("Đổi mật khẩu", fontWeight = FontWeight.Bold) },
+            CenterAlignedTopAppBar(
+                title = {
+                    Text(
+                        text = "Đổi mật khẩu",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = TitleColor,
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Default.ArrowBackIos, contentDescription = "Back", tint = TitleColor)
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
             )
         }
     ) { padding ->
@@ -74,14 +84,14 @@ fun ChangePasswordScreen(
         ) {
             Spacer(modifier = Modifier.height(24.dp))
 
-            Text("🔒", fontSize = 48.sp)
+            Icon(Icons.Default.Lock, contentDescription = null, tint = TitleColor, modifier = Modifier.size(80.dp))
 
             Spacer(modifier = Modifier.height(16.dp))
 
             Text(
                 text = "Thay đổi mật khẩu hiện tại",
                 style = MaterialTheme.typography.bodyMedium,
-                color = LabelColor
+                color = TitleColor
             )
 
             Spacer(modifier = Modifier.height(32.dp))
@@ -203,5 +213,13 @@ fun ChangePasswordScreen(
                 }
             }
         }
+    }
+}
+
+@Composable
+@Preview(showSystemUi = true)
+fun ChangePasswordScreenPrview() {
+    CoffeeShopAppTheme() {
+        ChangePasswordScreen()
     }
 }

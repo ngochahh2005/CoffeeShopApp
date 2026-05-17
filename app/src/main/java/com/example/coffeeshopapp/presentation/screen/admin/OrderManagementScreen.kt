@@ -15,9 +15,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.coffeeshopapp.data.model.dto.OrderDto
+import com.example.coffeeshopapp.presentation.theme.CoffeeShopAppTheme
 import com.example.coffeeshopapp.presentation.viewmodel.AdminOrderViewModel
 import java.text.NumberFormat
 import java.util.Locale
@@ -32,8 +35,8 @@ private val Card = Color(0xFFFFFFFF)
 private val Sub = Color(0xFF8E8E93)
 
 private fun moneyFmt(v: java.math.BigDecimal?): String {
-    if (v == null) return "0Ä‘"
-    return "${NumberFormat.getInstance(Locale.forLanguageTag("vi-VN")).format(v)}Ä‘"
+    if (v == null) return "0đ"
+    return "${NumberFormat.getInstance(Locale.forLanguageTag("vi-VN")).format(v)}đ"
 }
 
 private fun formatOrderTime(raw: String): String {
@@ -52,7 +55,10 @@ private val statusTabs = listOf("ALL" to "Tất cả", "PENDING" to "Chờ xác 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun OrderManagementScreen(viewModel: AdminOrderViewModel, onBackClick: () -> Unit) {
+fun OrderManagementScreen(
+    viewModel: AdminOrderViewModel = viewModel(),
+    onBackClick: () -> Unit = {}
+) {
     val state by viewModel.uiState.collectAsState()
 
     // Detail bottom sheet
@@ -201,4 +207,11 @@ private fun InfoRow(label: String, value: String, bold: Boolean = false) {
     }
 }
 
+@Composable
+@Preview(showSystemUi = true)
+fun OrderManagementScreenPreview() {
+    CoffeeShopAppTheme() {
+        OrderManagementScreen() { }
+    }
+}
 

@@ -7,6 +7,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.coffeeshopapp.data.local.CartDataStore
+import com.example.coffeeshopapp.data.model.dto.ProductDto
 import com.example.coffeeshopapp.data.model.entity.CartItem
 import com.example.coffeeshopapp.data.model.entity.Product
 import com.example.coffeeshopapp.data.remote.NetworkClient
@@ -46,7 +47,7 @@ class CartViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             CartDataStore.cartItemsFlow(getApplication()).collect { items ->
                 _uiState.update { currentState ->
-                    val cleanedSelectedIds = currentState.selectedIds.intersect(items.map { it.productId }.toSet())
+                    val cleanedSelectedIds = currentState.selectedIds.intersect(items.map { it.lineId }.toSet())
                     val newState = currentState.copy(
                         isLoading = false,
                         items = items,
@@ -59,27 +60,27 @@ class CartViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun toggleSelection(productId: String) {
+    fun toggleSelection(lineId: String) {
         _uiState.update { currentState ->
             val newSelectedIds = currentState.selectedIds.toMutableSet()
-            if (newSelectedIds.contains(productId)) newSelectedIds.remove(productId) else newSelectedIds.add(productId)
+            if (newSelectedIds.contains(lineId)) newSelectedIds.remove(lineId) else newSelectedIds.add(lineId)
             calculateTotal(currentState.copy(selectedIds = newSelectedIds))
         }
     }
 
-    fun increaseQuantity(productId: String) {
-        val current = _uiState.value.items.find { it.productId == productId } ?: return
-        updateQuantity(productId, current.quantity + 1)
+    fun increaseQuantity(lineId: String) {
+        val current = _uiState.value.items.find { it.lineId == lineId } ?: return
+        updateQuantity(lineId, current.quantity + 1)
     }
 
-    fun decreaseQuantity(productId: String) {
-        val current = _uiState.value.items.find { it.productId == productId } ?: return
-        updateQuantity(productId, current.quantity - 1)
+    fun decreaseQuantity(lineId: String) {
+        val current = _uiState.value.items.find { it.lineId == lineId } ?: return
+        updateQuantity(lineId, current.quantity - 1)
     }
 
-    fun removeItem(productId: String) {
+    fun removeItem(lineId: String) {
         viewModelScope.launch {
-            CartDataStore.removeProduct(getApplication(), productId)
+            CartDataStore.removeProduct(getApplication(), lineId)
         }
     }
 
@@ -111,20 +112,24 @@ class CartViewModel(application: Application) : AndroidViewModel(application) {
         isShowSheet = false
     }
 
-    fun addToCart(product: Product) {
+    fun addToCart(product: Product, quantity: Int = 1) {
         viewModelScope.launch {
-            CartDataStore.addProduct(getApplication(), product)
+            CartDataStore.addProduct(getApplication(), product, quantity)
         }
     }
 
-    private fun updateQuantity(productId: String, quantity: Int) {
+    fun updateQuantity(lineId: String, quantity: Int) {
+        if (quantity < 1) {
+            removeItem(lineId)
+            return
+        }
         viewModelScope.launch {
-            CartDataStore.updateQuantity(getApplication(), productId, quantity)
+            CartDataStore.updateQuantity(getApplication(), lineId, quantity)
         }
     }
 
     private fun calculateTotal(state: CartUiState): CartUiState {
-        val selectedItems = state.items.filter { it.productId in state.selectedIds }
+        val selectedItems = state.items.filter { it.lineId in state.selectedIds }
         return state.copy(
             selectedCount = selectedItems.sumOf { it.quantity },
             totalAmount = selectedItems.sumOf { it.priceAtAdd * it.quantity }
@@ -132,7 +137,7 @@ class CartViewModel(application: Application) : AndroidViewModel(application) {
     }
 }
 
-private fun com.example.coffeeshopapp.data.model.dto.ProductDto.toProduct(): Product {
+private fun ProductDto.toProduct(): Product {
     return Product(
         id = id.toString(),
         name = name,
@@ -140,6 +145,8 @@ private fun com.example.coffeeshopapp.data.model.dto.ProductDto.toProduct(): Pro
         description = description.orEmpty(),
         imageUrl = imageUrl,
         rating = 0.0,
-        reviewers = 0
+        reviewers = 0,
+        categoryId = categoryId,
+        sizes = size
     )
 }

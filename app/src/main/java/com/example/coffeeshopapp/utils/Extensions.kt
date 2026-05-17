@@ -93,6 +93,17 @@ fun CartItem.toProduct(): Product {
         id = this.productId,
         name = this.nameAtAdd,
         price = this.priceAtAdd,
-        imageUrl = this.imageUrlAtAdd
+        imageUrl = this.imageUrlAtAdd,
+        selectedSizeName = this.selectedSizeName,
+        selectedSizePriceExtra = this.sizePriceExtra,
+        selectedToppings = this.toppings.map {
+            ToppingDto(
+                id = it.id,
+                name = it.name,
+                imageUrl = it.imageUrl,
+                price = it.price.toDouble(),
+                isActive = true
+            )
+        }
     )
 }

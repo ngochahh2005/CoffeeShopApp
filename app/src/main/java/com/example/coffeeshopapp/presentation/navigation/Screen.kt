@@ -18,8 +18,16 @@ sealed class Screen(val route: String) {
     object AdminReviews: Screen("admin_reviews")
     object ProductList: Screen("product_list")
     object Cart: Screen("cart")
+    object Order: Screen("order")
+    object Checkout: Screen("checkout")
     object OrderHistory: Screen("order_history")
-    object OrderDetails: Screen("order_details")
+    object OrderDetails: Screen("order_details/{orderId}") {
+        fun createRoute(orderId: Long) = "order_details/$orderId"
+    }
+    object Review: Screen("review?productId={productId}&productName={productName}&size={size}&imageUrl={imageUrl}") {
+        fun createRoute(productId: Long, productName: String, size: String?, imageUrl: String?) =
+            "review?productId=$productId&productName=${android.net.Uri.encode(productName)}&size=${android.net.Uri.encode(size ?: "")}&imageUrl=${android.net.Uri.encode(imageUrl ?: "")}"
+    }
     object Favourites: Screen("favourites")
     object ResetPassword: Screen("reset_password")
     object Profile: Screen("profile")
@@ -36,5 +44,7 @@ val screenWithBottomBar = listOf(
     Screen.Favourites.route,
     Screen.Cart.route,
     Screen.Profile.route,
-    Screen.ProductDetail.route
+    Screen.ProductDetail.route,
+    Screen.OrderHistory.route,
+    Screen.Review.route
 )

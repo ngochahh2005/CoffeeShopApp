@@ -1,6 +1,8 @@
 package com.example.coffeeshopapp.presentation.navigation
 
 import android.annotation.SuppressLint
+import android.content.Intent
+import android.net.Uri
 import android.widget.Toast
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.core.tween
@@ -48,6 +50,7 @@ import com.example.coffeeshopapp.presentation.screen.admin.ReviewManagementScree
 import com.example.coffeeshopapp.presentation.screen.admin.ToppingManagementScreen
 import com.example.coffeeshopapp.presentation.screen.admin.UserManagementScreen
 import com.example.coffeeshopapp.presentation.screen.admin.category.AdminCategoryScreen
+import com.example.coffeeshopapp.presentation.screen.admin.product.AdminProductScreen
 import com.example.coffeeshopapp.presentation.screen.auth.ForgotPasswordScreen
 import com.example.coffeeshopapp.presentation.screen.auth.LoginScreen
 import com.example.coffeeshopapp.presentation.screen.auth.OtpVerificationScreen
@@ -55,6 +58,11 @@ import com.example.coffeeshopapp.presentation.screen.auth.RegisterScreen
 import com.example.coffeeshopapp.presentation.screen.user.ChangePasswordScreen
 import com.example.coffeeshopapp.presentation.screen.user.cart.CartScreen
 import com.example.coffeeshopapp.presentation.screen.user.ProductDetailScreen
+import com.example.coffeeshopapp.presentation.screen.user.CheckoutScreen
+import com.example.coffeeshopapp.presentation.screen.user.order.OrderHistoryScreen
+import com.example.coffeeshopapp.presentation.screen.user.order.OrderDetailScreen
+import com.example.coffeeshopapp.presentation.screen.user.order.ReviewScreen
+import com.example.coffeeshopapp.presentation.screen.user.order.OrderScreen
 import com.example.coffeeshopapp.presentation.screen.user.ProfileScreen
 import com.example.coffeeshopapp.presentation.screen.user.favorite.FavouritesScreen
 import com.example.coffeeshopapp.presentation.screen.user.home.HomeScreen
@@ -134,18 +142,94 @@ fun NavGraph(innerPadding: PaddingValues, navController: NavHostController) {
         }
 
         // cart
-        composable(route = Screen.Cart.route) { CartScreen() }
+        composable(route = Screen.Cart.route) { CartScreen(navController = navController) }
+
+        // order
+        composable(route = Screen.Order.route) {
+            OrderScreen(
+                onBack = { navController.popBackStack() },
+                onCheckout = { navController.navigate(Screen.Checkout.route) },
+                onAddMore = { navController.popBackStack() }
+            )
+        }
+
+        // checkout
+        composable(route = Screen.Checkout.route) {
+            val context = LocalContext.current
+            CheckoutScreen(
+                onBack = { navController.popBackStack() },
+                onPaymentSuccess = {
+                    navController.navigate(Screen.UserHome.route) {
+                        popUpTo(Screen.UserHome.route) { inclusive = true }
+                        launchSingleTop = true
+                    }
+                },
+                onOpenVnPay = { url ->
+                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+                    navController.navigate(Screen.UserHome.route) {
+                        popUpTo(Screen.UserHome.route) { inclusive = true }
+                        launchSingleTop = true
+                    }
+                }
+            )
+        }
 
         // profile
         composable(route = Screen.Profile.route) {
             ProfileScreen(
                 onOpenAdmin = { navController.navigate(Screen.AdminDashboard.route) },
                 onOpenChangePassword = { navController.navigate(Screen.ChangePassword.route) },
+                onOpenOrderHistory = { navController.navigate(Screen.OrderHistory.route) },
                 onLogout = {
                     navController.navigate(Screen.Login.route) {
                         popUpTo(0) { inclusive = true }
                     }
                 }
+            )
+        }
+
+        // order history
+        composable(route = Screen.OrderHistory.route) {
+            OrderHistoryScreen(
+                onBack = { navController.popBackStack() },
+                onReviewClick = { productId, productName, size, imageUrl ->
+                    navController.navigate(Screen.Review.createRoute(productId, productName, size, imageUrl))
+                },
+                onOrderClick = { orderId: Long ->
+                    navController.navigate(Screen.OrderDetails.createRoute(orderId))
+                }
+            )
+        }
+
+        // order details
+        composable(
+            route = Screen.OrderDetails.route,
+            arguments = listOf(androidx.navigation.navArgument("orderId") { type = androidx.navigation.NavType.LongType })
+        ) { backStackEntry ->
+            val orderId = backStackEntry.arguments?.getLong("orderId") ?: 0L
+            OrderDetailScreen(orderId = orderId, onBack = { navController.popBackStack() })
+        }
+
+        // review
+        composable(
+            route = Screen.Review.route,
+            arguments = listOf(
+                androidx.navigation.navArgument("productId") { type = androidx.navigation.NavType.LongType },
+                androidx.navigation.navArgument("productName") { type = androidx.navigation.NavType.StringType; nullable = true },
+                androidx.navigation.navArgument("size") { type = androidx.navigation.NavType.StringType; nullable = true },
+                androidx.navigation.navArgument("imageUrl") { type = androidx.navigation.NavType.StringType; nullable = true }
+            )
+        ) { backStackEntry ->
+            val productId = backStackEntry.arguments?.getLong("productId") ?: 0L
+            val productName = backStackEntry.arguments?.getString("productName") ?: ""
+            val size = backStackEntry.arguments?.getString("size")
+            val imageUrl = backStackEntry.arguments?.getString("imageUrl")
+            ReviewScreen(
+                productId = productId,
+                productName = productName,
+                size = size,
+                imageUrl = imageUrl,
+                onBack = { navController.popBackStack() }
             )
         }
 
@@ -420,7 +504,7 @@ fun NavGraph(innerPadding: PaddingValues, navController: NavHostController) {
                 }
             }
             AdminScreenTheme {
-                com.example.coffeeshopapp.presentation.screen.admin.product.AdminProductScreen(
+                AdminProductScreen(
                     viewModel = viewModel,
                     isDeepLink = productId != -1L,
                     onBackClick = { navController.popBackStack() }

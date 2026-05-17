@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.example.coffeeshopapp.data.model.entity.CartItem
+import com.example.coffeeshopapp.data.model.entity.CartItemTopping
 import com.example.coffeeshopapp.data.model.entity.Product
 import com.google.gson.Gson
 import kotlinx.coroutines.flow.Flow
@@ -33,21 +34,33 @@ object CartDataStore {
 
     suspend fun addProduct(context: Context, product: Product, quantity: Int = 1) {
         if (quantity <= 0) return
+        val lineId = buildLineId(product)
         val key = cartItemsKey(AuthDataStore.readUserIdBlocking(context))
         context.cartDataStore.edit { prefs ->
             val currentItems = deserialize(prefs[key]).toMutableList()
-            val index = currentItems.indexOfFirst { it.productId == product.id }
+            val index = currentItems.indexOfFirst { it.lineId == lineId }
             if (index >= 0) {
                 val existing = currentItems[index]
                 currentItems[index] = existing.copy(quantity = existing.quantity + quantity)
             } else {
                 currentItems.add(
                     CartItem(
+                        lineId = lineId,
                         productId = product.id,
                         nameAtAdd = product.name,
                         priceAtAdd = product.price,
                         imageUrlAtAdd = product.imageUrl,
-                        quantity = quantity
+                        quantity = quantity,
+                        selectedSizeName = product.selectedSizeName,
+                        sizePriceExtra = product.selectedSizePriceExtra,
+                        toppings = product.selectedToppings.map {
+                            CartItemTopping(
+                                id = it.id,
+                                name = it.name,
+                                price = it.price.toLong(),
+                                imageUrl = it.imageUrl
+                            )
+                        }
                     )
                 )
             }
@@ -55,23 +68,23 @@ object CartDataStore {
         }
     }
 
-    suspend fun updateQuantity(context: Context, productId: String, quantity: Int) {
+    suspend fun updateQuantity(context: Context, lineId: String, quantity: Int) {
         val key = cartItemsKey(AuthDataStore.readUserIdBlocking(context))
         context.cartDataStore.edit { prefs ->
             val currentItems = deserialize(prefs[key]).toMutableList()
             val updatedItems = if (quantity <= 0) {
-                currentItems.filterNot { it.productId == productId }
+                currentItems.filterNot { it.lineId == lineId }
             } else {
                 currentItems.map { item ->
-                    if (item.productId == productId) item.copy(quantity = quantity) else item
+                    if (item.lineId == lineId) item.copy(quantity = quantity) else item
                 }
             }
             prefs[key] = serialize(updatedItems)
         }
     }
 
-    suspend fun removeProduct(context: Context, productId: String) {
-        updateQuantity(context, productId, 0)
+    suspend fun removeProduct(context: Context, lineId: String) {
+        updateQuantity(context, lineId, 0)
     }
 
     suspend fun clear(context: Context) {
@@ -92,6 +105,7 @@ object CartDataStore {
                     val obj = arr.optJSONObject(i) ?: continue
                     val productId = obj.optString("productId").trim()
                     if (productId.isBlank()) continue
+                    val lineId = obj.optString("lineId").takeIf { it.isNotBlank() } ?: productId
 
                     val quantity = obj.optInt("quantity", 1)
                     val nameAtAdd = when {
@@ -106,19 +120,49 @@ object CartDataStore {
                         obj.has("imageUrlAtAdd") -> obj.optString("imageUrlAtAdd").takeIf { it.isNotBlank() }
                         else -> obj.optString("imageUrl").takeIf { it.isNotBlank() }
                     }
+                    val selectedSizeName = obj.optString("selectedSizeName").takeIf { it.isNotBlank() && it != "null" }
+                    val sizePriceExtra = obj.optLong("sizePriceExtra", 0L)
+                    val toppings = obj.optJSONArray("toppings")?.let { toppingsArray ->
+                        buildList {
+                            for (j in 0 until toppingsArray.length()) {
+                                val toppingObj = toppingsArray.optJSONObject(j) ?: continue
+                                add(
+                                    CartItemTopping(
+                                        id = toppingObj.optLong("id"),
+                                        name = toppingObj.optString("name"),
+                                        price = toppingObj.optLong("price"),
+                                        imageUrl = toppingObj.optString("imageUrl").takeIf { it.isNotBlank() && it != "null" }
+                                    )
+                                )
+                            }
+                        }
+                    }.orEmpty()
 
                     add(
                         CartItem(
+                            lineId = lineId,
                             productId = productId,
                             nameAtAdd = nameAtAdd,
                             priceAtAdd = priceAtAdd,
                             imageUrlAtAdd = imageUrlAtAdd,
-                            quantity = quantity
+                            quantity = quantity,
+                            selectedSizeName = selectedSizeName,
+                            sizePriceExtra = sizePriceExtra,
+                            toppings = toppings
                         )
                     )
                 }
             }
         }.getOrElse { emptyList() }
+    }
+
+    private fun buildLineId(product: Product): String {
+        val sizePart = product.selectedSizeName.orEmpty()
+        val toppingPart = product.selectedToppings
+            .map { it.id }
+            .sorted()
+            .joinToString(",")
+        return "${product.id}|size=$sizePart|toppings=$toppingPart"
     }
 
     private fun cartItemsKey(userId: String?): Preferences.Key<String> {

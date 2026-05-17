@@ -120,18 +120,14 @@ fun HomeScreen(
                     trendingItems = uiState.trendingItems,
                     loadingFavorites = uiState.loadingFavorites,
                     favorites = uiState.trendingItems.filter { it.isFavorite }.map { it.id }.toSet(),
-                    onCategoryClick = { categoryId ->
-
-                    },
                     onFavoriteClick = { productId ->
                         viewModel.toggleFavorite(productId)
                     },
                     openProductDetailScreen = { product -> viewModel.showProduct(product) },
-                    onAddToCartClick = { id, offset ->
-                        viewModel.addToCart(id, offset)
-                    },
-                    
-                )
+
+                    ) { id, offset ->
+                    viewModel.addToCart(id, offset)
+                }
 
                 uiState.error?.let { err ->
                     LaunchedEffect(err) {
@@ -175,8 +171,8 @@ fun HomeScreen(
             product = selectedProduct,
             isFavorite = selectedProduct.isFavorite,
             onToggleFavorite = { id -> viewModel.toggleFavorite(id) },
-            onAddToCartClick = {
-                viewModel.addToCart(selectedProduct)
+            onAddToCartClick = { product, quantity ->
+                viewModel.addToCart(product, quantity)
             },
             onDismiss = { viewModel.onDismiss() }
             )

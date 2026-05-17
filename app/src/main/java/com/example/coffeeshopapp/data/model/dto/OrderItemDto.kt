@@ -3,6 +3,7 @@ package com.example.coffeeshopapp.data.model.dto
 import java.math.BigDecimal
 
 data class OrderItemDto(
+    val productId: Long = 0,
     val productName: String = "",
     val size: String? = null,
     val unitPrice: BigDecimal = BigDecimal.ZERO,

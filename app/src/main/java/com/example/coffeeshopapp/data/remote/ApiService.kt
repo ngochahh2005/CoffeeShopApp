@@ -6,6 +6,8 @@ import com.example.coffeeshopapp.data.model.dto.DashboardOverviewDto
 import com.example.coffeeshopapp.data.model.dto.FavoriteDto
 import com.example.coffeeshopapp.data.model.dto.FavoriteStatusDto
 import com.example.coffeeshopapp.data.model.dto.LoginRequestDto
+import com.example.coffeeshopapp.data.model.dto.CartItemRequestDto
+import com.example.coffeeshopapp.data.model.dto.OrderRequestDto
 import com.example.coffeeshopapp.data.model.dto.OrderDto
 import com.example.coffeeshopapp.data.model.dto.ProductDto
 import com.example.coffeeshopapp.data.model.dto.PromotionDto
@@ -13,6 +15,7 @@ import com.example.coffeeshopapp.data.model.dto.PromotionRequestDto
 import com.example.coffeeshopapp.data.model.dto.RegisterRequestDto
 import com.example.coffeeshopapp.data.model.dto.RevenuePointDto
 import com.example.coffeeshopapp.data.model.dto.ReviewDto
+import com.example.coffeeshopapp.data.model.dto.ReviewRequestDto
 import com.example.coffeeshopapp.data.model.dto.RoleAdminDto
 import com.example.coffeeshopapp.data.model.dto.ToppingDto
 import com.example.coffeeshopapp.data.model.dto.TopProductDto
@@ -118,6 +121,15 @@ interface ApiService {
 
     @GET("api/v1/users/me")
     suspend fun getMyInfo(): ApiResponseDto<UserDto>
+
+    @POST("api/v1/cart/items")
+    suspend fun addToCartItem(@Body request: CartItemRequestDto): ApiResponseDto<Any>
+
+    @DELETE("api/v1/cart")
+    suspend fun clearCart(): ApiResponseDto<Any>
+
+    @POST("api/v1/orders")
+    suspend fun createOrderFromCart(@Body request: OrderRequestDto): ApiResponseDto<OrderDto>
 
     @GET("api/v1/admin/dashboard/overview")
     suspend fun getDashboardOverview(): ApiResponseDto<DashboardOverviewDto>
@@ -257,6 +269,19 @@ interface ApiService {
 
     @POST("api/v1/users/me/change-password")
     suspend fun changePassword(@Body request: ChangePasswordRequestDto): ApiResponseDto<Any>
+
+    @GET("api/v1/orders")
+    suspend fun getMyOrders(): ApiResponseDto<List<OrderDto>>
+
+    @PUT("api/v1/orders/{orderId}/cancel")
+    suspend fun cancelOrder(@Path("orderId") orderId: Long): ApiResponseDto<OrderDto>
+
+    @Multipart
+    @POST("api/v1/reviews")
+    suspend fun createReview(
+        @Part("request") request: RequestBody,
+        @Part image: MultipartBody.Part? = null
+    ): ApiResponseDto<ReviewDto>
 }
 
 data class VerifyOtpRequestDto(

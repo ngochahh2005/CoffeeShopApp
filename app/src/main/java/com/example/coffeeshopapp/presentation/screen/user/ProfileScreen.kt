@@ -29,9 +29,11 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Phone
+import com.example.coffeeshopapp.presentation.navigation.Screen
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -77,6 +79,7 @@ import okhttp3.RequestBody.Companion.toRequestBody
 fun ProfileScreen(
     onOpenAdmin: () -> Unit = {},
     onOpenChangePassword: () -> Unit = {},
+    onOpenOrderHistory: () -> Unit = {},
     onLogout: () -> Unit = {}
 ) {
     val context = LocalContext.current
@@ -207,7 +210,8 @@ fun ProfileScreen(
                                         firstName = firstName.toPlainPart(),
                                         lastName = lastName.toPlainPart(),
                                         phoneNumber = phoneNumber.blankToNullPart(),
-                                        dob = dob.blankToNullPart()
+                                        dob = dob.blankToNullPart(),
+                                        multipartFile = null
                                     )
                                     userInfo = resp.result
                                     isEditing = false
@@ -240,6 +244,13 @@ fun ProfileScreen(
             Spacer(modifier = Modifier.height(12.dp))
 
             ProfileSectionCard(title = "Cài đặt") {
+                ProfileActionRow(
+                    icon = Icons.Default.History,
+                    label = "Lịch sử đơn hàng",
+                    onClick = { onOpenOrderHistory() }
+                )
+                HorizontalDivider(color = Color(0xFFF0F0F0))
+
                 if (!isGoogleAccount) {
                     ProfileActionRow(
                         icon = Icons.Default.Lock,
