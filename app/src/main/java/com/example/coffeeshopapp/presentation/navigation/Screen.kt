@@ -45,6 +45,4 @@ val screenWithBottomBar = listOf(
     Screen.Cart.route,
     Screen.Profile.route,
     Screen.ProductDetail.route,
-    Screen.OrderHistory.route,
-    Screen.Review.route
 )

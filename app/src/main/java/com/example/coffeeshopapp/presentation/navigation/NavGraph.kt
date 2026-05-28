@@ -58,7 +58,7 @@ import com.example.coffeeshopapp.presentation.screen.auth.RegisterScreen
 import com.example.coffeeshopapp.presentation.screen.user.ChangePasswordScreen
 import com.example.coffeeshopapp.presentation.screen.user.cart.CartScreen
 import com.example.coffeeshopapp.presentation.screen.user.ProductDetailScreen
-import com.example.coffeeshopapp.presentation.screen.user.CheckoutScreen
+import com.example.coffeeshopapp.presentation.screen.user.checkout.CheckoutScreen
 import com.example.coffeeshopapp.presentation.screen.user.order.OrderHistoryScreen
 import com.example.coffeeshopapp.presentation.screen.user.order.OrderDetailScreen
 import com.example.coffeeshopapp.presentation.screen.user.order.ReviewScreen

@@ -1,7 +1,5 @@
 package com.example.coffeeshopapp.presentation.screen.user.order
 
-import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -13,8 +11,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -39,13 +35,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImage
 import com.example.coffeeshopapp.R
 import com.example.coffeeshopapp.data.model.entity.CartItem
 import com.example.coffeeshopapp.data.model.entity.CartItemTopping
 import com.example.coffeeshopapp.presentation.components.CommonSpace
-import com.example.coffeeshopapp.presentation.components.FlowTagRow
-import com.example.coffeeshopapp.presentation.theme.AuxiliaryButtonColor
+import com.example.coffeeshopapp.presentation.components.OrderItemCard
 import com.example.coffeeshopapp.presentation.theme.BackgroundColor
 import com.example.coffeeshopapp.presentation.theme.CardBackgroundColor
 import com.example.coffeeshopapp.presentation.theme.CoffeeShopAppTheme
@@ -95,7 +89,7 @@ fun OrderContent(
                 Text(text = getCurrentDateTime(), color = Color(0xff49454D), fontFamily = k2d, fontWeight = FontWeight.Normal, fontSize = 14.sp)
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            CommonSpace(8.dp)
 
             Box(modifier = Modifier.fillMaxWidth()) {
                 Image(
@@ -140,35 +134,48 @@ fun OrderContent(
             LazyColumn(modifier = Modifier.weight(1f)) {
                 items(items, key = { it.lineId }) { item ->
                     OrderItemCard(item = item)
-                    Spacer(modifier = Modifier.height(12.dp))
+                    CommonSpace(12.dp)
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            CommonSpace(12.dp)
+
+            Button(
+                onClick = onAddMore,
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xff3D3450)),
+                modifier = Modifier.fillMaxWidth().height(50.dp),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Text(text = "Chọn thêm mặt hàng", color = Color.White)
+            }
+
+            CommonSpace(12.dp)
 
             Card(
                 colors = CardDefaults.cardColors(containerColor = Color.White),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp)
             ) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp),
+                        .padding(12.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column {
-                        Text(text = "Tổng tiền", color = LabelColor)
+                        Text(text = "Tổng tiền", color = CoffeeTextColor, style = MaterialTheme.typography.bodyLarge)
                         Text(
                             text = "${totalAmount.formatGrouped()}đ",
-                            style = MaterialTheme.typography.titleMedium,
+                            style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Bold,
-                            color = CoffeeTextColor
+                            color = LabelColor
                         )
                     }
                     Button(
                         onClick = onCheckout,
-                        colors = ButtonDefaults.buttonColors(containerColor = AuxiliaryButtonColor)
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xff3D3450)),
+                        shape = RoundedCornerShape(12.dp)
                     ) {
                         Text(text = "Thanh toán", color = Color.White)
                     }
@@ -176,53 +183,6 @@ fun OrderContent(
             }
 
             Spacer(modifier = Modifier.height(12.dp))
-
-            Button(
-                onClick = onAddMore,
-                colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(text = "Chọn thêm mặt hàng", color = CoffeeTextColor)
-            }
-        }
-    }
-}
-
-@Composable
-private fun OrderItemCard(item: CartItem) {
-    Card(
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Row(modifier = Modifier.padding(4.dp), verticalAlignment = Alignment.CenterVertically) {
-            AsyncImage(
-                model = item.imageUrlAtAdd,
-                placeholder = painterResource(R.drawable.st_bo),
-                error = painterResource(R.drawable.error_img),
-                contentDescription = item.nameAtAdd,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.size(90.dp).clip(RoundedCornerShape(16.dp))
-            )
-            Spacer(modifier = Modifier.width(12.dp))
-            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(
-                    text = item.nameAtAdd,
-                    fontFamily = k2d,
-                    fontWeight = FontWeight.Normal,
-                    fontSize = 16.sp,
-                    color = Color(0xff191B29)
-                )
-                Text(
-                    text = "${item.priceAtAdd.formatGrouped()}đ x ${item.quantity}",
-                    color = Color(0xff63567A),
-                    fontFamily = k2d,
-                    fontWeight = FontWeight.Normal,
-                    fontSize = 14.sp
-                )
-                if (!item.selectedSizeName.isNullOrBlank()) {
-                    FlowTagRow(size = item.selectedSizeName, toppings = item.toppings)
-                }
-            }
         }
     }
 }
