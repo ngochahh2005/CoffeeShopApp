@@ -45,7 +45,15 @@ class CheckoutViewModel(application: Application) : AndroidViewModel(application
             try {
                 val response = NetworkClient.api.getAllPromotions()
                 if (response.result != null) {
-                    _uiState.update { it.copy(availablePromotions = response.result.filter { it.status == "ACTIVE" }) }
+                    _uiState.update { state ->
+                        val promotions = response.result.filter { it.status == "ACTIVE" }
+                        state.copy(
+                            availablePromotions = promotions,
+                            selectedPromotion = state.selectedPromotion?.takeIf { promo ->
+                                state.totalAmount >= promo.requiredOrderAmount()
+                            }
+                        )
+                    }
                 }
             } catch (e: Exception) {
                 // Handle error
@@ -53,8 +61,14 @@ class CheckoutViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
-    fun selectPromotion(promotion: PromotionDto?) {
+    fun selectPromotion(promotion: PromotionDto?): Boolean {
+        val state = _uiState.value
+        if (promotion != null && state.totalAmount < promotion.requiredOrderAmount()) {
+            return false
+        }
+
         _uiState.update { it.copy(selectedPromotion = promotion) }
+        return true
     }
 
     private fun observeCart() {
@@ -63,10 +77,15 @@ class CheckoutViewModel(application: Application) : AndroidViewModel(application
                 val selectedIds = OrderSession.selectedLineIds.toSet()
                 val selectedItems = items.filter { it.lineId in selectedIds }
                 _uiState.update {
+                    val totalAmount = selectedItems.sumOf { item -> item.priceAtAdd * item.quantity }
+                    val selectedPromotion = it.selectedPromotion
                     it.copy(
                         isLoading = false,
                         items = selectedItems,
-                        totalAmount = selectedItems.sumOf { it.priceAtAdd * it.quantity }
+                        totalAmount = totalAmount,
+                        selectedPromotion = selectedPromotion?.takeIf { promo ->
+                            totalAmount >= promo.requiredOrderAmount()
+                        }
                     )
                 }
             }
@@ -100,6 +119,10 @@ class CheckoutViewModel(application: Application) : AndroidViewModel(application
                     throw IllegalStateException("Không có sản phẩm nào để thanh toán")
                 }
 
+                val eligiblePromotion = state.selectedPromotion?.takeIf { promotion ->
+                    state.totalAmount >= promotion.requiredOrderAmount()
+                }
+
                 NetworkClient.api.clearCart()
 
                 state.items.forEach { item ->
@@ -127,7 +150,7 @@ class CheckoutViewModel(application: Application) : AndroidViewModel(application
                 val orderRequest = OrderRequestDto(
                     deliveryAddress = state.deliveryAddress,
                     note = state.note.ifBlank { null },
-                    promotionCode = state.selectedPromotion?.promotionCode,
+                    promotionCode = eligiblePromotion?.promotionCode,
                     paymentMethod = state.paymentMethod,
                     bankCode = if (state.paymentMethod == PaymentMethodDto.VNPAY) "NCB" else null
                 )

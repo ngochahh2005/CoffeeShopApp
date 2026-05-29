@@ -1,5 +1,6 @@
 package com.example.coffeeshopapp.data.model.dto
 
+import com.google.gson.annotations.SerializedName
 import java.math.BigDecimal
 
 data class OrderDto(
@@ -14,5 +15,7 @@ data class OrderDto(
     val note: String? = null,
     val createdAt: String? = null,
     val payment: PaymentDto? = null,
-    val orderItems: List<OrderItemDto>? = null
+    val orderItems: List<OrderItemDto>? = null,
+    @SerializedName(value = "isReviewed", alternate = ["is_reviewed", "reviewed"])
+    val isReviewed: Boolean = false
 )

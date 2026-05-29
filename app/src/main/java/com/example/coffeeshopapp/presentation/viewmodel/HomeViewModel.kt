@@ -10,6 +10,7 @@ import com.example.coffeeshopapp.data.local.FavoritesDataStore
 import com.example.coffeeshopapp.data.local.AuthDataStore
 import com.example.coffeeshopapp.data.coffeeCategories
 import com.example.coffeeshopapp.data.model.dto.FavoriteDto
+import com.example.coffeeshopapp.data.model.dto.ProductDto
 import com.example.coffeeshopapp.data.model.entity.Category
 import com.example.coffeeshopapp.data.model.entity.Product
 import com.example.coffeeshopapp.data.remote.NetworkClient
@@ -105,30 +106,11 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                         ?: FavoritesDataStore.favoritesFlow(getApplication()).first()
 
                     val allProduct = products.map { product ->
-                        Product(
-                            id = product.id.toString(),
-                            name = product.name,
-                            price = product.basePrice.toLong(),
-                            description = product.description.orEmpty(),
-                            imageUrl = product.imageUrl.toFullImageUrl(),
-                            categoryId = product.categoryId,
-                            sizes = product.size,
-                            rating = 0.0,
-                            reviewers = 0,
-                            isFavorite = favoriteIds.contains(product.id.toString()),
-                        )
+                        product.toProduct(isFavorite = favoriteIds.contains(product.id.toString()))
                     }
 
-                    val trendingProduct = allProduct.sortedByDescending { product ->
-                        val normalizedRating = product.rating / 5.0
-                        val popularityScore = ln(product.reviewers.toDouble() + 1.0)
-                        (normalizedRating * 0.5) + (popularityScore * 0.5)
-                    }.take(10)
-
-                    val trendingIds = trendingProduct.map { it.id }.toSet()
-                    val finalAllProduct = allProduct.map { product ->
-                        product.copy(isTrending = trendingIds.contains(product.id))
-                    }
+                    val finalAllProduct = allProduct.withTrendingFlags()
+                    val trendingIds = finalAllProduct.filter { it.isTrending }.map { it.id }.toSet()
 
                     val allCategory = try {
                         val catResp = NetworkClient.api.getCategories()
@@ -150,7 +132,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                             categories = allCategory,
                             trendingItems = finalAllProduct.filter { trendingIds.contains(it.id) },
                             allProduct = finalAllProduct,
-                            favoriteItems = serverFavorites ?: finalAllProduct.filter { product -> product.isFavorite },
+                            favoriteItems = finalAllProduct.favoriteItems(favoriteIds, serverFavorites),
                             isLoading = false,
                             error = null
                         )
@@ -202,13 +184,18 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun refreshProductsAfterReview() {
+        loadData(forceRefresh = true)
+    }
+
     private suspend fun syncFavoritesFromServer() {
         val favoriteProducts = fetchFavoriteProductsFromServer()
         val favoriteIds = favoriteProducts.map { it.id }.toSet()
 
         _uiState.update { state ->
+            val favoriteItems = state.allProduct.favoriteItems(favoriteIds, favoriteProducts)
             state.copy(
-                favoriteItems = favoriteProducts,
+                favoriteItems = favoriteItems,
                 allProduct = state.allProduct.map { product ->
                     product.copy(isFavorite = favoriteIds.contains(product.id))
                 },
@@ -238,6 +225,46 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             imageUrl = imageUrl.toFullImageUrl(),
             isFavorite = true
         )
+    }
+
+    private fun ProductDto.toProduct(isFavorite: Boolean): Product {
+        return Product(
+            id = id.toString(),
+            name = name,
+            price = basePrice.toLong(),
+            description = description.orEmpty(),
+            imageUrl = imageUrl.toFullImageUrl(),
+            categoryId = categoryId,
+            sizes = size,
+            rating = rating ?: 0.0,
+            reviewers = reviewers ?: 0,
+            isFavorite = isFavorite,
+        )
+    }
+
+    private fun List<Product>.withTrendingFlags(): List<Product> {
+        val trendingIds = sortedByDescending { product ->
+            val normalizedRating = product.rating / 5.0
+            val popularityScore = ln(product.reviewers.toDouble() + 1.0)
+            (normalizedRating * 0.5) + (popularityScore * 0.5)
+        }.take(10).map { it.id }.toSet()
+
+        return map { product -> product.copy(isTrending = trendingIds.contains(product.id)) }
+    }
+
+    private fun List<Product>.favoriteItems(
+        favoriteIds: Set<String>,
+        serverFavorites: List<Product>?
+    ): List<Product> {
+        val productsById = associateBy { it.id }
+        val enrichedFavorites = favoriteIds.mapNotNull { id ->
+            productsById[id]?.copy(isFavorite = true)
+        }
+        val missingServerFavorites = serverFavorites.orEmpty()
+            .filterNot { favorite -> productsById.containsKey(favorite.id) }
+            .map { favorite -> favorite.copy(isFavorite = true) }
+
+        return enrichedFavorites + missingServerFavorites
     }
 
 

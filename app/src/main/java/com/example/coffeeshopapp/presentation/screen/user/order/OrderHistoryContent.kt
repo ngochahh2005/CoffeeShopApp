@@ -49,7 +49,6 @@ import com.example.coffeeshopapp.utils.formatToVietnameseDate
 fun OrderHistoryContent(
     uiState: OrderHistoryUiState,
     onBack: () -> Unit,
-    onReviewClick: (productId: Long, productName: String, size: String?, imageUrl: String?) -> Unit,
     onCancelOrder: (Long) -> Unit,
     onRetryLoad: () -> Unit,
     onOrderClick: (Long) -> Unit
@@ -98,7 +97,6 @@ fun OrderHistoryContent(
                 items(uiState.orders) { order ->
                     OrderHistoryItem(
                         order = order,
-                        onReviewClick = onReviewClick,
                         onCancelClick = { onCancelOrder(order.id) },
                         onOrderClick = { onOrderClick(order.id) }
                     )
@@ -111,7 +109,6 @@ fun OrderHistoryContent(
 @Composable
 fun OrderHistoryItem(
     order: OrderDto,
-    onReviewClick: (productId: Long, productName: String, size: String?, imageUrl: String?) -> Unit,
     onCancelClick: () -> Unit,
     onOrderClick: () -> Unit
 ) {
@@ -157,26 +154,6 @@ fun OrderHistoryItem(
                 }
             }
 
-            if (order.status.uppercase() == "COMPLETED") {
-                Spacer(modifier = Modifier.height(8.dp))
-                order.orderItems?.forEach { item ->
-                    Button(
-                        onClick = {
-                            if (item.productId > 0) {
-                                onReviewClick(item.productId, item.productName, item.size, null)
-                            } else {
-                            }
-                        },
-                        modifier = Modifier.fillMaxWidth().height(36.dp),
-                        contentPadding = PaddingValues(0.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF7B6BA8)),
-                        shape = RoundedCornerShape(8.dp)
-                    ) {
-                        Text("Đánh giá ${item.productName}", fontSize = 12.sp)
-                    }
-                    Spacer(modifier = Modifier.height(4.dp))
-                }
-            }
         }
     }
 }
@@ -225,7 +202,6 @@ private fun OrderHistoryPreview() {
         OrderHistoryContent(
             uiState = mockUiState,
             onBack = {},
-            onReviewClick = { _, _, _, _ -> },
             onCancelOrder = {},
             onRetryLoad = {},
             onOrderClick = {}

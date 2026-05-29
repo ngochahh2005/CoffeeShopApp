@@ -67,6 +67,7 @@ import com.example.coffeeshopapp.presentation.components.OrderItemCard
 import com.example.coffeeshopapp.presentation.theme.AuxiliaryButtonColor
 import com.example.coffeeshopapp.presentation.theme.BackgroundColor
 import com.example.coffeeshopapp.presentation.theme.CardBackgroundColor
+import com.example.coffeeshopapp.presentation.theme.CoffeeShopAppTheme
 import com.example.coffeeshopapp.presentation.theme.CoffeeTextColor
 import com.example.coffeeshopapp.presentation.theme.LabelColor
 import com.example.coffeeshopapp.presentation.theme.TextColor
@@ -82,7 +83,7 @@ fun CheckoutContent(
     onDeliveryAddressChange: (String) -> Unit,
     onNoteChange: (String) -> Unit,
     onPaymentMethodSelect: (PaymentMethodDto) -> Unit,
-    onPromotionSelect: (PromotionDto?) -> Unit,
+    onPromotionSelect: (PromotionDto?) -> Boolean,
     onSubmitOrder: () -> Unit
 ) {
     val context = LocalContext.current
@@ -130,9 +131,12 @@ fun CheckoutContent(
 
                 item {
                     CheckoutTitle("Áp dụng ưu đãi")
+                    val eligiblePromotion = state.selectedPromotion?.takeIf { promotion ->
+                        state.totalAmount >= promotion.requiredOrderAmount()
+                    }
 
                     PromotionSelectionRow(
-                        selectedPromotion = state.selectedPromotion,
+                        selectedPromotion = eligiblePromotion,
                         onClick = { showPromotionSheet = true }
                     )
                     CommonSpace(12.dp)
@@ -181,7 +185,10 @@ fun CheckoutContent(
                 }
 
                 item {
-                    val discountAmount = state.selectedPromotion?.let { promo ->
+                    val eligiblePromotion = state.selectedPromotion?.takeIf { promo ->
+                        state.totalAmount >= promo.requiredOrderAmount()
+                    }
+                    val discountAmount = eligiblePromotion?.let { promo ->
                         if (promo.discountType == "PERCENTAGE") {
                             (state.totalAmount * (promo.discountValue / 100.0)).toLong()
                         } else {
@@ -394,12 +401,16 @@ fun CheckoutContent(
     }
 
     if (showPromotionSheet) {
+        val eligiblePromotion = state.selectedPromotion?.takeIf { promotion ->
+            state.totalAmount >= promotion.requiredOrderAmount()
+        }
         PromotionBottomSheet(
             promotions = state.availablePromotions,
-            selectedPromotion = state.selectedPromotion,
+            selectedPromotion = eligiblePromotion,
             onPromotionSelected = {
-                onPromotionSelect(it)
-                showPromotionSheet = false
+                if (onPromotionSelect(it)) {
+                    showPromotionSheet = false
+                }
             },
             onDismiss = { showPromotionSheet = false }
         )
@@ -452,8 +463,8 @@ private fun PromotionSelectionRow(
 private fun PromotionBottomSheet(
     promotions: List<PromotionDto>,
     selectedPromotion: PromotionDto?,
-    onPromotionSelected: (PromotionDto?) -> Unit,
-    onDismiss: () -> Unit
+    onPromotionSelected: (PromotionDto?) -> Unit = {_ ->},
+    onDismiss: () -> Unit = {}
 ) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -565,14 +576,14 @@ private fun CheckoutPreview() {
         error = null
     )
 
-    com.example.coffeeshopapp.presentation.theme.CoffeeShopAppTheme {
+    CoffeeShopAppTheme {
         CheckoutContent(
             state = mockUiState,
             onBack = {},
             onDeliveryAddressChange = {},
             onNoteChange = {},
             onPaymentMethodSelect = {},
-            onPromotionSelect = {},
+            onPromotionSelect = { true },
             onSubmitOrder = {}
         )
     }

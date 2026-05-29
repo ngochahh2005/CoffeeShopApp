@@ -27,6 +27,7 @@ import com.example.coffeeshopapp.R
 import com.example.coffeeshopapp.data.model.entity.CartItem
 import com.example.coffeeshopapp.presentation.theme.k2d
 import com.example.coffeeshopapp.utils.formatGrouped
+import com.example.coffeeshopapp.utils.toFullImageUrl
 
 @Composable
 fun OrderItemCard(
@@ -40,7 +41,7 @@ fun OrderItemCard(
     ) {
         Row(modifier = Modifier.padding(4.dp), verticalAlignment = Alignment.CenterVertically) {
             AsyncImage(
-                model = item.imageUrlAtAdd,
+                model = item.imageUrlAtAdd.toFullImageUrl(),
                 placeholder = painterResource(R.drawable.loading_img),
                 error = painterResource(R.drawable.error_img),
                 contentDescription = item.nameAtAdd,

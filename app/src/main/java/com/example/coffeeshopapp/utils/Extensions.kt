@@ -61,6 +61,7 @@ private fun buildAbsoluteUrl(baseUrl: String, raw: String): String {
     val baseTrimmed = baseUrl.trimEnd('/')
 
     return when {
+        raw.isNullOrBlank() || raw == "null" -> ""
         raw.startsWith("http://") || raw.startsWith("https://") -> rewriteLocalhostIfNeeded(baseUrl, raw)
         raw.startsWith("/") -> baseTrimmed + raw
         else -> "$baseTrimmed/$raw"

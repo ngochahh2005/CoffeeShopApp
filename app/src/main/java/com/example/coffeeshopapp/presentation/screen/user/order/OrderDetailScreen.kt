@@ -7,7 +7,7 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -16,6 +16,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import com.example.coffeeshopapp.data.model.dto.OrderItemDto
 import com.example.coffeeshopapp.presentation.theme.BackgroundColor
 import com.example.coffeeshopapp.presentation.theme.CoffeeTextColor
 import com.example.coffeeshopapp.presentation.theme.TitleColor
@@ -25,12 +29,22 @@ import com.example.coffeeshopapp.presentation.viewmodel.OrderDetailViewModel
 fun OrderDetailScreen(
     orderId: Long,
     onBack: () -> Unit,
+    onReviewClick: (List<OrderItemDto>) -> Unit = {},
     viewModel: OrderDetailViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val lifecycleOwner = LocalLifecycleOwner.current
 
-    LaunchedEffect(orderId) {
-        viewModel.loadOrderDetail(orderId)
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                viewModel.loadOrderDetail(orderId)
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
     }
 
     Scaffold(
@@ -67,7 +81,12 @@ fun OrderDetailScreen(
                 }
             }
             uiState.order != null -> {
-                OrderDetailContent(order = uiState.order!!, modifier = Modifier.padding(padding))
+                OrderDetailContent(
+                    order = uiState.order!!,
+                    modifier = Modifier.padding(padding),
+                    isLocalReviewed = uiState.isLocalReviewed,
+                    onReviewClick = {items -> onReviewClick(items)}
+                )
             }
         }
     }

@@ -85,7 +85,17 @@ fun CheckoutScreen(
         onDeliveryAddressChange = viewModel::setDeliveryAddress,
         onNoteChange = viewModel::setNote,
         onPaymentMethodSelect = viewModel::setPaymentMethod,
-        onPromotionSelect = viewModel::selectPromotion,
+        onPromotionSelect = { promotion ->
+            val selected = viewModel.selectPromotion(promotion)
+            if (!selected && promotion != null) {
+                Toast.makeText(
+                    context,
+                    "Đơn hàng tối thiểu ${promotion.requiredOrderAmount().formatGrouped()}đ để dùng mã ${promotion.promotionCode}",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+            selected
+        },
         onSubmitOrder = {
             viewModel.submitOrder(
                 onVnPayUrl = { url ->

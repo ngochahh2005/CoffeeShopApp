@@ -282,6 +282,12 @@ interface ApiService {
         @Part("request") request: RequestBody,
         @Part image: MultipartBody.Part? = null
     ): ApiResponseDto<ReviewDto>
+
+    @GET("api/v1/orders/{orderId}/products/{productId}/check-reviewed")
+    suspend fun checkOrderProductReviewed(
+        @Path("orderId") orderId: Long,
+        @Path("productId") productId: Long
+    ): ApiResponseDto<Boolean>
 }
 
 data class VerifyOtpRequestDto(

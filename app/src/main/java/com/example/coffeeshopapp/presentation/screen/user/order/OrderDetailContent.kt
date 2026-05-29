@@ -11,11 +11,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -26,6 +29,7 @@ import com.example.coffeeshopapp.data.model.dto.OrderDto
 import com.example.coffeeshopapp.data.model.dto.OrderItemDto
 import com.example.coffeeshopapp.data.model.dto.OrderItemToppingDto
 import com.example.coffeeshopapp.data.model.dto.PaymentDto
+import com.example.coffeeshopapp.presentation.components.CommonSpace
 import com.example.coffeeshopapp.presentation.theme.CoffeeShopAppTheme
 import com.example.coffeeshopapp.presentation.theme.CoffeeTextColor
 import com.example.coffeeshopapp.presentation.theme.TextColor
@@ -34,7 +38,12 @@ import com.example.coffeeshopapp.utils.formatToVietnameseDate
 import java.math.BigDecimal
 
 @Composable
-fun OrderDetailContent(order: OrderDto, modifier: Modifier = Modifier) {
+fun OrderDetailContent(
+    order: OrderDto,
+    modifier: Modifier = Modifier,
+    isLocalReviewed: Boolean = false,
+    onReviewClick: (items: List<OrderItemDto>) -> Unit = {}
+) {
     val (statusText, statusColor) = when (order.status.uppercase()) {
         "PENDING" -> "Chờ xác nhận" to Color(0xFFF59E0B)
         "CONFIRMED" -> "Đã xác nhận" to Color(0xFF3B82F6)
@@ -49,6 +58,15 @@ fun OrderDetailContent(order: OrderDto, modifier: Modifier = Modifier) {
         "VNPAY" -> "Ví điện tử VNPAY"
         else -> "N/A"
     }
+
+    val reviewProducts = order.orderItems.orEmpty()
+        .filter { item -> item.productId > 0 || item.productName.isNotBlank() }
+        .distinctBy { item ->
+            if (item.productId > 0) item.productId.toString()
+            else item.productName.trim().lowercase()
+        }
+
+    val alreadyReviewed = isLocalReviewed
 
     Column(
         modifier = modifier
@@ -153,6 +171,24 @@ fun OrderDetailContent(order: OrderDto, modifier: Modifier = Modifier) {
                     )
                 }
             }
+
+            if (order.status.uppercase() == "COMPLETED" && reviewProducts.isNotEmpty()) {
+                CommonSpace()
+                Button(
+                    onClick = { onReviewClick(reviewProducts) },
+                    enabled = !alreadyReviewed,
+                    modifier = Modifier
+                        .height(48.dp)
+                        .align(Alignment.CenterHorizontally),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (alreadyReviewed) Color.Gray else Color(0xff3D3450),
+                        contentColor = Color.White
+                    ),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Text(text = if (alreadyReviewed) "Đã đánh giá" else "Viết đánh giá đơn hàng ngay!")
+                }
+            }
         }
     }
 }
@@ -173,7 +209,6 @@ private fun OrderDetailPreview() {
         OrderItemToppingDto(toppingName = "Thạch trái cây")
     )
 
-    // 2. Tạo danh sách món ăn/nước uống giả lập
     val mockOrderItems = listOf(
         OrderItemDto(
             productId = 101,
@@ -181,7 +216,7 @@ private fun OrderDetailPreview() {
             size = "M",
             unitPrice = BigDecimal(29000),
             quantity = 2,
-            toppings = emptyList() // Món này không thêm topping
+            toppings = emptyList()
         ),
         OrderItemDto(
             productId = 102,
@@ -189,25 +224,22 @@ private fun OrderDetailPreview() {
             size = "L",
             unitPrice = BigDecimal(35000),
             quantity = 1,
-            toppings = mockToppings // Món này có kèm topping ở trên
+            toppings = mockToppings
         )
     )
 
-    // 3. Đưa tất cả vào OrderDto để hiển thị lên Preview
     CoffeeShopAppTheme {
         OrderDetailContent(
             order = OrderDto(
                 id = 12345,
-                // Tính toán tổng tiền thực tế để hiển thị cho khớp logic:
-                // (29000 * 2) + (35000 * 1) = 93000đ
                 orderSubTotal = BigDecimal(93000),
-                discountAmount = BigDecimal(15000), // Giả lập giảm giá 15k
-                totalPrice = BigDecimal(78000),     // Tổng cộng = 93k - 15k = 78k
-                status = "CONFIRMED", // Đổi thử thành DELIVERING, COMPLETED... để xem đổi màu
+                discountAmount = BigDecimal(15000),
+                totalPrice = BigDecimal(78000),
+                status = "COMPLETED",
                 createdAt = "2026-05-11T16:48:44",
                 deliveryAddress = "Học viện Công nghệ Bưu chính Viễn thông (PTIT) - Hà Đông",
-                payment = PaymentDto(method = "Tiền mặt (COD)"), // Giả lập phương thức thanh toán
-                orderItems = mockOrderItems // Truyền danh sách món vào đây
+                payment = PaymentDto(method = "Tiền mặt (COD)"),
+                orderItems = mockOrderItems
             )
         )
     }

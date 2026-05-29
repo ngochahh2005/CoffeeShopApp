@@ -61,14 +61,17 @@ import com.example.coffeeshopapp.presentation.screen.user.ProductDetailScreen
 import com.example.coffeeshopapp.presentation.screen.user.checkout.CheckoutScreen
 import com.example.coffeeshopapp.presentation.screen.user.order.OrderHistoryScreen
 import com.example.coffeeshopapp.presentation.screen.user.order.OrderDetailScreen
-import com.example.coffeeshopapp.presentation.screen.user.order.ReviewScreen
+import com.example.coffeeshopapp.presentation.screen.user.review.ReviewScreen
 import com.example.coffeeshopapp.presentation.screen.user.order.OrderScreen
 import com.example.coffeeshopapp.presentation.screen.user.ProfileScreen
 import com.example.coffeeshopapp.presentation.screen.user.favorite.FavouritesScreen
 import com.example.coffeeshopapp.presentation.screen.user.home.HomeScreen
 import com.example.coffeeshopapp.presentation.theme.AdminScreenTheme
 import com.example.coffeeshopapp.presentation.viewmodel.*
+import com.example.coffeeshopapp.data.model.dto.OrderItemDto
 import com.example.coffeeshopapp.utils.getErrorMessage
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.launch
 
 private data class AuthSnapshot(
@@ -192,9 +195,6 @@ fun NavGraph(innerPadding: PaddingValues, navController: NavHostController) {
         composable(route = Screen.OrderHistory.route) {
             OrderHistoryScreen(
                 onBack = { navController.popBackStack() },
-                onReviewClick = { productId, productName, size, imageUrl ->
-                    navController.navigate(Screen.Review.createRoute(productId, productName, size, imageUrl))
-                },
                 onOrderClick = { orderId: Long ->
                     navController.navigate(Screen.OrderDetails.createRoute(orderId))
                 }
@@ -207,29 +207,44 @@ fun NavGraph(innerPadding: PaddingValues, navController: NavHostController) {
             arguments = listOf(androidx.navigation.navArgument("orderId") { type = androidx.navigation.NavType.LongType })
         ) { backStackEntry ->
             val orderId = backStackEntry.arguments?.getLong("orderId") ?: 0L
-            OrderDetailScreen(orderId = orderId, onBack = { navController.popBackStack() })
+            OrderDetailScreen(
+                orderId = orderId,
+                onBack = { navController.popBackStack() },
+                onReviewClick = { items ->
+                    val jsonItems = Gson().toJson(items)
+                    val encodedJson = Uri.encode(jsonItems)
+                    navController.navigate(Screen.Review.createRoute(orderId, encodedJson))
+                }
+            )
         }
 
         // review
         composable(
             route = Screen.Review.route,
             arguments = listOf(
-                androidx.navigation.navArgument("productId") { type = androidx.navigation.NavType.LongType },
-                androidx.navigation.navArgument("productName") { type = androidx.navigation.NavType.StringType; nullable = true },
-                androidx.navigation.navArgument("size") { type = androidx.navigation.NavType.StringType; nullable = true },
-                androidx.navigation.navArgument("imageUrl") { type = androidx.navigation.NavType.StringType; nullable = true }
+                androidx.navigation.navArgument("orderId") {
+                    type = androidx.navigation.NavType.LongType
+                    defaultValue = 0L
+                },
+                androidx.navigation.navArgument("items") {
+                    type = androidx.navigation.NavType.StringType
+                    nullable = true
+                }
             )
         ) { backStackEntry ->
-            val productId = backStackEntry.arguments?.getLong("productId") ?: 0L
-            val productName = backStackEntry.arguments?.getString("productName") ?: ""
-            val size = backStackEntry.arguments?.getString("size")
-            val imageUrl = backStackEntry.arguments?.getString("imageUrl")
+            val orderId = backStackEntry.arguments?.getLong("orderId") ?: 0L
+            val jsonItems = backStackEntry.arguments?.getString("items") ?: ""
+            val items = try {
+                val listType = object : TypeToken<List<OrderItemDto>>() {}.type
+                Gson().fromJson<List<OrderItemDto>>(jsonItems, listType)
+            } catch (e: Exception) {
+                emptyList()
+            }
             ReviewScreen(
-                productId = productId,
-                productName = productName,
-                size = size,
-                imageUrl = imageUrl,
-                onBack = { navController.popBackStack() }
+                orderId = orderId,
+                reviewItems = items,
+                onBack = { navController.popBackStack() },
+                onReviewSubmitted = { sharedHomeViewModel.refreshProductsAfterReview() }
             )
         }
 

@@ -24,9 +24,10 @@ sealed class Screen(val route: String) {
     object OrderDetails: Screen("order_details/{orderId}") {
         fun createRoute(orderId: Long) = "order_details/$orderId"
     }
-    object Review: Screen("review?productId={productId}&productName={productName}&size={size}&imageUrl={imageUrl}") {
-        fun createRoute(productId: Long, productName: String, size: String?, imageUrl: String?) =
-            "review?productId=$productId&productName=${android.net.Uri.encode(productName)}&size=${android.net.Uri.encode(size ?: "")}&imageUrl=${android.net.Uri.encode(imageUrl ?: "")}"
+    object Review: Screen("review?orderId={orderId}&items={items}") {
+        fun createRoute(orderId: Long, jsonItems: String):String {
+            return "review?orderId=$orderId&items=$jsonItems"
+        }
     }
     object Favourites: Screen("favourites")
     object ResetPassword: Screen("reset_password")

@@ -10,7 +10,6 @@ import com.example.coffeeshopapp.presentation.viewmodel.OrderHistoryViewModel
 fun OrderHistoryScreen(
     viewModel: OrderHistoryViewModel = viewModel(),
     onBack: () -> Unit = {},
-    onReviewClick: (productId: Long, productName: String, size: String?, imageUrl: String?) -> Unit = {_, _, _, _ ->},
     onOrderClick: (Long) -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -18,7 +17,6 @@ fun OrderHistoryScreen(
     OrderHistoryContent(
         uiState = uiState,
         onBack = onBack,
-        onReviewClick = onReviewClick,
         onCancelOrder = {orderId -> viewModel.cancelOrder(orderId)},
         onRetryLoad = {viewModel.loadOrders()},
         onOrderClick = onOrderClick
