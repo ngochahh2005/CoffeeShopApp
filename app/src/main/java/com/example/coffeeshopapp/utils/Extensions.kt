@@ -23,6 +23,10 @@ fun Exception.getErrorMessage(): String {
         } catch (e: Exception) {
             // Bỏ qua và dùng thông báo lỗi mặc định
         }
+        
+        // Nếu không parse được từ body, dùng message của HTTP (ví dụ "HTTP 400 Bad Request")
+        // nhưng thường người dùng không muốn thấy "HTTP 400...", nên có thể trả về lỗi mặc định thân thiện hơn.
+        return "Lỗi máy chủ hoặc yêu cầu không hợp lệ"
     }
     return this.message ?: "Lỗi không xác định"
 }
