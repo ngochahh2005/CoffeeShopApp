@@ -3,7 +3,9 @@ package com.example.coffeeshopapp.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.coffeeshopapp.data.model.dto.OrderDto
+import com.example.coffeeshopapp.data.model.dto.PaymentMethodDto
 import com.example.coffeeshopapp.data.remote.NetworkClient
+import com.example.coffeeshopapp.data.remote.PaymentRequestDto
 import com.example.coffeeshopapp.utils.getErrorMessage
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -54,6 +56,30 @@ class OrderHistoryViewModel : ViewModel() {
                 }
             } catch (e: Exception) {
                 _uiState.update { it.copy(isLoading = false, error = e.getErrorMessage()) }
+            }
+        }
+    }
+
+    fun repayOrder(orderId: Long, onVnPayUrl: (String) -> Unit) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true) }
+            try {
+                val request = PaymentRequestDto(
+                    paymentMethod = PaymentMethodDto.VNPAY,
+                    bankCode = "NCB"
+                )
+                val resp = NetworkClient.api.createPayment(orderId, request)
+                val payment = resp.result ?: throw IllegalStateException(resp.message ?: "Không thể tạo liên kết thanh toán")
+                
+                if (!payment.paymentUrl.isNullOrBlank()) {
+                    onVnPayUrl(payment.paymentUrl)
+                } else {
+                    _uiState.update { it.copy(isLoading = false, error = "Không nhận được URL thanh toán") }
+                }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(isLoading = false, error = e.getErrorMessage()) }
+            } finally {
+                _uiState.update { it.copy(isLoading = false) }
             }
         }
     }

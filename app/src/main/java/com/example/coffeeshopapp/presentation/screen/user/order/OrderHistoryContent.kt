@@ -51,7 +51,8 @@ fun OrderHistoryContent(
     onBack: () -> Unit,
     onCancelOrder: (Long) -> Unit,
     onRetryLoad: () -> Unit,
-    onOrderClick: (Long) -> Unit
+    onOrderClick: (Long) -> Unit,
+    onRepayOrder: (Long) -> Unit = {}
 ) {
     Column(modifier = Modifier.fillMaxSize().background(BackgroundColor)) {
         Box(
@@ -98,7 +99,8 @@ fun OrderHistoryContent(
                     OrderHistoryItem(
                         order = order,
                         onCancelClick = { onCancelOrder(order.id) },
-                        onOrderClick = { onOrderClick(order.id) }
+                        onOrderClick = { onOrderClick(order.id) },
+                        onRepayClick = { onRepayOrder(order.id) }
                     )
                 }
             }
@@ -110,7 +112,8 @@ fun OrderHistoryContent(
 fun OrderHistoryItem(
     order: OrderDto,
     onCancelClick: () -> Unit,
-    onOrderClick: () -> Unit
+    onOrderClick: () -> Unit,
+    onRepayClick: () -> Unit
 ) {
     val (statusText, statusColor) = when (order.status.uppercase()) {
         "PENDING" -> "Chờ xác nhận" to Color(0xFFF59E0B)
@@ -129,7 +132,7 @@ fun OrderHistoryItem(
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text(text = "Đơn hàng", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                Text(text = "Đơn hàng #${order.id}", fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 Text(
                     text = statusText,
                     color = statusColor,
@@ -142,15 +145,36 @@ fun OrderHistoryItem(
             Text(text = "Tổng tiền: ${order.totalPrice.toLong().formatGrouped()}đ", fontWeight = FontWeight.SemiBold, color = TextColor)
 
             if (order.status.uppercase() == "PENDING") {
-                Spacer(modifier = Modifier.height(8.dp))
-                Button(
-                    onClick = onCancelClick,
-                    modifier = Modifier.fillMaxWidth().height(36.dp),
-                    contentPadding = PaddingValues(0.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEF4444)),
-                    shape = RoundedCornerShape(8.dp)
+                val isVnPay = order.payment?.method?.uppercase() == "VNPAY"
+                val isPaid = order.payment?.status?.uppercase() == "PAID"
+
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Text("Hủy đơn hàng", fontSize = 12.sp, color = Color.White)
+                    // Nút Hủy đơn hàng luôn hiện nếu là PENDING
+                    Button(
+                        onClick = onCancelClick,
+                        modifier = Modifier.weight(1f).height(36.dp),
+                        contentPadding = PaddingValues(0.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEF4444)),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Text("Hủy đơn hàng", fontSize = 12.sp, color = Color.White)
+                    }
+
+                    // Nút Thanh toán lại chỉ hiện nếu là VNPAY và chưa PAID
+                    if (isVnPay && !isPaid) {
+                        Button(
+                            onClick = onRepayClick,
+                            modifier = Modifier.weight(1f).height(36.dp),
+                            contentPadding = PaddingValues(0.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3B82F6)),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Text("Thanh toán lại", fontSize = 12.sp, color = Color.White)
+                        }
+                    }
                 }
             }
 

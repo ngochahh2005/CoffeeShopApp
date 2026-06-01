@@ -22,6 +22,8 @@ import com.example.coffeeshopapp.data.model.dto.TopProductDto
 import com.example.coffeeshopapp.data.model.dto.UserCreateRequestDto
 import com.example.coffeeshopapp.data.model.dto.UserResponseDto
 import com.example.coffeeshopapp.data.model.dto.UserUpdateRequestDto
+import com.example.coffeeshopapp.data.model.dto.PaymentDto
+import com.example.coffeeshopapp.data.model.dto.PaymentMethodDto
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
 import retrofit2.http.Body
@@ -288,7 +290,18 @@ interface ApiService {
         @Path("orderId") orderId: Long,
         @Path("productId") productId: Long
     ): ApiResponseDto<Boolean>
+
+    @POST("api/v1/orders/{orderId}/payment")
+    suspend fun createPayment(
+        @Path("orderId") orderId: Long,
+        @Body request: PaymentRequestDto
+    ): ApiResponseDto<PaymentDto>
 }
+
+data class PaymentRequestDto(
+    val paymentMethod: PaymentMethodDto,
+    val bankCode: String? = null
+)
 
 data class VerifyOtpRequestDto(
     val email: String,

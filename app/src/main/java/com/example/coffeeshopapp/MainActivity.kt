@@ -1,6 +1,8 @@
 package com.example.coffeeshopapp
 
+import android.content.Intent
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -56,6 +58,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         context = applicationContext
         enableEdgeToEdge()
+        handleIntent(intent)
         setContent {
             CoffeeShopAppTheme {
                 androidx.compose.material3.Surface(
@@ -63,6 +66,24 @@ class MainActivity : ComponentActivity() {
                     color = androidx.compose.material3.MaterialTheme.colorScheme.background
                 ) {
                     MyApp()
+                }
+            }
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        handleIntent(intent)
+    }
+
+    private fun handleIntent(intent: Intent?) {
+        intent?.data?.let { uri ->
+            if (uri.scheme == "coffeeshop" && uri.host == "payment-result") {
+                val status = uri.getQueryParameter("status")
+                if (status == "success") {
+                    Toast.makeText(this, "Thanh toán thành công!", Toast.LENGTH_LONG).show()
+                } else {
+                    Toast.makeText(this, "Thanh toán thất bại hoặc đã bị hủy.", Toast.LENGTH_LONG).show()
                 }
             }
         }

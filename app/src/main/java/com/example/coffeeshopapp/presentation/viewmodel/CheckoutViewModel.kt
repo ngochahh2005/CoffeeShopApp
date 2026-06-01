@@ -133,9 +133,9 @@ class CheckoutViewModel(application: Application) : AndroidViewModel(application
                             try {
                                 SizeTypeDto.valueOf(it)
                             } catch (ignored: IllegalArgumentException) {
-                                SizeTypeDto.S
+                                null
                             }
-                        } ?: SizeTypeDto.S
+                        }
 
                     val request = CartItemRequestDto(
                         productId = productId,

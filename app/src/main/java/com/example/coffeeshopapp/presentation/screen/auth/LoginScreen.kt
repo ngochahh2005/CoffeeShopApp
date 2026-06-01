@@ -1,6 +1,7 @@
 package com.example.coffeeshopapp.presentation.screen.auth
 
 import android.widget.Toast
+import androidx.compose.foundation.Image
 import androidx.compose.runtime.getValue
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -50,6 +51,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.coffeeshopapp.R
 import com.example.coffeeshopapp.data.local.AuthDataStore
 import com.example.coffeeshopapp.data.model.dto.LoginRequestDto
 import com.example.coffeeshopapp.data.remote.NetworkClient
@@ -233,17 +235,15 @@ fun LoginScreen(
                     ),
                     elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
                 ) {
-                    Text(
-                        text = "G",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 20.sp,
-                        color = Color(0xFF4285F4)
+                    Image(
+                        painter = painterResource(R.drawable.btn_sign_in_with_gg),
+                        contentDescription = null
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = "Đăng nhập với Google",
                         style = MaterialTheme.typography.bodyLarge,
-                        color = PlaceHolderColor
+                        color = LabelColor
                     )
                 }
 

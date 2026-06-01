@@ -16,7 +16,7 @@ import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
 object GoogleSignInHelper {
 
     // Web Client ID từ Google Cloud Console (phải khớp với google.client-id trong application.properties của BE)
-    const val WEB_CLIENT_ID = "370933304710-bj55m7fove17vm3vkgmsc3mt3lidfoif.apps.googleusercontent.com"
+    const val WEB_CLIENT_ID = "370933304710-0fspa0q3r5g9ggkkgb9t76mpktlmk59k.apps.googleusercontent.com"
 
     /**
      * Launches Google Sign-In via Credential Manager.
@@ -26,7 +26,6 @@ object GoogleSignInHelper {
         return runCatching {
             val credentialManager = CredentialManager.create(context)
 
-            // Đây là luồng dành cho nút "Đăng nhập với Google", ổn định hơn so với lấy credential chung.
             val signInOption = GetSignInWithGoogleOption.Builder(WEB_CLIENT_ID).build()
             val signInRequest = GetCredentialRequest.Builder()
                 .addCredentialOption(signInOption)
@@ -34,7 +33,7 @@ object GoogleSignInHelper {
 
             credentialManager.getIdToken(context, signInRequest)
         }.getOrElse { firstError ->
-            firstError.printStackTrace()
+            android.util.Log.e("GoogleSignIn", "Lỗi SignInWithGoogleOption: ${firstError.message}", firstError)
 
             // Fallback: mở danh sách tất cả tài khoản Google nếu máy không hỗ trợ SignInWithGoogleOption tốt.
             runCatching {
@@ -50,8 +49,10 @@ object GoogleSignInHelper {
 
                 credentialManager.getIdToken(context, request)
             }.getOrElse { secondError ->
-                secondError.printStackTrace()
-                null
+                android.util.Log.e("GoogleSignIn", "Lỗi GetGoogleIdOption (Fallback): ${secondError.message}", secondError)
+                
+                // Ném lỗi ra ngoài để LoginScreen có thể lấy message chi tiết
+                throw secondError
             }
         }
     }

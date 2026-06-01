@@ -291,7 +291,27 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
     fun addToCartById(productId: String) {
         val product = _uiState.value.allProduct.find { it.id == productId } ?: return
-        addToCart(product)
+        
+        // Default to first size if product has sizes but none selected
+        val productWithDefaultSize = if (product.selectedSizeName == null && product.sizes.isNotEmpty()) {
+            val firstSize = product.sizes.minByOrNull { size ->
+                when (size.sizeName.uppercase()) {
+                    "S" -> 0
+                    "M" -> 1
+                    "L" -> 2
+                    else -> 3
+                }
+            } ?: product.sizes.first()
+
+            product.copy(
+                selectedSizeName = firstSize.sizeName,
+                selectedSizePriceExtra = firstSize.priceExtra.toLong()
+            )
+        } else {
+            product
+        }
+        
+        addToCart(productWithDefaultSize)
     }
 
     var isShowSheet by mutableStateOf(false)
