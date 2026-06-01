@@ -9,6 +9,9 @@ class           AuthViewModel : ViewModel() {
     var username by mutableStateOf("")
     private set
 
+    var email by mutableStateOf("")
+    private set
+
     var password by mutableStateOf("")
     private set
 
@@ -23,6 +26,10 @@ class           AuthViewModel : ViewModel() {
 
     fun onUsernameChange(newValue: String) {
         username = newValue
+    }
+
+    fun onEmailChange(newValue: String) {
+        email = newValue
     }
 
     fun onPasswordChange(newValue: String) {

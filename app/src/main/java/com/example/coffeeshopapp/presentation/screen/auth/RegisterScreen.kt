@@ -59,14 +59,13 @@ fun RegisterScreen(
     val focusManager = LocalFocusManager.current
 
     var isRegistering by remember { mutableStateOf(false) }
-    var email by remember { mutableStateOf("") }
 
     val handleRegister = {
-        if (viewModel.username.isEmpty() || viewModel.password.isEmpty() || viewModel.confirmPassword.isEmpty() || email.isEmpty()) {
+        if (viewModel.username.isEmpty() || viewModel.password.isEmpty() || viewModel.confirmPassword.isEmpty() || viewModel.email.isEmpty()) {
             Toast.makeText(context, "Vui lòng nhập đầy đủ thông tin!", Toast.LENGTH_SHORT).show()
         } else if (viewModel.password != viewModel.confirmPassword) {
             Toast.makeText(context, "Mật khẩu không khớp!", Toast.LENGTH_SHORT).show()
-        } else if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+        } else if (!android.util.Patterns.EMAIL_ADDRESS.matcher(viewModel.email).matches()) {
             Toast.makeText(context, "Email không đúng định dạng!", Toast.LENGTH_SHORT).show()
         } else {
             if (!isRegistering) {
@@ -80,13 +79,13 @@ fun RegisterScreen(
                                 viewModel.username,
                                 viewModel.password,
                                 viewModel.confirmPassword,
-                                email
+                                viewModel.email
                             )
                         )
 
                         if (resp.result != null) {
                             Toast.makeText(context, "Đăng ký thành công! Vui lòng nhập mã OTP.", Toast.LENGTH_SHORT).show()
-                            openOtpScreen(email)
+                            openOtpScreen(viewModel.email)
                         } else {
                             Toast.makeText(context, "Lỗi: ${resp.message}", Toast.LENGTH_SHORT).show()
                         }
@@ -149,9 +148,9 @@ fun RegisterScreen(
                 modifier = Modifier.padding(horizontal = 4.dp)
             )
             UsernameTextField(
-                username = email,
+                username = viewModel.email,
                 text = "example123@gmail.com",
-                onValueChange = { email = it },
+                onValueChange = { viewModel.onEmailChange(it) },
                 onAction = { focusManager.moveFocus(FocusDirection.Down) },
                 modifier = Modifier.fillMaxWidth(),
             )
