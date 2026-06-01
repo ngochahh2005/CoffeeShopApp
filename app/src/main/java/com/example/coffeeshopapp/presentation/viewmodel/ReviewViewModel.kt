@@ -30,6 +30,9 @@ import java.io.File
 import java.io.FileOutputStream
 
 data class UserReviewUiState(
+    val ratings: Map<Int, Int> = emptyMap(),
+    val comments: Map<Int, String> = emptyMap(),
+    val imagesMap: Map<Int, Uri?> = emptyMap(),
     val isSubmitting: Boolean = false,
     val isSuccess: Boolean = false,
     val error: String? = null
@@ -60,15 +63,24 @@ class ReviewViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
+    fun updateRating(index: Int, rating: Int) {
+        _uiState.update { it.copy(ratings = it.ratings + (index to rating)) }
+    }
+
+    fun updateComment(index: Int, comment: String) {
+        _uiState.update { it.copy(comments = it.comments + (index to comment)) }
+    }
+
+    fun updateImage(index: Int, uri: Uri?) {
+        _uiState.update { it.copy(imagesMap = it.imagesMap + (index to uri)) }
+    }
+
     fun submitMutipleReviews(
         orderId: Long,
-        reviewItems: List<OrderItemDto>,
-        ratings: Map<Int, Int>,
-        comments: Map<Int, String>,
-        images: Map<Int, Uri?>
+        reviewItems: List<OrderItemDto>
     ) {
-        if (ratings.isEmpty()) {
-            _uiState.update { it.copy(error = "Không có sản phẩm nào được đánh giá") }
+        if (reviewItems.isEmpty()) {
+            _uiState.update { it.copy(error = "Không có sản phẩm nào để đánh giá") }
             return
         }
 
@@ -76,6 +88,11 @@ class ReviewViewModel(application: Application) : AndroidViewModel(application) 
             _uiState.update { it.copy(isSubmitting = true, error = null) }
 
             try {
+                val currentState = _uiState.value
+                val ratings = currentState.ratings
+                val comments = currentState.comments
+                val images = currentState.imagesMap
+                
                 // Ensure we have products for name lookup
                 val currentProducts = if (_products.value.isEmpty()) {
                     try {
@@ -89,9 +106,11 @@ class ReviewViewModel(application: Application) : AndroidViewModel(application) 
 
                 var lastErrorMessage: String? = null
                 supervisorScope {
-                    val deferredRequests = ratings.map { (index, rating) ->
+                    // Lặp qua tất cả sản phẩm trong đơn hàng thay vì chỉ lặp qua danh sách ratings đã sửa
+                    val deferredRequests = reviewItems.indices.map { index ->
                         async {
-                            val item = reviewItems.getOrNull(index) ?: return@async null
+                            val item = reviewItems[index]
+                            val rating = ratings[index] ?: 5 // Mặc định 5 sao nếu chưa chọn
                             
                             var productId = item.productId
                             if (productId == 0L) {
@@ -116,7 +135,6 @@ class ReviewViewModel(application: Application) : AndroidViewModel(application) 
                             val gson = GsonBuilder().serializeNulls().create()
                             val jsonString = gson.toJson(reviewRequest)
                             
-                            // Important: Use application/json as Content-Type for the request part
                             val requestBody = jsonString.toRequestBody("application/json".toMediaTypeOrNull())
 
                             var imagePart: MultipartBody.Part? = null

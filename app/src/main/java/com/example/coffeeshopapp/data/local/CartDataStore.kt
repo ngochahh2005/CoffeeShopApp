@@ -23,6 +23,7 @@ object CartDataStore {
     fun cartItemsFlow(context: Context): Flow<List<CartItem>> {
         return AuthDataStore.userIdFlow(context).combine(context.cartDataStore.data) { userId, prefs ->
             deserialize(prefs[cartItemsKey(userId)])
+                .sortedByDescending { it.lastModified }
         }
     }
 
@@ -41,7 +42,10 @@ object CartDataStore {
             val index = currentItems.indexOfFirst { it.lineId == lineId }
             if (index >= 0) {
                 val existing = currentItems[index]
-                currentItems[index] = existing.copy(quantity = existing.quantity + quantity)
+                currentItems[index] = existing.copy(
+                    quantity = existing.quantity + quantity,
+                    lastModified = System.currentTimeMillis()
+                )
             } else {
                 currentItems.add(
                     CartItem(
@@ -60,7 +64,8 @@ object CartDataStore {
                                 price = it.price.toLong(),
                                 imageUrl = it.imageUrl
                             )
-                        }
+                        },
+                        lastModified = System.currentTimeMillis()
                     )
                 )
             }
@@ -76,7 +81,14 @@ object CartDataStore {
                 currentItems.filterNot { it.lineId == lineId }
             } else {
                 currentItems.map { item ->
-                    if (item.lineId == lineId) item.copy(quantity = quantity) else item
+                    if (item.lineId == lineId) {
+                        item.copy(
+                            quantity = quantity,
+                            lastModified = System.currentTimeMillis()
+                        )
+                    } else {
+                        item
+                    }
                 }
             }
             prefs[key] = serialize(updatedItems)
@@ -122,6 +134,7 @@ object CartDataStore {
                     }
                     val selectedSizeName = obj.optString("selectedSizeName").takeIf { it.isNotBlank() && it != "null" }
                     val sizePriceExtra = obj.optLong("sizePriceExtra", 0L)
+                    val lastModified = obj.optLong("lastModified", System.currentTimeMillis())
                     val toppings = obj.optJSONArray("toppings")?.let { toppingsArray ->
                         buildList {
                             for (j in 0 until toppingsArray.length()) {
@@ -148,7 +161,8 @@ object CartDataStore {
                             quantity = quantity,
                             selectedSizeName = selectedSizeName,
                             sizePriceExtra = sizePriceExtra,
-                            toppings = toppings
+                            toppings = toppings,
+                            lastModified = lastModified
                         )
                     )
                 }

@@ -33,6 +33,8 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import com.example.coffeeshopapp.data.TokenProvider
 import com.example.coffeeshopapp.utils.getErrorMessage
+import com.example.coffeeshopapp.utils.DataRefreshBroker
+import com.example.coffeeshopapp.utils.RefreshType
 import kotlin.math.ln
 
 data class HomeUiState(
@@ -73,6 +75,13 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             }
         }
 
+        // Lắng nghe các sự kiện thay đổi dữ liệu từ trang quản trị hoặc nơi khác
+        viewModelScope.launch {
+            DataRefreshBroker.refreshEvent.collect {
+                loadData(forceRefresh = true)
+            }
+        }
+
         loadData()
     }
 
@@ -84,7 +93,12 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             if (_uiState.value.trendingItems.isNotEmpty() && !forceRefresh) return@launch
 
-            _uiState.update { it.copy(isLoading = true) }
+            // Nếu là forceRefresh, ta xóa bớt dữ liệu cũ để Compose bắt buộc phải vẽ lại
+            if (forceRefresh) {
+                _uiState.update { it.copy(allProduct = emptyList(), isLoading = true) }
+            } else {
+                _uiState.update { it.copy(isLoading = true) }
+            }
 
             try {
                 val productResponse = NetworkClient.api.getProduct()

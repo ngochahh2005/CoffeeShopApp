@@ -19,6 +19,8 @@ import kotlinx.coroutines.launch
 import okhttp3.MultipartBody
 import com.example.coffeeshopapp.utils.getErrorMessage
 import com.example.coffeeshopapp.utils.isActiveResolved
+import com.example.coffeeshopapp.utils.DataRefreshBroker
+import com.example.coffeeshopapp.utils.RefreshType
 
 data class CategoryUiState(
     val isLoading: Boolean = false,
@@ -114,6 +116,7 @@ class AdminCategoryViewModel(
                 )
                 val response = createCategoryUseCase(dto, image)
                 if (isSuccess(response.code)) {
+                    DataRefreshBroker.notifyDataChanged(RefreshType.CATEGORIES)
                     loadCategories()
                     _uiState.update { it.copy(currentScreen = AdminCategoryScreenType.LIST) }
                 } else {
@@ -145,6 +148,7 @@ class AdminCategoryViewModel(
                 )
                 val response = updateCategoryUseCase(id, dto, image)
                 if (isSuccess(response.code)) {
+                    DataRefreshBroker.notifyDataChanged(RefreshType.CATEGORIES)
                     loadCategories()
                     _uiState.update { it.copy(currentScreen = AdminCategoryScreenType.LIST) }
                 } else {
@@ -172,6 +176,7 @@ class AdminCategoryViewModel(
             try {
                 val response = deleteCategoryUseCase(id)
                  if (isSuccess(response.code)) {
+                    DataRefreshBroker.notifyDataChanged(RefreshType.CATEGORIES)
                     loadCategories()
                 } else {
                     _uiState.update { it.copy(isLoading = false, error = response.message) }

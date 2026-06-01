@@ -26,6 +26,7 @@ import com.example.coffeeshopapp.data.model.dto.PaymentDto
 import com.example.coffeeshopapp.data.model.dto.PaymentMethodDto
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
+import retrofit2.http.Headers
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
@@ -58,6 +59,7 @@ data class UserDto(
 )
 
 interface ApiService {
+    @Headers("Cache-Control: no-cache")
     @GET("api/v1/products")
     suspend fun getProduct(): ApiResponseDto<List<ProductDto>>
 

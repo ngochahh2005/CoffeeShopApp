@@ -1,5 +1,6 @@
 package com.example.coffeeshopapp.presentation.screen.user.home
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,6 +21,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
@@ -29,7 +31,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.coffeeshopapp.presentation.screen.user.ProductDetailScreen
 import com.example.coffeeshopapp.presentation.theme.BackgroundColor
@@ -45,6 +51,7 @@ fun HomeScreen(
     viewModel: HomeViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val context = LocalContext.current
 
     val flyX = remember { Animatable(0f) }
     val flyY = remember { Animatable(0f) }
@@ -173,6 +180,8 @@ fun HomeScreen(
             onToggleFavorite = { id -> viewModel.toggleFavorite(id) },
             onAddToCartClick = { product, quantity ->
                 viewModel.addToCart(product, quantity)
+                Toast.makeText(context, "Đã thêm sản phẩm vào giỏ hàng!", Toast.LENGTH_SHORT).show()
+                viewModel.onDismiss()
             },
             onDismiss = { viewModel.onDismiss() }
             )

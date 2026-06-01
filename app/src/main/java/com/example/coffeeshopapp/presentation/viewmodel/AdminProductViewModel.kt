@@ -19,6 +19,8 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import okhttp3.MultipartBody
 import com.example.coffeeshopapp.utils.getErrorMessage
+import com.example.coffeeshopapp.utils.DataRefreshBroker
+import com.example.coffeeshopapp.utils.RefreshType
 
 data class ProductUiState(
     val isLoading: Boolean = false,
@@ -134,6 +136,7 @@ class AdminProductViewModel(
                 )
                 val response = createProductUseCase(dto, image)
                 if (isSuccess(response.code)) {
+                    DataRefreshBroker.notifyDataChanged(RefreshType.PRODUCTS)
                     loadProducts()
                     _uiState.update { it.copy(currentScreen = AdminProductScreenType.LIST) }
                 } else {
@@ -166,6 +169,7 @@ class AdminProductViewModel(
                 )
                 val response = updateProductUseCase(id, dto, image)
                 if (isSuccess(response.code)) {
+                    DataRefreshBroker.notifyDataChanged(RefreshType.PRODUCTS)
                     loadProducts()
                     _uiState.update { it.copy(currentScreen = AdminProductScreenType.LIST) }
                 } else {
@@ -193,6 +197,7 @@ class AdminProductViewModel(
             try {
                 val response = deleteProductUseCase(id)
                 if (isSuccess(response.code)) {
+                    DataRefreshBroker.notifyDataChanged(RefreshType.PRODUCTS)
                     loadProducts()
                 } else {
                     _uiState.update { it.copy(isLoading = false, error = response.message) }

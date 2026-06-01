@@ -61,6 +61,7 @@ import com.example.coffeeshopapp.presentation.viewmodel.UserReviewUiState
 import com.example.coffeeshopapp.utils.toFullImageUrl
 import java.math.BigDecimal
 import androidx.compose.ui.res.painterResource
+import com.example.coffeeshopapp.presentation.components.CommonSpace
 
 @Composable
 fun ReviewContent(
@@ -68,12 +69,11 @@ fun ReviewContent(
     allProducts: List<ProductDto>,
     uiState: UserReviewUiState,
     onBack: () -> Unit,
-    onSubmitClick: (ratings: Map<Int, Int>, comments: Map<Int, String>, images: Map<Int, Uri?>) -> Unit
+    onRatingChange: (Int, Int) -> Unit,
+    onCommentChange: (Int, String) -> Unit,
+    onImageChange: (Int, Uri?) -> Unit,
+    onSubmitClick: () -> Unit
 ) {
-    var ratings by remember(reviewItems) { mutableStateOf(reviewItems.indices.associateWith { 5 }) }
-    var comments by remember(reviewItems) { mutableStateOf(reviewItems.indices.associateWith { "" }) }
-    var imagesMap by remember(reviewItems) { mutableStateOf(reviewItems.indices.associateWith { null as Uri? }) }
-
     var activeProductIndex by remember { mutableStateOf<Int?>(null) }
 
     val launcher = rememberLauncherForActivityResult(
@@ -81,7 +81,7 @@ fun ReviewContent(
     ) { uri: Uri? ->
         activeProductIndex?.let { index ->
             if (uri != null) {
-                imagesMap = imagesMap + (index to uri)
+                onImageChange(index, uri)
             }
         }
     }
@@ -115,12 +115,11 @@ fun ReviewContent(
                 .weight(1f)
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
             reviewItems.forEachIndexed { index, item ->
-                val currentRating = ratings[index] ?: 5
-                val currentComment = comments[index] ?: ""
-                val currentUri = imagesMap[index]
+                val currentRating = uiState.ratings[index] ?: 5
+                val currentComment = uiState.comments[index] ?: ""
+                val currentUri = uiState.imagesMap[index]
 
                 val matchingProduct = allProducts.find {
                     (it.id != 0L && it.id == item.productId) ||
@@ -166,7 +165,7 @@ fun ReviewContent(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(32.dp))
+                CommonSpace()
 
                 // Rating Section
                 Text(
@@ -190,7 +189,7 @@ fun ReviewContent(
                             else Color(0xFFD1D1D1),
                             modifier = Modifier
                                 .size(40.dp)
-                                .clickable { ratings = ratings + (index to currentStar) }
+                                .clickable { onRatingChange(index, currentStar) }
                         )
                     }
                 }
@@ -207,7 +206,7 @@ fun ReviewContent(
                 Spacer(modifier = Modifier.height(8.dp))
                 OutlinedTextField(
                     value = currentComment,
-                    onValueChange = { comments = comments + (index to it) },
+                    onValueChange = { onCommentChange(index, it) },
                     placeholder = {
                         Text(
                             "Hãy chia sẻ chi tiết về trải nghiệm đồ uống của bạn...",
@@ -274,7 +273,7 @@ fun ReviewContent(
                                 contentScale = ContentScale.Crop
                             )
                             IconButton(
-                                onClick = { imagesMap = imagesMap + (index to null) },
+                                onClick = { onImageChange(index, null) },
                                 modifier = Modifier
                                     .align(Alignment.TopEnd)
                                     .size(24.dp)
@@ -294,14 +293,13 @@ fun ReviewContent(
                         }
                     }
                 }
-            }
 
-            Spacer(modifier = Modifier.weight(1f))
-            Spacer(modifier = Modifier.height(32.dp))
+                CommonSpace(32.dp)
+            }
 
             // Submit Button
             Button(
-                onClick = { onSubmitClick(ratings, comments, imagesMap) },
+                onClick = onSubmitClick,
                 enabled = !uiState.isSubmitting && reviewItems.isNotEmpty(),
                 modifier = Modifier
                     .fillMaxWidth()
@@ -390,7 +388,10 @@ fun ReviewScreenPreview() {
             allProducts = mockAllProducts,
             uiState = UserReviewUiState(isSubmitting = false, error = null),
             onBack = {},
-            onSubmitClick = { _, _, _ -> }
+            onRatingChange = { _, _ -> },
+            onCommentChange = { _, _ -> },
+            onImageChange = { _, _ -> },
+            onSubmitClick = { }
         )
     }
 }
