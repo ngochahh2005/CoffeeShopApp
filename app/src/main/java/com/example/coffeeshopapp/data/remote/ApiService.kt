@@ -1,5 +1,6 @@
 package com.example.coffeeshopapp.data.remote
 
+import com.example.coffeeshopapp.data.model.dto.AIChatRequestDto
 import com.example.coffeeshopapp.data.model.dto.ApiResponseDto
 import com.example.coffeeshopapp.data.model.dto.CategoryDto
 import com.example.coffeeshopapp.data.model.dto.DashboardOverviewDto
@@ -65,6 +66,9 @@ interface ApiService {
 
     @GET("api/v1/categories")
     suspend fun getCategories(): ApiResponseDto<List<CategoryDto>>
+
+    @POST("api/v1/ai/chat")
+    suspend fun chatWithAI(@Body request: AIChatRequestDto): ApiResponseDto<String>
 
     @POST("api/v1/favorites/{productId}/toggle")
     suspend fun toggleFavorite(@Path("productId") productId: Long): ApiResponseDto<FavoriteStatusDto>

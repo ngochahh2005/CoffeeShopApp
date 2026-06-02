@@ -12,6 +12,7 @@ import com.example.coffeeshopapp.data.model.entity.Product
 import com.google.gson.Gson
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import org.json.JSONArray
 
@@ -21,10 +22,15 @@ object CartDataStore {
     private val gson = Gson()
 
     fun cartItemsFlow(context: Context): Flow<List<CartItem>> {
-        return AuthDataStore.userIdFlow(context).combine(context.cartDataStore.data) { userId, prefs ->
-            deserialize(prefs[cartItemsKey(userId)])
-                .sortedByDescending { it.lastModified }
-        }
+        return AuthDataStore.userIdFlow(context)
+            .distinctUntilChanged()
+            .combine(context.cartDataStore.data.distinctUntilChanged()) { userId, prefs ->
+                val raw = prefs[cartItemsKey(userId)]
+                deserialize(raw).sortedWith(
+                    compareByDescending<CartItem> { it.lastModified }
+                        .thenByDescending { it.lineId }
+                )
+            }.distinctUntilChanged()
     }
 
     fun cartCountFlow(context: Context): Flow<Int> {
@@ -82,10 +88,8 @@ object CartDataStore {
             } else {
                 currentItems.map { item ->
                     if (item.lineId == lineId) {
-                        item.copy(
-                            quantity = quantity,
-                            lastModified = System.currentTimeMillis()
-                        )
+                        // Không cập nhật lastModified ở đây để tránh nhảy sản phẩm khi bấm +/- trong giỏ hàng
+                        item.copy(quantity = quantity)
                     } else {
                         item
                     }
@@ -99,6 +103,16 @@ object CartDataStore {
         updateQuantity(context, lineId, 0)
     }
 
+    suspend fun removeProducts(context: Context, lineIds: Set<String>) {
+        if (lineIds.isEmpty()) return
+        val key = cartItemsKey(AuthDataStore.readUserIdBlocking(context))
+        context.cartDataStore.edit { prefs ->
+            val currentItems = deserialize(prefs[key]).toMutableList()
+            val updatedItems = currentItems.filterNot { it.lineId in lineIds }
+            prefs[key] = serialize(updatedItems)
+        }
+    }
+
     suspend fun clear(context: Context) {
         val key = cartItemsKey(AuthDataStore.readUserIdBlocking(context))
         context.cartDataStore.edit { prefs ->
@@ -110,64 +124,69 @@ object CartDataStore {
 
     private fun deserialize(raw: String?): List<CartItem> {
         if (raw.isNullOrBlank()) return emptyList()
-        return runCatching {
-            val arr = JSONArray(raw)
-            buildList {
-                for (i in 0 until arr.length()) {
-                    val obj = arr.optJSONObject(i) ?: continue
-                    val productId = obj.optString("productId").trim()
-                    if (productId.isBlank()) continue
-                    val lineId = obj.optString("lineId").takeIf { it.isNotBlank() } ?: productId
-
-                    val quantity = obj.optInt("quantity", 1)
-                    val nameAtAdd = when {
-                        obj.has("nameAtAdd") -> obj.optString("nameAtAdd")
-                        else -> obj.optString("name")
-                    }
-                    val priceAtAdd = when {
-                        obj.has("priceAtAdd") -> obj.optLong("priceAtAdd", 0L)
-                        else -> obj.optLong("price", 0L)
-                    }
-                    val imageUrlAtAdd = when {
-                        obj.has("imageUrlAtAdd") -> obj.optString("imageUrlAtAdd").takeIf { it.isNotBlank() }
-                        else -> obj.optString("imageUrl").takeIf { it.isNotBlank() }
-                    }
-                    val selectedSizeName = obj.optString("selectedSizeName").takeIf { it.isNotBlank() && it != "null" }
-                    val sizePriceExtra = obj.optLong("sizePriceExtra", 0L)
-                    val lastModified = obj.optLong("lastModified", System.currentTimeMillis())
-                    val toppings = obj.optJSONArray("toppings")?.let { toppingsArray ->
-                        buildList {
-                            for (j in 0 until toppingsArray.length()) {
-                                val toppingObj = toppingsArray.optJSONObject(j) ?: continue
-                                add(
-                                    CartItemTopping(
-                                        id = toppingObj.optLong("id"),
-                                        name = toppingObj.optString("name"),
-                                        price = toppingObj.optLong("price"),
-                                        imageUrl = toppingObj.optString("imageUrl").takeIf { it.isNotBlank() && it != "null" }
-                                    )
-                                )
-                            }
+        return try {
+            val type = object : com.google.gson.reflect.TypeToken<List<CartItem>>() {}.type
+            gson.fromJson<List<CartItem>>(raw, type) ?: emptyList()
+        } catch (e: Exception) {
+            // Fallback to manual parsing for backward compatibility if needed
+            runCatching {
+                val arr = JSONArray(raw)
+                buildList {
+                    for (i in 0 until arr.length()) {
+                        val obj = arr.optJSONObject(i) ?: continue
+                        val productId = obj.optString("productId").trim()
+                        if (productId.isBlank()) continue
+                        val lineId = obj.optString("lineId").takeIf { it.isNotBlank() } ?: productId
+                        val quantity = obj.optInt("quantity", 1)
+                        val nameAtAdd = when {
+                            obj.has("nameAtAdd") -> obj.optString("nameAtAdd")
+                            else -> obj.optString("name")
                         }
-                    }.orEmpty()
+                        val priceAtAdd = when {
+                            obj.has("priceAtAdd") -> obj.optLong("priceAtAdd", 0L)
+                            else -> obj.optLong("price", 0L)
+                        }
+                        val imageUrlAtAdd = when {
+                            obj.has("imageUrlAtAdd") -> obj.optString("imageUrlAtAdd").takeIf { it.isNotBlank() }
+                            else -> obj.optString("imageUrl").takeIf { it.isNotBlank() }
+                        }
+                        val selectedSizeName = obj.optString("selectedSizeName").takeIf { it.isNotBlank() && it != "null" }
+                        val sizePriceExtra = obj.optLong("sizePriceExtra", 0L)
+                        val lastModified = obj.optLong("lastModified", 0L)
+                        val toppings = obj.optJSONArray("toppings")?.let { toppingsArray ->
+                            buildList {
+                                for (j in 0 until toppingsArray.length()) {
+                                    val toppingObj = toppingsArray.optJSONObject(j) ?: continue
+                                    add(
+                                        CartItemTopping(
+                                            id = toppingObj.optLong("id"),
+                                            name = toppingObj.optString("name"),
+                                            price = toppingObj.optLong("price"),
+                                            imageUrl = toppingObj.optString("imageUrl").takeIf { it.isNotBlank() && it != "null" }
+                                        )
+                                    )
+                                }
+                            }
+                        }.orEmpty()
 
-                    add(
-                        CartItem(
-                            lineId = lineId,
-                            productId = productId,
-                            nameAtAdd = nameAtAdd,
-                            priceAtAdd = priceAtAdd,
-                            imageUrlAtAdd = imageUrlAtAdd,
-                            quantity = quantity,
-                            selectedSizeName = selectedSizeName,
-                            sizePriceExtra = sizePriceExtra,
-                            toppings = toppings,
-                            lastModified = lastModified
+                        add(
+                            CartItem(
+                                lineId = lineId,
+                                productId = productId,
+                                nameAtAdd = nameAtAdd,
+                                priceAtAdd = priceAtAdd,
+                                imageUrlAtAdd = imageUrlAtAdd,
+                                quantity = quantity,
+                                selectedSizeName = selectedSizeName,
+                                sizePriceExtra = sizePriceExtra,
+                                toppings = toppings,
+                                lastModified = lastModified
+                            )
                         )
-                    )
+                    }
                 }
-            }
-        }.getOrElse { emptyList() }
+            }.getOrElse { emptyList() }
+        }
     }
 
     private fun buildLineId(product: Product): String {

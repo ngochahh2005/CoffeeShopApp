@@ -10,5 +10,5 @@ data class CartItem(
     val selectedSizeName: String? = null,
     val sizePriceExtra: Long = 0,
     val toppings: List<CartItemTopping> = emptyList(),
-    val lastModified: Long = System.currentTimeMillis()
+    val lastModified: Long = 0L
 )

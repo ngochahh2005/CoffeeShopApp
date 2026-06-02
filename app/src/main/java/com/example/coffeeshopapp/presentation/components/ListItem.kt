@@ -1,37 +1,25 @@
 package com.example.coffeeshopapp.presentation.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
@@ -44,13 +32,8 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.coffeeshopapp.R
 import com.example.coffeeshopapp.data.model.entity.Product
-import com.example.coffeeshopapp.presentation.theme.CardBackgroundColor
-import com.example.coffeeshopapp.presentation.theme.CoffeeShopAppTheme
-import com.example.coffeeshopapp.presentation.theme.CoffeeTextColor
-import com.example.coffeeshopapp.presentation.theme.IconStarRateColor
-import com.example.coffeeshopapp.presentation.theme.PlaceHolderColor
-import com.example.coffeeshopapp.presentation.theme.TitleSmallColor
-import com.example.coffeeshopapp.presentation.theme.k2d
+import com.example.coffeeshopapp.presentation.theme.*
+import com.example.coffeeshopapp.utils.formatGrouped
 import com.example.coffeeshopapp.utils.getFullImageUrl
 
 @Composable
@@ -59,114 +42,143 @@ fun ListItem(
     isLoading: Boolean = false,
     onFavoriteClick: (String) -> Unit,
     openProductDetailScreen: (Product) -> Unit = {},
-    onAddToCartClick: (String, Offset) -> Unit = {_, _ ->},
+    onAddToCartClick: (String, Offset) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier
 ) {
-    Row(
+    var itemOffset by remember { mutableStateOf(Offset.Zero) }
+
+    Surface(
         modifier = modifier
             .fillMaxWidth()
-            .height(100.dp)
-            .clip(RoundedCornerShape(12.dp))
-            .background(CardBackgroundColor)
-            .clickable {
-                openProductDetailScreen(product)
-            },
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+            .height(115.dp)
+            .shadow(elevation = 6.dp, shape = RoundedCornerShape(20.dp))
+            .clickable { openProductDetailScreen(product) },
+        color = Color.White,
+        shape = RoundedCornerShape(20.dp)
     ) {
-        AsyncImage(
-            model = product.getFullImageUrl(),
-            contentDescription = product.name,
-            modifier = Modifier.size(100.dp).padding(4.dp)
-                .clip(RoundedCornerShape(8.dp)),
-            contentScale = ContentScale.Crop,
-            error = painterResource(R.drawable.error_img),
-            placeholder = painterResource(R.drawable.loading_img)
-        )
-
-        Column(modifier = Modifier
-            .weight(1f)
-            .padding(vertical = 4.dp)
-            .align(Alignment.CenterVertically),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
+        Row(
+            modifier = Modifier.fillMaxSize(),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = product.name,
-                fontWeight = FontWeight.Bold,
-                color = TitleSmallColor,
-                style = MaterialTheme.typography.bodyLarge,
-            )
-
-            Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-                Icon(
-                    Icons.Default.Star,
-                    tint = IconStarRateColor,
-                    contentDescription = null,
-                    modifier = Modifier.size(12.dp).align(Alignment.CenterVertically)
+            // Product Image with Aesthetic Frame
+            Box(
+                modifier = Modifier
+                    .padding(10.dp)
+                    .size(95.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(Color(0xFFF8F8F8))
+            ) {
+                AsyncImage(
+                    model = product.getFullImageUrl(),
+                    contentDescription = product.name,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop,
+                    error = painterResource(R.drawable.error_img),
+                    placeholder = painterResource(R.drawable.loading_img)
                 )
+                
+                // Rating Overlay
+                Surface(
+                    color = Color.Black.copy(alpha = 0.6f),
+                    shape = RoundedCornerShape(topStart = 16.dp, bottomEnd = 8.dp),
+                    modifier = Modifier.align(Alignment.TopStart)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(2.dp)
+                    ) {
+                        Icon(Icons.Default.Star, null, tint = Color(0xFFFFD700), modifier = Modifier.size(10.dp))
+                        Text(product.rating.toString(), color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(vertical = 12.dp, horizontal = 4.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
                 Text(
-                    text = product.rating.toString() + " (" + product.reviewers.toString() + " người đánh giá)",
-                    color = CoffeeTextColor,
+                    text = product.name,
                     fontFamily = k2d,
-                    fontWeight = FontWeight.Normal,
-                    fontSize = 14.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 18.sp,
+                    color = TextColor,
                     maxLines = 1,
-                    softWrap = true,
                     overflow = TextOverflow.Ellipsis
                 )
+
+                Text(
+                    text = "${product.reviewers} đánh giá",
+                    fontSize = 14.sp,
+                    color = Color.Gray,
+                    fontFamily = k2d,
+                    fontWeight = FontWeight.Normal
+                )
+
+                Text(
+                    text = "${product.price.formatGrouped()}đ",
+                    color = TextColor,
+                    fontFamily = k2d,
+                    fontWeight = FontWeight.Normal,
+                    fontSize = 14.sp
+                )
             }
 
-            Text(
-                text = product.getPrice(),
-                color = TitleSmallColor,
-                fontFamily = k2d,
-                fontWeight = FontWeight.Normal,
-                fontSize = 16.sp
-            )
-        }
-
-        Column(
-            modifier = Modifier.fillMaxHeight(),
-            verticalArrangement = Arrangement.SpaceBetween
-        ) {
-            IconButton(onClick = {
-                if (!isLoading) onFavoriteClick(product.id) },
-                modifier = Modifier.padding(top = 8.dp).size(24.dp).align(Alignment.CenterHorizontally)
+            Column(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .padding(top = 12.dp),
+                verticalArrangement = Arrangement.SpaceBetween,
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                if (isLoading) {
-                    CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
-                } else {
-                    Icon(
-                        imageVector = if (product.isFavorite) Icons.Filled.Favorite else Icons.Default.FavoriteBorder,
-                        contentDescription = null,
-                        tint = PlaceHolderColor
-                    )
+                // Favorite Button
+                IconButton(
+                    onClick = { if (!isLoading) onFavoriteClick(product.id) },
+                    modifier = Modifier.size(28.dp)
+                ) {
+                    if (isLoading) {
+                        CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp, color = Color(0xFFC38EB4))
+                    } else {
+                        Icon(
+                            imageVector = if (product.isFavorite) Icons.Filled.Favorite else Icons.Default.FavoriteBorder,
+                            contentDescription = null,
+                            tint = if (product.isFavorite) Color(0xFFC38EB4) else Color(0xFFA89FBA),
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
                 }
-            }
 
-            var itemOffset by remember { mutableStateOf(Offset.Zero) }
-            Box(modifier = Modifier
-                .size(36.dp, 30.dp)
-                .clip(RoundedCornerShape(topStart = 12.dp, bottomEnd = 12.dp))
-                .background(color = CoffeeTextColor)
-                .onGloballyPositioned { itemOffset = it.positionInRoot() }
-                .clickable {
-                    onAddToCartClick(product.id, itemOffset)
+                // Premium Add Button
+                Surface(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .onGloballyPositioned { itemOffset = it.positionInRoot() }
+                        .clickable { onAddToCartClick(product.id, itemOffset) },
+                    shape = RoundedCornerShape(topStart = 12.dp, bottomEnd = 12.dp),
+                    color = CoffeeTextColor,
+                    shadowElevation = 4.dp
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(Icons.Default.Add, null, tint = Color.White, modifier = Modifier.size(20.dp))
+                    }
                 }
-            ) {
-                Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.align(Alignment.Center), tint = CardBackgroundColor)
             }
         }
     }
 }
 
+@Preview
 @Composable
-@Preview(name = "Favorite List Preview")
-fun FavoriteListItemPreview() {
+fun ListItemPreview() {
     CoffeeShopAppTheme {
-        ListItem(
-            product = Product(id = "1", name = "Hồng trà sữa khoai môn trân châu đường đen", price = 35000, isFavorite = true),
-            onFavoriteClick = {},
-
-        )
+        Box(modifier = Modifier.padding(20.dp)) {
+            ListItem(
+                product = Product(id = "1", name = "Mocha Espresso Macchiato", price = 45000, rating = 4.8, reviewers = 1250),
+                onFavoriteClick = {}
+            )
+        }
     }
 }

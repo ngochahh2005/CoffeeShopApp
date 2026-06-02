@@ -20,7 +20,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 data class CartUiState(
-    val isLoading: Boolean = true,
+    val isLoading: Boolean = false,
     val items: List<CartItem> = emptyList(),
     val totalItemsInCart: Int = 0,
     val selectedCount: Int = 0,
@@ -51,7 +51,7 @@ class CartViewModel(application: Application) : AndroidViewModel(application) {
                     val newState = currentState.copy(
                         isLoading = false,
                         items = items,
-                        totalItemsInCart = items.sumOf { it.quantity },
+                        totalItemsInCart = items.size,
                         selectedIds = cleanedSelectedIds
                     )
                     calculateTotal(newState)
@@ -65,6 +65,27 @@ class CartViewModel(application: Application) : AndroidViewModel(application) {
             val newSelectedIds = currentState.selectedIds.toMutableSet()
             if (newSelectedIds.contains(lineId)) newSelectedIds.remove(lineId) else newSelectedIds.add(lineId)
             calculateTotal(currentState.copy(selectedIds = newSelectedIds))
+        }
+    }
+
+    fun toggleAllSelection(selected: Boolean) {
+        _uiState.update { currentState ->
+            val newSelectedIds = if (selected) {
+                currentState.items.map { it.lineId }.toSet()
+            } else {
+                emptySet()
+            }
+            calculateTotal(currentState.copy(selectedIds = newSelectedIds))
+        }
+    }
+
+    fun removeSelectedItems() {
+        val selectedIds = _uiState.value.selectedIds
+        if (selectedIds.isEmpty()) return
+        
+        viewModelScope.launch {
+            CartDataStore.removeProducts(getApplication(), selectedIds)
+            _uiState.update { it.copy(selectedIds = emptySet()) }
         }
     }
 

@@ -55,6 +55,7 @@ import com.example.coffeeshopapp.presentation.screen.auth.ForgotPasswordScreen
 import com.example.coffeeshopapp.presentation.screen.auth.LoginScreen
 import com.example.coffeeshopapp.presentation.screen.auth.OtpVerificationScreen
 import com.example.coffeeshopapp.presentation.screen.auth.RegisterScreen
+import com.example.coffeeshopapp.presentation.screen.user.aichat.AIChatScreen
 import com.example.coffeeshopapp.presentation.screen.user.ChangePasswordScreen
 import com.example.coffeeshopapp.presentation.screen.user.cart.CartScreen
 import com.example.coffeeshopapp.presentation.screen.user.ProductDetailScreen
@@ -136,7 +137,10 @@ fun NavGraph(innerPadding: PaddingValues, navController: NavHostController) {
     ) {
         // home
         composable(route = Screen.UserHome.route) {
-            HomeScreen(viewModel = sharedHomeViewModel)
+            HomeScreen(
+                viewModel = sharedHomeViewModel,
+                onNavigateToChat = { navController.navigate(Screen.AIChat.route) }
+            )
         }
 
         // favorite
@@ -532,6 +536,13 @@ fun NavGraph(innerPadding: PaddingValues, navController: NavHostController) {
             ProductDetailScreen(
                 product = Product("1", "Sinh tố bơ", 25000, imageUrl = "", description = "Bơ sáp Daklak xay nhuyễn"),
                 onDismiss = { sharedHomeViewModel.onDismiss() }
+            )
+        }
+
+        // ai chat
+        composable(route = Screen.AIChat.route) {
+            AIChatScreen(
+                onBackClick = { navController.popBackStack() }
             )
         }
     }

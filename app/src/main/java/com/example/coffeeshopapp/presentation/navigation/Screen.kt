@@ -38,6 +38,7 @@ sealed class Screen(val route: String) {
     object ForgotPassword: Screen("forgot_password")
     object ChangePassword: Screen("change_password")
     object ProductDetail: Screen("product_detail")
+    object AIChat: Screen("ai_chat")
 }
 
 val screenWithBottomBar = listOf(

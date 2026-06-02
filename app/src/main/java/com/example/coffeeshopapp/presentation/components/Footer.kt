@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
@@ -28,11 +30,13 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import com.example.coffeeshopapp.data.local.CartDataStore
 import com.example.coffeeshopapp.presentation.utils.CartPositionStore
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -50,7 +54,7 @@ fun Footer(
     val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
     Box(modifier = modifier
         .fillMaxWidth()
-        .height(48.dp)
+        .height(56.dp)
         .background(color = FooterBackgroundColor)
     ) {
         Row(modifier = Modifier.fillMaxSize(),
@@ -86,20 +90,33 @@ fun Footer(
             }
 
             // Shopping bag: capture its position for fly-to-cart animation
-            IconButton(onClick = {
-                navController.navigate(Screen.Cart.route) {
-                    popUpTo(navController.graph.findStartDestination().id) {
-                        saveState = true
+            IconButton(
+                modifier = Modifier.onGloballyPositioned { coords ->
+                    val pos = coords.positionInRoot()
+                    CartPositionStore.update(Offset(pos.x, pos.y))
+                },
+                onClick = {
+                    navController.navigate(Screen.Cart.route) {
+                        popUpTo(navController.graph.findStartDestination().id) {
+                            saveState = true
+                        }
+                        launchSingleTop = true
+                        restoreState = true
                     }
-                    launchSingleTop = true
-                    restoreState = true
                 }
-            }) {
+            ) {
                 BadgedBox(
                     badge = {
                         if (cartCount > 0) {
-                            Badge {
-                                Text(text = if (cartCount > 99) "99+" else cartCount.toString())
+                            Badge(
+                                containerColor = Color.Red,
+                                contentColor = Color.White,
+                                modifier = Modifier.offset(x = (-4).dp, y = 4.dp)
+                            ) {
+                                Text(
+                                    text = if (cartCount > 99) "99+" else cartCount.toString(),
+                                    fontSize = 10.sp
+                                )
                             }
                         }
                     }
@@ -108,12 +125,7 @@ fun Footer(
                         imageVector = if (currentRoute == Screen.Cart.route) Icons.Default.ShoppingBag else Icons.Outlined.ShoppingBag,
                         contentDescription = null,
                         tint = LabelColor,
-                        modifier = Modifier
-                            .fillMaxSize(.75f)
-                            .onGloballyPositioned { coords ->
-                                val pos = coords.positionInRoot()
-                                CartPositionStore.update(Offset(pos.x, pos.y))
-                            }
+                        modifier = Modifier.size(28.dp)
                     )
                 }
             }
@@ -147,7 +159,7 @@ fun FooterIcon(
             imageVector = if (isSelected) iconSelected else iconUnselected,
             contentDescription = null,
             tint = LabelColor,
-            modifier = Modifier.fillMaxSize(.75f)
+            modifier = Modifier.size(28.dp)
         )
     }
 }

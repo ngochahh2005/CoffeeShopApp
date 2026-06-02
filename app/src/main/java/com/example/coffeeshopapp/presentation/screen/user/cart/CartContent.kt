@@ -1,86 +1,52 @@
 package com.example.coffeeshopapp.presentation.screen.user.cart
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.gestures.rememberDraggableState
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Remove
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.CheckboxDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonDefaults
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.coffeeshopapp.R
-import com.example.coffeeshopapp.data.local.CartDataStore
 import com.example.coffeeshopapp.data.model.entity.CartItem
-import com.example.coffeeshopapp.data.model.entity.CartItemTopping
 import com.example.coffeeshopapp.presentation.components.FlowTagRow
-import com.example.coffeeshopapp.presentation.theme.AuxiliaryButtonColor
-import com.example.coffeeshopapp.presentation.theme.BackgroundColor
-import com.example.coffeeshopapp.presentation.theme.CoffeeShopAppTheme
-import com.example.coffeeshopapp.presentation.theme.CoffeeTextColor
-import com.example.coffeeshopapp.presentation.theme.LabelColor
-import com.example.coffeeshopapp.presentation.theme.PlaceHolderColor
-import com.example.coffeeshopapp.presentation.theme.TitleSmallColor
-import com.example.coffeeshopapp.presentation.theme.k2d
+import com.example.coffeeshopapp.presentation.theme.*
 import com.example.coffeeshopapp.presentation.viewmodel.CartUiState
 import com.example.coffeeshopapp.utils.formatGrouped
 import com.example.coffeeshopapp.utils.toFullImageUrl
@@ -90,6 +56,8 @@ fun CartContent(
     state: CartUiState,
     cartCount: Int,
     onToggleSelection: (String) -> Unit,
+    onToggleAllSelection: (Boolean) -> Unit,
+    onRemoveSelected: () -> Unit,
     onIncrease: (String) -> Unit,
     onDecrease: (String) -> Unit,
     onRemove: (String) -> Unit,
@@ -98,107 +66,169 @@ fun CartContent(
     openProductDetailScreen: (String) -> Unit,
     onQuantityChange: (String, Int) -> Unit
 ) {
+    val allSelected = state.items.isNotEmpty() && state.selectedIds.size == state.items.size
 
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(BackgroundColor)
+            .background(
+                brush = Brush.verticalGradient(
+                    colors = listOf(
+                        BackgroundColor,
+                        Color(0xFFD1C8D5)
+                    )
+                )
+            )
     ) {
-        Box(modifier = Modifier.fillMaxWidth().padding(top = 18.dp)) {
-            IconButton(
-                onClick = onBack,
-                colors = IconButtonDefaults.iconButtonColors(contentColor = CoffeeTextColor)
+        Column(modifier = Modifier.fillMaxSize()) {
+            // header
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 20.dp, start = 8.dp, end = 16.dp, bottom = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(Icons.Default.ArrowBack, contentDescription = "back", modifier = Modifier.size(36.dp))
-            }
-
-            Text(
-                text = buildAnnotatedString {
-                    withStyle(style = MaterialTheme.typography.titleMedium.toSpanStyle().copy(color = LabelColor)) {
-                        append("Giỏ hàng ")
-                    }
-                    withStyle(style = MaterialTheme.typography.titleMedium.toSpanStyle().copy(color = CoffeeTextColor)) {
-                        append("(${cartCount})")
-                    }
-                },
-                style = MaterialTheme.typography.titleMedium,
-                color = TitleSmallColor,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.align(Alignment.Center)
-            )
-        }
-        Spacer(modifier = Modifier.height(12.dp))
-
-        LazyColumn(modifier = Modifier.weight(1f)) {
-            items(state.items, key = { it.lineId }) { item ->
-                ItemOfCart(
-                    item = item,
-                    isSelected = item.lineId in state.selectedIds,
-                    onCheckedChange = { onToggleSelection(item.lineId) },
-                    onIncrease = { onIncrease(item.lineId) },
-                    onDecrease = { onDecrease(item.lineId) },
-                    onRemove = { onRemove(item.lineId) },
-                    onOpenDetail = { openProductDetailScreen(item.productId) },
-                    onQuantityChange = { onQuantityChange(item.lineId, it)}
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-            }
-        }
-
-        Spacer(modifier = Modifier.height(12.dp))
-        Row(
-            modifier = Modifier.fillMaxWidth().wrapContentHeight().padding(horizontal = 12.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = "${state.totalAmount.formatGrouped()}đ",
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold,
-                color = TitleSmallColor,
-                textAlign = TextAlign.Right,
-                modifier = Modifier.fillMaxWidth(.5f)
-            )
-
-            Spacer(modifier = Modifier.width(8.dp))
-
-            Button(
-                modifier = Modifier.fillMaxWidth(),
-                onClick = openOrderScreen,
-                enabled = state.selectedIds.isNotEmpty(),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = AuxiliaryButtonColor,
-                    contentColor = Color.White
-                )
-            ) {
+                IconButton(onClick = onBack) {
+                    Icon(Icons.Default.ArrowBackIosNew, contentDescription = null, tint = LabelColor, modifier = Modifier.size(22.dp))
+                }
                 Text(
-                    "Mua hàng (${state.selectedIds.size})",
-                    style = MaterialTheme.typography.bodyLarge
+                    text = "Giỏ hàng của tôi",
+                    fontFamily = pacifico,
+                    fontSize = 28.sp,
+                    color = LabelColor,
+                    modifier = Modifier.weight(1f)
                 )
+                Surface(
+                    color = LabelColor,
+                    shape = CircleShape,
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Text(cartCount.toString(), color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    }
+                }
+            }
+
+            // select all
+            if (state.items.isNotEmpty()) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Checkbox(
+                        checked = allSelected,
+                        onCheckedChange = { onToggleAllSelection(it) },
+                        colors = CheckboxDefaults.colors(
+                            checkedColor = PlaceHolderColor,
+                            uncheckedColor = PlaceHolderColor
+                        )
+                    )
+                    Text("Chọn tất cả", style = MaterialTheme.typography.bodyMedium, color = LabelColor, fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.weight(1f))
+                    if (state.selectedIds.isNotEmpty()) {
+                        Text(
+                            "Xóa mục đã chọn",
+                            color = Color(0xFFE53935),
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.clickable { onRemoveSelected() }
+                        )
+                    }
+                }
+            }
+
+            LazyColumn(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(horizontal = 20.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                contentPadding = PaddingValues(bottom = 140.dp) // Space for floating bottom bar
+            ) {
+                items(state.items, key = { it.lineId }) { item ->
+                    PremiumCartItem(
+                        item = item,
+                        isSelected = item.lineId in state.selectedIds,
+                        onCheckedChange = { onToggleSelection(item.lineId) },
+                        onIncrease = { onIncrease(item.lineId) },
+                        onDecrease = { onDecrease(item.lineId) },
+                        onRemove = { onRemove(item.lineId) },
+                        onOpenDetail = { openProductDetailScreen(item.productId) },
+                        onQuantityChange = { onQuantityChange(item.lineId, it) }
+                    )
+                }
+            }
+        }
+
+        // check out
+        AnimatedVisibility(
+            visible = state.items.isNotEmpty(),
+            enter = fadeIn(),
+            exit = fadeOut(),
+            modifier = Modifier.align(Alignment.BottomCenter)
+        ) {
+            Surface(
+                modifier = Modifier
+                    .padding(20.dp)
+                    .fillMaxWidth()
+                    .height(100.dp)
+                    .shadow(elevation = 24.dp, shape = RoundedCornerShape(28.dp)),
+                color = Color.White,
+                shape = RoundedCornerShape(28.dp)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .padding(horizontal = 24.dp)
+                        .fillMaxSize(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column {
+                        Text("Tổng tiền", style = MaterialTheme.typography.labelLarge, color = PlaceHolderColor)
+                        Text(
+                            text = "${state.totalAmount.formatGrouped()}đ",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = TitleSmallColor,
+                            fontSize = 18.sp
+                        )
+                    }
+
+                    Button(
+                        onClick = openOrderScreen,
+                        enabled = state.selectedIds.isNotEmpty(),
+                        shape = RoundedCornerShape(18.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xff3D3450),
+                            contentColor = Color.White,
+                            disabledContainerColor = Color(0xffA0A0A0)
+                        ),
+                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 8.dp)
+                    ) {
+                        Text("Thanh toán", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                        Spacer(Modifier.width(8.dp))
+                        Icon(Icons.Default.ArrowForward, contentDescription = null, modifier = Modifier.size(18.dp))
+                    }
+                }
             }
         }
     }
 }
 
 @Composable
-private fun ItemOfCart(
+private fun PremiumCartItem(
     item: CartItem,
-    isSelected: Boolean = false,
-    onCheckedChange: (Boolean) -> Unit = {},
+    isSelected: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
     onIncrease: () -> Unit,
     onDecrease: () -> Unit,
     onRemove: () -> Unit,
     onOpenDetail: () -> Unit,
     onQuantityChange: (Int) -> Unit
 ) {
-    var tmpQuantity by rememberSaveable(item.quantity) {
-        mutableStateOf(item.quantity.toString())
-    }
-    val focusManager = LocalFocusManager.current
-
     var offsetX by remember { mutableFloatStateOf(0f) }
-    val maxOffset = -80f
-
+    val maxOffset = -90f
     val draggableState = rememberDraggableState { delta ->
         val newOffset = offsetX + delta
         offsetX = newOffset.coerceIn(maxOffset, 0f)
@@ -207,33 +237,28 @@ private fun ItemOfCart(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onOpenDetail)
+            .clip(RoundedCornerShape(24.dp))
     ) {
+        // Aesthetic Swipe Action
         Box(
             modifier = Modifier
                 .matchParentSize()
-                .background(Color.Red)
+                .background(Color(0xFFFFF1F0))
+                .clickable { onRemove() },
+            contentAlignment = Alignment.CenterEnd
         ) {
             Box(
                 modifier = Modifier
-                    .width(80.dp)
+                    .width(90.dp)
                     .fillMaxHeight()
-                    .align(Alignment.CenterEnd)
-                    .clickable {
-                        onRemove()
-                        offsetX = 0f
-                    },
+                    .background(Color(0xFFFF4D4F)),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    Icons.Default.Delete,
-                    contentDescription = "Remove",
-                    tint = Color.White,
-                    modifier = Modifier.size(24.dp)
-                )
+                Icon(Icons.Outlined.Delete, contentDescription = null, tint = Color.White, modifier = Modifier.size(28.dp))
             }
         }
 
+        // Main Boutique Card
         Surface(
             modifier = Modifier
                 .fillMaxWidth()
@@ -241,112 +266,97 @@ private fun ItemOfCart(
                 .draggable(
                     state = draggableState,
                     orientation = Orientation.Horizontal,
-                    onDragStopped = { offsetX = if (offsetX < -40f) maxOffset else 0f }
-                ),
-            color = BackgroundColor
+                    onDragStopped = { offsetX = if (offsetX < -45f) maxOffset else 0f }
+                )
+                .clickable(onClick = onOpenDetail),
+            color = Color.White,
+            shape = RoundedCornerShape(24.dp),
+            shadowElevation = 4.dp
         ) {
             Row(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 6.dp, end = 6.dp, bottom = 6.dp),
+                    .padding(14.dp)
+                    .fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Checkbox(
                     checked = isSelected,
                     onCheckedChange = onCheckedChange,
-                    colors = CheckboxDefaults.colors(
-                        checkedColor = PlaceHolderColor,
-                        uncheckedColor = PlaceHolderColor
-                    )
+                    colors = CheckboxDefaults.colors(checkedColor = PlaceHolderColor, uncheckedColor = PlaceHolderColor),
+                    modifier = Modifier.size(24.dp)
                 )
 
-                AsyncImage(
-                    model = item.imageUrlAtAdd.toFullImageUrl(),
-                    placeholder = painterResource(R.drawable.loading_img),
-                    error = painterResource(R.drawable.error_img),
-                    contentDescription = item.nameAtAdd,
-                    modifier = Modifier.padding(end = 8.dp).size(108.dp),
-                    contentScale = ContentScale.Crop
-                )
+                Spacer(modifier = Modifier.width(12.dp))
 
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                // Product Image with Frame
+                Box(
+                    modifier = Modifier
+                        .size(90.dp)
+                        .clip(RoundedCornerShape(18.dp))
+                        .background(Color(0xFFF5F5F5))
+                        .border(1.dp, Color(0xFFF0F0F0), RoundedCornerShape(18.dp))
                 ) {
+                    AsyncImage(
+                        model = item.imageUrlAtAdd.toFullImageUrl(),
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop,
+                        placeholder = painterResource(R.drawable.loading_img),
+                        error = painterResource(R.drawable.error_img)
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(16.dp))
+
+                Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = item.nameAtAdd,
                         fontFamily = k2d,
-                        fontWeight = FontWeight.Normal,
-                        fontSize = 16.sp,
-                        color = Color(0xff191B29),
-                        maxLines = 2,
+                        fontWeight = FontWeight.ExtraBold,
+                        fontSize = 17.sp,
+                        color = TextColor,
+                        maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
 
+                    Spacer(modifier = Modifier.height(6.dp))
+                    
+                    // Options as Minimal Chips
                     CartItemOptions(item)
 
-                    Box(
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    Row(
                         modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text(
-                            text = item.priceAtAdd.formatGrouped(),
-                            color = Color(0xff63567A),
+                            text = "${item.priceAtAdd.formatGrouped()}đ",
+                            color = TextColor,
                             fontFamily = k2d,
                             fontWeight = FontWeight.Normal,
-                            fontSize = 14.sp,
+                            fontSize = 16.sp,
                         )
 
+                        Spacer(modifier = Modifier.width(4.dp))
+                        // Elegant Boutique Quantity Picker
                         Row(
-                            modifier = Modifier.wrapContentSize().align(Alignment.CenterEnd),
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(Color(0xFFF8F8F8))
+                                .border(1.dp, Color(0xFFEEEEEE), RoundedCornerShape(12.dp))
+                                .padding(horizontal = 2.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            IconButton(onClick = onDecrease) {
-                                Icon(Icons.Default.Remove, contentDescription = "Decrease")
+                            IconButton(onClick = onDecrease, modifier = Modifier.size(30.dp)) {
+                                Icon(Icons.Default.Remove, null, modifier = Modifier.size(14.dp), tint = Color.Gray)
                             }
-                            BasicTextField(
-                                value = tmpQuantity,
-                                onValueChange = { newValue ->
-                                    if ((newValue.isEmpty() || newValue.all { it.isDigit() }) && newValue.length <= 3) {
-                                        tmpQuantity = newValue
-                                    }
-                                },
-                                textStyle = MaterialTheme.typography.bodyMedium.copy(
-                                    color = TitleSmallColor,
-                                    textAlign = TextAlign.Center,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 16.sp
-                                ),
-                                modifier = Modifier
-                                    .width(35.dp)
-                                    .wrapContentHeight()
-                                    .onFocusChanged { focusState ->
-                                        if (!focusState.isFocused) {
-                                            val finalQty = tmpQuantity.toIntOrNull() ?: item.quantity
-                                            if (finalQty > 0) onQuantityChange(finalQty) else tmpQuantity = item.quantity.toString()
-                                        }
-                                    },
-                                keyboardOptions = KeyboardOptions(
-                                    keyboardType = KeyboardType.Number,
-                                    imeAction = ImeAction.Done
-                                ),
-                                keyboardActions = KeyboardActions(
-                                    onDone = {
-                                        val finalQty = tmpQuantity.toIntOrNull() ?: item.quantity
-                                        if (finalQty > 0) onQuantityChange(finalQty) else tmpQuantity = item.quantity.toString()
-                                        focusManager.clearFocus()
-                                    }
-                                ),
-                                singleLine = true,
-                                decorationBox = { innerTextField ->
-                                    Box(
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        innerTextField()
-                                    }
-                                }
-                            )
-                            IconButton(onClick = onIncrease) {
-                                Icon(Icons.Default.Add, contentDescription = "Increase")
+                            
+                            QuantityField(item, onQuantityChange)
+
+                            IconButton(onClick = onIncrease, modifier = Modifier.size(30.dp)) {
+                                Icon(Icons.Default.Add, null, modifier = Modifier.size(14.dp), tint = TitleColor)
                             }
                         }
                     }
@@ -357,60 +367,69 @@ private fun ItemOfCart(
 }
 
 @Composable
-private fun CartItemOptions(item: CartItem) {
-    val optionText = buildList {
-        item.selectedSizeName?.let { add("Size $it (+${item.sizePriceExtra.formatGrouped()}đ)") }
-        if (item.toppings.isNotEmpty()) {
-            add("Topping: ${item.toppings.joinToString { "${it.name} (+${it.price.formatGrouped()}đ)" }}")
-        }
-    }.joinToString(" • ")
+private fun QuantityField(item: CartItem, onQuantityChange: (Int) -> Unit) {
+    var tmpQty by remember(item.quantity) { mutableStateOf(item.quantity.toString()) }
+    val focusManager = LocalFocusManager.current
 
-    if (optionText.isNotBlank()) {
+    BasicTextField(
+        value = tmpQty,
+        onValueChange = { if (it.length <= 2 && (it.isEmpty() || it.all { c -> c.isDigit() })) tmpQty = it },
+        textStyle = MaterialTheme.typography.bodyMedium.copy(
+            color = Color(0xFF2D2D2D),
+            textAlign = TextAlign.Center,
+            fontWeight = FontWeight.ExtraBold,
+            fontSize = 14.sp
+        ),
+        modifier = Modifier
+            .width(28.dp)
+            .onFocusChanged {
+                if (!it.isFocused) {
+                    val final = tmpQty.toIntOrNull() ?: item.quantity
+                    if (final > 0) onQuantityChange(final) else tmpQty = item.quantity.toString()
+                }
+            },
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
+        keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
+        singleLine = true,
+        decorationBox = { innerTextField -> Box(contentAlignment = Alignment.Center) { innerTextField() } }
+    )
+}
+
+@Composable
+private fun CartItemOptions(item: CartItem) {
+    if (item.selectedSizeName != null || item.toppings.isNotEmpty()) {
         FlowTagRow(item.selectedSizeName, item.toppings)
     }
 }
 
 @Composable
 @Preview(showSystemUi = true)
-fun CartContentPreview() {
+fun CartPreview() {
+    // Giả lập dữ liệu CartUiState
     val mockState = CartUiState(
-        isLoading = false,
         items = listOf(
             CartItem(
-                lineId = "1|size=M|toppings=1",
-                productId = "1",
-                nameAtAdd = "Hồng trà sữa trân châu đường đen",
-                priceAtAdd = 40000,
-                imageUrlAtAdd = "",
+                lineId = "1",
+                productId = "p1",
+                nameAtAdd = "Caramel Macchiato",
+                imageUrlAtAdd = "https://example.com/coffee.jpg",
+                priceAtAdd = 2000000,
                 quantity = 1,
-                selectedSizeName = "M",
-                sizePriceExtra = 5000,
-                toppings = listOf(
-                    CartItemTopping(id = 1, name = "Trân châu", price = 5000),
-                    CartItemTopping(id = 2, name = "Thạch cà phê", price = 5000)
-                )
+                selectedSizeName = "Vừa (M)",
             ),
             CartItem(
-            lineId = "2",
-            productId = "1",
-            nameAtAdd = "Hồng trà sữa trân châu đường đen",
-            priceAtAdd = 40000,
-            imageUrlAtAdd = "",
-            quantity = 1,
-            sizePriceExtra = 5000,
-            ),
-            CartItem(
-                lineId = "3|size=L|toppings=1",
-                productId = "3",
-                nameAtAdd = "Hồng trà sữa trân châu đường đen",
-                priceAtAdd = 40000,
-                imageUrlAtAdd = "",
-                quantity = 1,
-                selectedSizeName = "L",
-                sizePriceExtra = 5000,
+                lineId = "2",
+                productId = "p2",
+                nameAtAdd = "Bạc Xỉu Đá",
+                imageUrlAtAdd = "https://example.com/coffee2.jpg",
+                priceAtAdd = 35000,
+                quantity = 2,
+                selectedSizeName = "Lớn (L)",
+                toppings = emptyList()
             )
         ),
-        selectedIds = setOf("1|size=M|toppings=1")
+        selectedIds = setOf("1"), // Giả sử item 1 đang được chọn
+        totalAmount = 0 // Tổng tiền của các item được chọn
     )
 
     CoffeeShopAppTheme {
@@ -418,13 +437,15 @@ fun CartContentPreview() {
             state = mockState,
             cartCount = 3,
             onToggleSelection = {},
+            onToggleAllSelection = {},
+            onRemoveSelected = {},
             onIncrease = {},
             onDecrease = {},
             onRemove = {},
             onBack = {},
             openOrderScreen = {},
             openProductDetailScreen = {},
-            onQuantityChange = {_, _ ->}
+            onQuantityChange = { _, _ -> }
         )
     }
 }

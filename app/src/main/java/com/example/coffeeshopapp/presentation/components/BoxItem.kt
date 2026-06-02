@@ -2,38 +2,21 @@ package com.example.coffeeshopapp.presentation.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.FavoriteBorder
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.filled.StarRate
-import androidx.compose.material.icons.filled.Whatshot
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
@@ -41,167 +24,184 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.coffeeshopapp.R
 import com.example.coffeeshopapp.data.model.entity.Product
-import com.example.coffeeshopapp.presentation.theme.CardBackgroundColor
-import com.example.coffeeshopapp.presentation.theme.CardBackgroundColor2
-import com.example.coffeeshopapp.presentation.theme.CoffeeShopAppTheme
-import com.example.coffeeshopapp.presentation.theme.CoffeeTextColor
-import com.example.coffeeshopapp.presentation.theme.IconStarRateColor
-import com.example.coffeeshopapp.presentation.theme.IconWhatshotColor
-import com.example.coffeeshopapp.presentation.theme.PlaceHolderColor
-import com.example.coffeeshopapp.presentation.theme.TitleSmallColor
-import com.example.coffeeshopapp.presentation.theme.k2d
+import com.example.coffeeshopapp.presentation.theme.*
+import com.example.coffeeshopapp.utils.formatGrouped
 import com.example.coffeeshopapp.utils.getFullImageUrl
 
 @Composable
 fun BoxItem(
     product: Product,
-    onFavoriteClick: (String) -> Unit,
-    onAddToCartClick: (String, Offset) -> Unit,
+    onFavoriteClick: (String) -> Unit = {},
+    onAddToCartClick: (String, Offset) -> Unit = {_, _ -> },
+    modifier: Modifier = Modifier,
     openProductDetailScreen: (Product) -> Unit = {},
     isLoading: Boolean = false,
-    modifier: Modifier = Modifier,
 ) {
-    Box(modifier = Modifier
-        .wrapContentSize()
-        .clickable {
-            openProductDetailScreen(product)
-        }
+    var itemOffset by remember { mutableStateOf(Offset.Zero) }
+
+    Surface(
+        modifier = modifier
+            .width(180.dp)
+            .height(260.dp)
+            .shadow(elevation = 8.dp, shape = RoundedCornerShape(28.dp))
+            .clickable { openProductDetailScreen(product) },
+        color = Color.White,
+        shape = RoundedCornerShape(28.dp)
     ) {
-        Column(
-            modifier = modifier.size(200.dp, 220.dp).clip(RoundedCornerShape(16.dp))
-                .background(CardBackgroundColor).padding(6.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxHeight(.6f)
-                    .fillMaxWidth()
-                    .align(Alignment.CenterHorizontally)
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(CardBackgroundColor2)
-            ) {
-                AsyncImage(
-                    model = product.getFullImageUrl(),
-                    contentDescription = product.name,
-                    modifier = Modifier.align(Alignment.Center).fillMaxSize(),
-                    contentScale = ContentScale.Crop,
-                    placeholder = painterResource(R.drawable.loading_img),
-                    error = painterResource(R.drawable.error_img)
-                )
-            }
-
-            Box(modifier = Modifier.fillMaxWidth().padding(start = 6.dp, end = 6.dp)) {
-                Column(
-                    modifier = Modifier.wrapContentSize(),
-                    verticalArrangement = Arrangement.spacedBy(2.dp)
+        Box(modifier = Modifier.fillMaxSize()) {
+            Column() {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(160.dp)
+                        .padding(8.dp)
+                        .clip(RoundedCornerShape(24.dp))
                 ) {
-                    Row() {
-                        if (product.isTrending) Icon(
-                            Icons.Default.Whatshot,
-                            tint = IconWhatshotColor,
-                            contentDescription = null
-                        )
+                    AsyncImage(
+                        model = product.getFullImageUrl(),
+                        contentDescription = product.name,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop,
+                        placeholder = painterResource(R.drawable.loading_img),
+                        error = painterResource(R.drawable.error_img)
+                    )
 
-                        Text(
-                            text = product.name,
-                            color = TitleSmallColor,
-                            fontWeight = FontWeight.Bold,
-                            style = MaterialTheme.typography.bodyMedium,
-                            maxLines = 1,
-                            softWrap = true,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.padding(end = 20.dp)
-                        )
+                    // hot/trending icon
+                    if (product.isTrending) {
+                        Surface(
+                            color = Color(0xFFFFEFEF).copy(alpha = 0.9f),
+                            shape = CircleShape,
+                            modifier = Modifier.padding(8.dp).size(32.dp).align(Alignment.TopStart)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    Icons.Default.Whatshot,
+                                    null,
+                                    tint = IconWhatshotColor,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                        }
                     }
 
-                    CommonSpace(1.dp)
-
-                    Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-                        Icon(
-                            Icons.Default.Star,
-                            tint = IconStarRateColor,
-                            contentDescription = null,
-                            modifier = Modifier.size(13.dp).align(Alignment.CenterVertically)
-                        )
-                        Text(
-                            text = product.rating.toString() + " (" + product.reviewers.toString() + " người đánh giá)",
-                            color = CoffeeTextColor,
-                            style = MaterialTheme.typography.labelMedium,
-                            fontFamily = k2d,
-                            maxLines = 1,
-                            softWrap = true,
-                            overflow = TextOverflow.Ellipsis
-                        )
+                    // favorite button
+                    Surface(
+                        color = Color.White.copy(alpha = 0.8f),
+                        shape = CircleShape,
+                        modifier = Modifier.padding(8.dp).size(32.dp).align(Alignment.TopEnd)
+                    ) {
+                        IconButton(onClick = { if (!isLoading) onFavoriteClick(product.id) }) {
+                            if (isLoading) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(16.dp),
+                                    strokeWidth = 2.dp,
+                                    color = Color(0xFFC38EB4)
+                                )
+                            } else {
+                                Icon(
+                                    imageVector = if (product.isFavorite) Icons.Filled.Favorite else Icons.Default.FavoriteBorder,
+                                    contentDescription = null,
+                                    tint = if (product.isFavorite) Color(0xFFC38EB4) else Color(0xFFA89FBA),
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                        }
                     }
 
-                    CommonSpace(4.dp)
+                    // rating
+                    Surface(
+                        color = Color.Black.copy(alpha = 0.6f),
+                        shape = RoundedCornerShape(topStart = 12.dp),
+                        modifier = Modifier.align(Alignment.BottomEnd)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.Star,
+                                null,
+                                tint = Color(0xFFFFD700),
+                                modifier = Modifier.size(12.dp)
+                            )
+                            Text(
+                                product.rating.toString(),
+                                color = Color.White,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                }
+
+                // info
+                Column(
+                    modifier = Modifier
+                        .padding(horizontal = 16.dp, vertical = 4.dp)
+                        .fillMaxWidth()
+                ) {
+                    Text(
+                        text = product.name,
+                        fontFamily = k2d,
+                        fontWeight = FontWeight.ExtraBold,
+                        fontSize = 15.sp,
+                        color = TextColor,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+
+                    CommonSpace(6.dp)
 
                     Text(
-                        text = product.getPrice(),
-                        color = TitleSmallColor,
-                        style = MaterialTheme.typography.labelMedium
+                        text = "${product.reviewers} đánh giá",
+                        fontSize = 14.sp,
+                        color = Color.Gray,
+                        fontFamily = k2d,
+                        fontWeight = FontWeight.Normal
+                    )
+
+                    CommonSpace(6.dp)
+                    Text(
+                        text = "${product.price.formatGrouped()}đ",
+                        color = TextColor,
+                        fontFamily = k2d,
+                        fontWeight = FontWeight.Normal,
+                        fontSize = 14.sp
                     )
                 }
-
-                IconButton(
-                    onClick = { if (!isLoading) onFavoriteClick(product.id) },
-                    modifier = Modifier.size(24.dp).align(Alignment.TopEnd).padding(top = 4.dp)
-                ) {
-                    if (isLoading) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(20.dp),
-                            strokeWidth = Dp(2f),
-                            color = PlaceHolderColor
-                        )
-                    } else {
-                        Icon(
-                            imageVector = if (product.isFavorite) Icons.Filled.Favorite else Icons.Default.FavoriteBorder,
-                            contentDescription = null,
-                            tint = PlaceHolderColor
-                        )
-                    }
+            }
+            // add button
+            Surface(
+                modifier = Modifier
+                    .height(36.dp)
+                    .width(40.dp)
+                    .onGloballyPositioned { itemOffset = it.positionInRoot() }
+                    .clickable { onAddToCartClick(product.id, itemOffset) }
+                    .align(Alignment.BottomEnd),
+                shape = RoundedCornerShape(topStart = 18.dp, bottomEnd = 28.dp),
+                color = CoffeeTextColor
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(Icons.Default.Add, null, tint = Color.White, modifier = Modifier.size(20.dp))
                 }
             }
         }
-
-        // Nút +
-        var itemOffset by remember { mutableStateOf(Offset.Zero) }
-        Box(modifier = Modifier
-            .size(36.dp, 30.dp)
-            .clip(RoundedCornerShape(topStart = 16.dp, bottomEnd = 16.dp))
-            .background(color = CoffeeTextColor)
-            .align(Alignment.BottomEnd)
-            .onGloballyPositioned { itemOffset = it.positionInRoot() }
-            .clickable {
-                onAddToCartClick(product.id, itemOffset)
-            }
-        ) {
-            Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.align(Alignment.Center), tint = CardBackgroundColor)
-        }
     }
-
 }
 
 @Composable
-@Preview(name = "Trending Item Preview", showSystemUi = true)
-fun TrendingItemPreview() {
-    CoffeeShopAppTheme {
+@Preview
+fun BoxItemPreview() {
+    CoffeeShopAppTheme() {
         BoxItem(
-            product = Product(
-                id = "1",
-                name = "Nước ép giải nhiệt mùa hè",
-                price = 35000,
-                rating = 4.5,
-                reviewers = 100000,
-                isFavorite = true
-            ),
-            onFavoriteClick = {},
-            onAddToCartClick = {_, _ ->}
+            product = Product(id = "1", name = "Mocha Espresso Macchiato", price = 45000, rating = 4.8, reviewers = 1250),
+            onFavoriteClick = {}
         )
     }
 }

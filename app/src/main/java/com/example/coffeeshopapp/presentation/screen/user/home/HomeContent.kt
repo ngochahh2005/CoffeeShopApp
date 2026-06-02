@@ -14,8 +14,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ChatBubbleOutline
 import androidx.compose.material.icons.filled.Whatshot
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -65,6 +67,7 @@ fun HomeContent(
     favorites: Set<String> = emptySet(),
     onFavoriteClick: (String) -> Unit = {},
     openProductDetailScreen: (Product) -> Unit = {},
+    onChatBotClick: () -> Unit = {},
     onAddToCartClick: (String, Offset) -> Unit = {_, _ ->}
 ) {
     val listState = rememberLazyListState()
@@ -145,14 +148,20 @@ fun HomeContent(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 24.dp, start = 24.dp, end = 24.dp),
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 SearchingTextField(
                     viewModel = viewModel,
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .align(Alignment.CenterVertically)
+                        .fillMaxWidth(.85f)
                 )
+
+                IconButton(
+                    onClick = onChatBotClick
+                ) {
+                    Image(painter = painterResource(R.drawable.btn_chatbot), contentDescription = null, modifier = Modifier.fillMaxSize())
+                }
             }
         }
 
@@ -256,37 +265,6 @@ private fun TitleSmall(
 @Preview(showSystemUi = true)
 fun HomeContentPreview() {
     CoffeeShopAppTheme {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 24.dp, start = 24.dp, end = 24.dp)
-        ) {
-            Text(
-                text = buildAnnotatedString {
-                    withStyle(
-                        style = MaterialTheme.typography.titleMedium.toSpanStyle()
-                            .copy(color = LabelColor)
-                    ) {
-                        append("Enjoy your\nMorning ")
-                    }
-                    withStyle(
-                        style = MaterialTheme.typography.titleMedium.toSpanStyle()
-                            .copy(color = CoffeeTextColor)
-                    ) {
-                        append("Coffee!!")
-                    }
 
-                },
-                textAlign = TextAlign.Left,
-            )
-
-            Image(
-                painter = painterResource(id = R.drawable.ic_home),
-                contentDescription = null,
-                modifier = Modifier
-                    .align(Alignment.CenterEnd)
-                    .size(80.dp)
-            )
-        }
     }
 }

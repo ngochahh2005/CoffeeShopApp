@@ -41,6 +41,7 @@ import com.example.coffeeshopapp.presentation.screen.user.ProductDetailScreen
 import com.example.coffeeshopapp.presentation.theme.BackgroundColor
 import com.example.coffeeshopapp.presentation.theme.CoffeeTextColor
 import com.example.coffeeshopapp.presentation.viewmodel.HomeViewModel
+import com.example.coffeeshopapp.presentation.navigation.Screen
 import com.example.coffeeshopapp.utils.getFullImageUrl
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -48,7 +49,8 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun HomeScreen(
-    viewModel: HomeViewModel = viewModel()
+    viewModel: HomeViewModel = viewModel(),
+    onNavigateToChat: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
@@ -131,7 +133,7 @@ fun HomeScreen(
                         viewModel.toggleFavorite(productId)
                     },
                     openProductDetailScreen = { product -> viewModel.showProduct(product) },
-
+                    onChatBotClick = onNavigateToChat
                     ) { id, offset ->
                     viewModel.addToCart(id, offset)
                 }

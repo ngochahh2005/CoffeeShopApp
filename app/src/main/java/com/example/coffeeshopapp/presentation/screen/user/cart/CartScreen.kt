@@ -31,8 +31,6 @@ fun CartScreen(navController: NavHostController, viewModel: CartViewModel = view
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(BackgroundColor)
-            .padding(16.dp)
     ) {
         when {
             state.isLoading -> {
@@ -55,6 +53,8 @@ fun CartScreen(navController: NavHostController, viewModel: CartViewModel = view
                     state = state,
                     cartCount = cartCount,
                     onToggleSelection = { viewModel.toggleSelection(it) },
+                    onToggleAllSelection = { viewModel.toggleAllSelection(it) },
+                    onRemoveSelected = { viewModel.removeSelectedItems() },
                     onIncrease = { viewModel.increaseQuantity(it) },
                     onDecrease = { viewModel.decreaseQuantity(it) },
                     onRemove = { viewModel.removeItem(it) },
