@@ -200,7 +200,7 @@ fun LoginScreen(
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                // Forgot Password - nhỏ gọn ngay dưới ô mật khẩu
+                // forgot password
                 TextButton(
                     onClick = { openResetPasswordScreen() },
                     modifier = Modifier.align(alignment = Alignment.End)

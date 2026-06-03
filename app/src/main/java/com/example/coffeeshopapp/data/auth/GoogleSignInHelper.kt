@@ -8,20 +8,9 @@ import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
 
-/**
- * Helper class for Google Sign-In using Android Credential Manager.
- *
- * Web Client ID lấy từ Google Cloud Console (cùng project với BE).
- */
 object GoogleSignInHelper {
+    const val WEB_CLIENT_ID = "370933304710-887psjbi23csauc0apo315ppsko6k0nb.apps.googleusercontent.com"
 
-    // Web Client ID từ Google Cloud Console (phải khớp với google.client-id trong application.properties của BE)
-    const val WEB_CLIENT_ID = "370933304710-0fspa0q3r5g9ggkkgb9t76mpktlmk59k.apps.googleusercontent.com"
-
-    /**
-     * Launches Google Sign-In via Credential Manager.
-     * Returns the Google ID token string if successful, or null if failed/cancelled.
-     */
     suspend fun signIn(context: Context): String? {
         return runCatching {
             val credentialManager = CredentialManager.create(context)
