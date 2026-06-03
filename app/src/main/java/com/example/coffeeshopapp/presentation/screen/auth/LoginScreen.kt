@@ -70,6 +70,7 @@ import com.example.coffeeshopapp.presentation.theme.PlaceHolderColor
 import com.example.coffeeshopapp.presentation.theme.TitleColor
 import com.example.coffeeshopapp.presentation.theme.rememberScreenInfo
 import com.example.coffeeshopapp.presentation.viewmodel.AuthViewModel
+import com.example.coffeeshopapp.utils.getErrorMessage
 import kotlinx.coroutines.launch
 
 @Composable
@@ -119,24 +120,18 @@ fun LoginScreen(
                                 AuthDataStore.setProvider(context, meResp.result?.provider ?: "LOCAL")
                                 val userId = meResp.result?.id?.toString()
                                 AuthDataStore.setUserId(context, userId)
-//                                android.util.Log.d("LoginScreen", "User logged in: userId=$userId")
                             } catch (e: Exception) {
-//                                android.util.Log.e("LoginScreen", "getMyInfo() failed", e)
                                 AuthDataStore.setUserId(context, null)
                             }
                             Toast.makeText(context, "Đăng nhập thành công!", Toast.LENGTH_SHORT)
                                 .show()
                             if (isAdmin) openAdminScreen() else openHomeScreen()
                         } else {
-                            Toast.makeText(
-                                context,
-                                "Đăng nhập thất bại: ${resp.message}",
-                                Toast.LENGTH_SHORT
-                            ).show()
+                            val errorMsg = if (resp.message.isNotBlank()) resp.message else "Đăng nhập thất bại"
+                            Toast.makeText(context, errorMsg, Toast.LENGTH_SHORT).show()
                         }
                     } catch (e: Exception) {
-                        Toast.makeText(context, "Lỗi kết nối: ${e.message}", Toast.LENGTH_SHORT)
-                            .show()
+                        Toast.makeText(context, e.getErrorMessage(), Toast.LENGTH_SHORT).show()
                     } finally {
                         isLogging = false
                     }

@@ -12,7 +12,7 @@ import androidx.compose.ui.unit.dp
 import com.example.coffeeshopapp.data.model.entity.Product
 
 @Composable
-fun TrendingItems(
+fun BoxItems(
     items: List<Product> = emptyList(),
     loadingFavorites: Set<String> = emptySet(),
     favorites: Set<String> = emptySet(),

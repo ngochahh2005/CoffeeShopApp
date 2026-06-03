@@ -126,6 +126,9 @@ fun OrderDetailContent(
                 Text(text = "Danh sách món", fontWeight = FontWeight.Bold)
                 Spacer(modifier = Modifier.height(12.dp))
                 order.orderItems?.forEach { item ->
+                    val toppingPriceSum = item.toppings?.sumOf { it.price.toLong() } ?: 0L
+                    val singleItemPrice = item.unitPrice.toLong() + toppingPriceSum
+
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(text = item.productName, fontWeight = FontWeight.Medium)
@@ -143,7 +146,7 @@ fun OrderDetailContent(
                             }
                         }
                         Text(text = "x${item.quantity}", modifier = Modifier.padding(horizontal = 8.dp))
-                        Text(text = "${(item.unitPrice.toLong() * item.quantity).formatGrouped()}đ")
+                        Text(text = "${singleItemPrice.formatGrouped()}đ")
                     }
                     HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = Color(0xFFF5F5F5))
                 }
@@ -171,23 +174,23 @@ fun OrderDetailContent(
                     )
                 }
             }
+        }
 
-            if (order.status.uppercase() == "COMPLETED" && reviewProducts.isNotEmpty()) {
-                CommonSpace()
-                Button(
-                    onClick = { onReviewClick(reviewProducts) },
-                    enabled = !alreadyReviewed,
-                    modifier = Modifier
-                        .height(48.dp)
-                        .align(Alignment.CenterHorizontally),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = if (alreadyReviewed) Color.Gray else Color(0xff3D3450),
-                        contentColor = Color.White
-                    ),
-                    shape = RoundedCornerShape(16.dp)
-                ) {
-                    Text(text = if (alreadyReviewed) "Đã đánh giá" else "Viết đánh giá đơn hàng ngay!")
-                }
+        if (order.status.uppercase() == "COMPLETED" && reviewProducts.isNotEmpty()) {
+            CommonSpace()
+            Button(
+                onClick = { onReviewClick(reviewProducts) },
+                enabled = !alreadyReviewed,
+                modifier = Modifier
+                    .height(48.dp)
+                    .align(Alignment.CenterHorizontally),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (alreadyReviewed) Color.Gray else Color(0xff3D3450),
+                    contentColor = Color.White
+                ),
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Text(text = if (alreadyReviewed) "Đã đánh giá" else "Viết đánh giá đơn hàng ngay!")
             }
         }
     }

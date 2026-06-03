@@ -48,9 +48,9 @@ fun BoxItem(
         modifier = modifier
             .width(180.dp)
             .height(260.dp)
-            .shadow(elevation = 8.dp, shape = RoundedCornerShape(28.dp))
+//            .shadow(elevation = 8.dp, shape = RoundedCornerShape(28.dp))
             .clickable { openProductDetailScreen(product) },
-        color = Color.White,
+        color = CardBackgroundColor,
         shape = RoundedCornerShape(28.dp)
     ) {
         Box(modifier = Modifier.fillMaxSize()) {

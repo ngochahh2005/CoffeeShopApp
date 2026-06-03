@@ -12,23 +12,24 @@ import java.net.URI
 
 fun Exception.getErrorMessage(): String {
     if (this is HttpException) {
-        try {
-            val errorBody = this.response()?.errorBody()?.string()
-            if (!errorBody.isNullOrEmpty()) {
-                val json = JSONObject(errorBody)
-                if (json.has("message")) {
-                    return json.getString("message")
-                }
-            }
-        } catch (e: Exception) {
-            // Bỏ qua và dùng thông báo lỗi mặc định
+        val code = this.code()
+
+        when (code) {
+            401 -> return "Tài khoản hoặc mật khẩu không chính xác"
+            403 -> return "Bạn không có quyền thực hiện hành động này"
+            404 -> return "Không tìm thấy dữ liệu yêu cầu"
+            500 -> return "Lỗi hệ thống, vui lòng thử lại sau"
         }
-        
-        // Nếu không parse được từ body, dùng message của HTTP (ví dụ "HTTP 400 Bad Request")
-        // nhưng thường người dùng không muốn thấy "HTTP 400...", nên có thể trả về lỗi mặc định thân thiện hơn.
-        return "Lỗi máy chủ hoặc yêu cầu không hợp lệ"
+
+        return "Lỗi kết nối: HTTP $code"
     }
-    return this.message ?: "Lỗi không xác định"
+
+    val msg = this.message ?: ""
+    return when {
+        msg.contains("Unable to resolve host") || msg.contains("ConnectException") -> "Không có kết nối mạng"
+        msg.contains("timeout") -> "Kết nối quá hạn, vui lòng thử lại"
+        else -> if (msg.isNotBlank()) "Lỗi: $msg" else "Lỗi không xác định"
+    }
 }
 
 private fun baseOriginFrom(baseUrl: String): String {

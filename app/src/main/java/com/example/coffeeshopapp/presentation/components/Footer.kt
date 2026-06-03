@@ -42,6 +42,7 @@ import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.example.coffeeshopapp.presentation.navigation.Screen
 import com.example.coffeeshopapp.presentation.theme.FooterBackgroundColor
+import com.example.coffeeshopapp.presentation.theme.IconWhatshotColor
 import com.example.coffeeshopapp.presentation.theme.LabelColor
 
 @Composable
@@ -66,7 +67,6 @@ fun Footer(
                 isSelected = currentRoute == Screen.UserHome.route,
             ) {
                 navController.navigate(Screen.UserHome.route) {
-                    // avoid multiple copies and restore state
                     popUpTo(navController.graph.findStartDestination().id) {
                         saveState = true
                     }
@@ -89,7 +89,6 @@ fun Footer(
                 }
             }
 
-            // Shopping bag: capture its position for fly-to-cart animation
             IconButton(
                 modifier = Modifier.onGloballyPositioned { coords ->
                     val pos = coords.positionInRoot()
@@ -109,7 +108,7 @@ fun Footer(
                     badge = {
                         if (cartCount > 0) {
                             Badge(
-                                containerColor = Color.Red,
+                                containerColor = IconWhatshotColor,
                                 contentColor = Color.White,
                                 modifier = Modifier.offset(x = (-4).dp, y = 4.dp)
                             ) {

@@ -51,9 +51,9 @@ fun ListItem(
         modifier = modifier
             .fillMaxWidth()
             .height(115.dp)
-            .shadow(elevation = 6.dp, shape = RoundedCornerShape(20.dp))
+//            .shadow(elevation = 6.dp, shape = RoundedCornerShape(20.dp))
             .clickable { openProductDetailScreen(product) },
-        color = Color.White,
+        color = CardBackgroundColor,
         shape = RoundedCornerShape(20.dp)
     ) {
         Row(

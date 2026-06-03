@@ -291,6 +291,9 @@ interface ApiService {
         @Part image: MultipartBody.Part? = null
     ): ApiResponseDto<ReviewDto>
 
+    @GET("api/v1/products/{id}/review-count")
+    suspend fun getReviewCount(@Path("id") id: Long): ApiResponseDto<Long>
+
     @GET("api/v1/orders/{orderId}/products/{productId}/check-reviewed")
     suspend fun checkOrderProductReviewed(
         @Path("orderId") orderId: Long,
@@ -302,6 +305,9 @@ interface ApiService {
         @Path("orderId") orderId: Long,
         @Body request: PaymentRequestDto
     ): ApiResponseDto<PaymentDto>
+
+    @GET("api/products/recommendations")
+    suspend fun getRecommendations(): List<ProductDto>
 }
 
 data class PaymentRequestDto(

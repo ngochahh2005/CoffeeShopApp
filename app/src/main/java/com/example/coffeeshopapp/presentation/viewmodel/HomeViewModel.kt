@@ -41,6 +41,7 @@ data class HomeUiState(
     val isLoading: Boolean = false,
     val categories: List<Category> = emptyList(),
     val trendingItems: List<Product> = emptyList(),
+    val recommendationItems: List<Product> = emptyList(),
     val favoriteItems: List<Product> = emptyList(),
     val loadingFavorites: Set<String> = emptySet(),
     val allProduct: List<Product> = emptyList(),
@@ -124,7 +125,20 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                     }
 
                     val finalAllProduct = allProduct.withTrendingFlags()
-                    val trendingIds = finalAllProduct.filter { it.isTrending }.map { it.id }.toSet()
+                    val trendingItemsSorted = finalAllProduct
+                        .filter { it.isTrending }
+                        .sortedByDescending { product ->
+                            val normalizedRating = product.rating / 5.0
+                            val popularityScore = ln(product.reviewers.toDouble() + 1.0)
+                            (normalizedRating * 0.5) + (popularityScore * 0.5)
+                        }
+
+                    val recommendations = try {
+                        val recs = NetworkClient.api.getRecommendations()
+                        recs.map { it.toProduct(isFavorite = favoriteIds.contains(it.id.toString())) }
+                    } catch (e: Exception) {
+                        emptyList()
+                    }
 
                     val allCategory = try {
                         val catResp = NetworkClient.api.getCategories()
@@ -144,7 +158,8 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                     _uiState.update {
                         it.copy(
                             categories = allCategory,
-                            trendingItems = finalAllProduct.filter { trendingIds.contains(it.id) },
+                            trendingItems = trendingItemsSorted,
+                            recommendationItems = recommendations,
                             allProduct = finalAllProduct,
                             favoriteItems = finalAllProduct.favoriteItems(favoriteIds, serverFavorites),
                             isLoading = false,

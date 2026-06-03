@@ -14,7 +14,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ChatBubbleOutline
+import androidx.compose.material.icons.filled.CoffeeMaker
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.Whatshot
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -30,6 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -40,6 +43,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
 import com.example.coffeeshopapp.R
 import com.example.coffeeshopapp.data.model.entity.Category
 import com.example.coffeeshopapp.data.model.entity.Product
@@ -47,15 +51,18 @@ import com.example.coffeeshopapp.presentation.components.Categories
 import com.example.coffeeshopapp.presentation.components.CommonSpace
 import com.example.coffeeshopapp.presentation.components.ListItem
 import com.example.coffeeshopapp.presentation.components.SearchingTextField
-import com.example.coffeeshopapp.presentation.components.TrendingItems
+import com.example.coffeeshopapp.presentation.components.BoxItems
 import com.example.coffeeshopapp.presentation.theme.CoffeeShopAppTheme
 import com.example.coffeeshopapp.presentation.theme.CoffeeTextColor
 import com.example.coffeeshopapp.presentation.theme.IconWhatshotColor
 import com.example.coffeeshopapp.presentation.theme.LabelColor
 import com.example.coffeeshopapp.presentation.theme.PlaceHolderColor
+import com.example.coffeeshopapp.presentation.theme.TextColor
 import com.example.coffeeshopapp.presentation.theme.TitleSmallColor
 import com.example.coffeeshopapp.presentation.theme.k2d
 import com.example.coffeeshopapp.presentation.viewmodel.HomeViewModel
+import com.example.coffeeshopapp.utils.getFullImageUrl
+import com.example.coffeeshopapp.utils.toFullImageUrl
 import kotlinx.coroutines.launch
 
 @Composable
@@ -63,6 +70,7 @@ fun HomeContent(
     viewModel: HomeViewModel = viewModel(),
     categories: List<Category> = emptyList(),
     trendingItems: List<Product> = emptyList(),
+    recommendationItems: List<Product> = emptyList(),
     loadingFavorites: Set<String> = emptySet(),
     favorites: Set<String> = emptySet(),
     onFavoriteClick: (String) -> Unit = {},
@@ -82,10 +90,10 @@ fun HomeContent(
             val positions = mutableMapOf<Long, Int>()
             var currentIdx = 4
             val grouped = filteredProducts.groupBy { product ->
-                uiState.categories.find { it.id == product.categoryId }?.name
+                uiState.categories.find { it.id == product.categoryId }
             }
             uiState.categories.forEach { category ->
-                val productsInCat = grouped[category.name] ?: emptyList()
+                val productsInCat = grouped[category] ?: emptyList()
                 if (productsInCat.isNotEmpty()) {
                     positions[category.id] = currentIdx
                     currentIdx += 1 + productsInCat.size
@@ -168,6 +176,7 @@ fun HomeContent(
         if (!isSearching) {
             item {
                 TitleSmall("Danh Mục")
+                CommonSpace(6.dp)
                 Categories(
                     categories = categories,
                     onCategoryClick = { categoryId ->
@@ -182,7 +191,8 @@ fun HomeContent(
                     icon = Icons.Default.Whatshot,
                     iconColor = IconWhatshotColor
                 )
-                TrendingItems(
+                CommonSpace(6.dp)
+                BoxItems(
                     items = trendingItems,
                     loadingFavorites = loadingFavorites,
                     favorites = favorites,
@@ -193,7 +203,28 @@ fun HomeContent(
             }
 
             item {
-                TitleSmall("Danh sách sản phẩm")
+                TitleSmall(
+                    "Dành cho bạn",
+                    icon = Icons.Default.Favorite,
+                    iconColor = Color(0xFFC38EB4)
+                )
+                CommonSpace(6.dp)
+                BoxItems(
+                    items = recommendationItems,
+                    loadingFavorites = loadingFavorites,
+                    favorites = favorites,
+                    onFavoriteClick = onFavoriteClick,
+                    onAddToCartClick = onAddToCartClick,
+                    openProductDetailScreen = openProductDetailScreen
+                )
+            }
+
+            item {
+                TitleSmall(
+                    titleContent = "Danh sách sản phẩm",
+                    icon = Icons.Default.CoffeeMaker,
+                    iconColor = CoffeeTextColor
+                )
                 CommonSpace(12.dp)
             }
         } else {
@@ -203,16 +234,31 @@ fun HomeContent(
             }
         }
 
-        groupedProducts.forEach { (categoryName, products) ->
+        groupedProducts.forEach { (category, products) ->
             item {
-                Text(
-                    text = categoryName ?: "Khác",
-                    fontSize = 20.sp,
-                    fontFamily = k2d,
-                    fontWeight = FontWeight.Bold,
-                    color = PlaceHolderColor,
-                    modifier = Modifier.padding(horizontal = 24.dp)
-                )
+                Row(
+                    modifier = Modifier.padding(horizontal = 24.dp),
+                    verticalAlignment = Alignment.Bottom,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text(
+                        text = category?.name ?: "Khác",
+                        fontSize = 20.sp,
+                        fontFamily = k2d,
+                        fontWeight = FontWeight.Normal,
+                        color = TextColor,
+                    )
+                    if (category?.imageUrl != null) {
+                        AsyncImage(
+                            model = category.imageUrl.toFullImageUrl(),
+                            contentDescription = category.name,
+                            modifier = Modifier.size(32.dp),
+                            contentScale = ContentScale.Crop,
+                            placeholder = painterResource(R.drawable.loading_img),
+                            error = painterResource(R.drawable.error_img)
+                        )
+                    }
+                }
                 CommonSpace(12.dp)
             }
 

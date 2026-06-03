@@ -219,21 +219,43 @@ private fun RevenueSection(state: DashboardUiState, onToggle: (String) -> Unit) 
                     Text("Chưa có dữ liệu doanh thu", color = SubText, fontSize = 13.sp)
                 }
             } else {
-                // Simple bar chart representation
                 val maxRevenue = state.revenuePoints.maxOfOrNull { it.revenue.toDouble() } ?: 1.0
-                LazyRow(Modifier.fillMaxWidth().height(140.dp), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.Bottom) {
+                LazyRow(
+                    modifier = Modifier.fillMaxWidth().height(170.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalAlignment = Alignment.Bottom,
+                    contentPadding = PaddingValues(bottom = 8.dp)
+                ) {
                     items(state.revenuePoints) { point ->
                         val ratio = if (maxRevenue > 0) (point.revenue.toDouble() / maxRevenue).toFloat() else 0f
-                        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(40.dp)) {
-                            Text(formatMoney(point.revenue), fontSize = 8.sp, color = SubText, maxLines = 1)
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.width(45.dp),
+                            verticalArrangement = Arrangement.Bottom
+                        ) {
+                            Text(
+                                text = formatMoney(point.revenue),
+                                fontSize = 9.sp,
+                                color = SubText,
+                                maxLines = 1,
+                                fontWeight = FontWeight.Medium
+                            )
                             Spacer(Modifier.height(4.dp))
                             Box(
-                                Modifier.fillMaxWidth(0.6f).height((100 * ratio).coerceAtLeast(4f).dp)
+                                Modifier
+                                    .fillMaxWidth(0.7f)
+                                    .height(((110 * ratio).coerceAtLeast(6f)).dp)
                                     .clip(RoundedCornerShape(topStart = 6.dp, topEnd = 6.dp))
                                     .background(CoffeeLight)
                             )
-                            Spacer(Modifier.height(4.dp))
-                            Text(point.label, fontSize = 9.sp, color = SubText, maxLines = 1)
+                            Spacer(Modifier.height(6.dp))
+                            Text(
+                                text = point.label,
+                                fontSize = 10.sp,
+                                color = SubText,
+                                maxLines = 1,
+                                fontWeight = FontWeight.Bold
+                            )
                         }
                     }
                 }
