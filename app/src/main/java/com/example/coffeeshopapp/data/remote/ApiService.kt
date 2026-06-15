@@ -16,7 +16,6 @@ import com.example.coffeeshopapp.data.model.dto.PromotionRequestDto
 import com.example.coffeeshopapp.data.model.dto.RegisterRequestDto
 import com.example.coffeeshopapp.data.model.dto.RevenuePointDto
 import com.example.coffeeshopapp.data.model.dto.ReviewDto
-import com.example.coffeeshopapp.data.model.dto.ReviewRequestDto
 import com.example.coffeeshopapp.data.model.dto.RoleAdminDto
 import com.example.coffeeshopapp.data.model.dto.ToppingDto
 import com.example.coffeeshopapp.data.model.dto.TopProductDto
@@ -239,7 +238,6 @@ interface ApiService {
     @DELETE("api/v1/admin/reviews/{reviewId}")
     suspend fun deleteReview(@Path("reviewId") reviewId: Long): ApiResponseDto<Any>
 
-    // ─── OTP, Auth & Refresh ───
     @POST("api/v1/auth/verify-email")
     suspend fun verifyEmailOtp(@Body request: VerifyOtpRequestDto): ApiResponseDto<Any>
 
@@ -260,8 +258,6 @@ interface ApiService {
 
     @POST("api/v1/auth/logout")
     suspend fun logout(@Body request: LogoutRequestDto): ApiResponseDto<Any>
-
-    // ─── User Profile ───
     @GET("api/v1/users/me")
     suspend fun getMyInfoFull(): ApiResponseDto<UserResponseDto>
 

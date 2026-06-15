@@ -14,7 +14,6 @@ fun Exception.getErrorMessage(): String {
     if (this is HttpException) {
         val code = this.code()
 
-        // Cố gắng đọc message từ Error Body của Backend trước
         try {
             val errorBody = this.response()?.errorBody()?.string()
             if (!errorBody.isNullOrEmpty()) {
@@ -22,7 +21,6 @@ fun Exception.getErrorMessage(): String {
                 if (json.has("message")) return json.getString("message")
             }
         } catch (_: Exception) {
-            // Nếu có lỗi khi đọc body (ví dụ: NetworkOnMainThread), bỏ qua và dùng mặc định
         }
 
         when (code) {

@@ -34,7 +34,6 @@ import kotlinx.coroutines.flow.stateIn
 import com.example.coffeeshopapp.data.TokenProvider
 import com.example.coffeeshopapp.utils.getErrorMessage
 import com.example.coffeeshopapp.utils.DataRefreshBroker
-import com.example.coffeeshopapp.utils.RefreshType
 import kotlin.math.ln
 
 data class HomeUiState(
@@ -76,7 +75,6 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             }
         }
 
-        // Lắng nghe các sự kiện thay đổi dữ liệu từ trang quản trị hoặc nơi khác
         viewModelScope.launch {
             DataRefreshBroker.refreshEvent.collect {
                 loadData(forceRefresh = true)
@@ -94,7 +92,6 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             if (_uiState.value.trendingItems.isNotEmpty() && !forceRefresh) return@launch
 
-            // Nếu là forceRefresh, ta xóa bớt dữ liệu cũ để Compose bắt buộc phải vẽ lại
             if (forceRefresh) {
                 _uiState.update { it.copy(allProduct = emptyList(), isLoading = true) }
             } else {
@@ -135,7 +132,10 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
                     val recommendations = try {
                         val recs = NetworkClient.api.getRecommendations()
-                        recs.map { it.toProduct(isFavorite = favoriteIds.contains(it.id.toString())) }
+                        val productMap = finalAllProduct.associateBy { it.id }
+                        recs.map { dto ->
+                            productMap[dto.id.toString()] ?: dto.toProduct(isFavorite = favoriteIds.contains(dto.id.toString()))
+                        }
                     } catch (e: Exception) {
                         emptyList()
                     }
@@ -230,6 +230,9 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                 },
                 trendingItems = state.trendingItems.map { product ->
                     product.copy(isFavorite = favoriteIds.contains(product.id))
+                },
+                recommendationItems = state.recommendationItems.map { product ->
+                    product.copy(isFavorite = favoriteIds.contains(product.id))
                 }
             )
         }
@@ -320,8 +323,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
     fun addToCartById(productId: String) {
         val product = _uiState.value.allProduct.find { it.id == productId } ?: return
-        
-        // Default to first size if product has sizes but none selected
+
         val productWithDefaultSize = if (product.selectedSizeName == null && product.sizes.isNotEmpty()) {
             val firstSize = product.sizes.minByOrNull { size ->
                 when (size.sizeName.uppercase()) {
