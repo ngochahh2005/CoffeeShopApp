@@ -108,7 +108,6 @@ fun ForgotPasswordScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-//        Text("🔐", fontSize = 64.sp)
         Icon(Icons.Default.Lock,
             contentDescription = null,
             modifier = Modifier.size(64.dp),

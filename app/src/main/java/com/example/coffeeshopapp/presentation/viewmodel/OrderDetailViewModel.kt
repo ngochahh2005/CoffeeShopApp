@@ -36,7 +36,6 @@ class OrderDetailViewModel(application: Application) : AndroidViewModel(applicat
                 val resp = NetworkClient.api.getOrderById(orderId)
                 if (resp.result != null) {
                     _uiState.update { it.copy(isLoading = false, order = resp.result) }
-                    // Kiểm tra review status từ API
                     checkAllProductsReviewedStatus(resp.result)
                 } else {
                     _uiState.update { it.copy(isLoading = false, error = resp.message) }
@@ -50,7 +49,6 @@ class OrderDetailViewModel(application: Application) : AndroidViewModel(applicat
     private fun checkAllProductsReviewedStatus(order: OrderDto) {
         viewModelScope.launch {
             try {
-                // Lấy danh sách sản phẩm để lookup ID nếu bị thiếu
                 val allProductsResp = try {
                     NetworkClient.api.getProduct()
                 } catch (_: Exception) { null }
@@ -66,7 +64,6 @@ class OrderDetailViewModel(application: Application) : AndroidViewModel(applicat
                         return@supervisorScope
                     }
 
-                    // Check từng sản phẩm xem order này đã review hay chưa
                     val reviewStatusList = items.map { item ->
                         var productId = item.productId
                         if (productId == 0L) {
@@ -86,7 +83,6 @@ class OrderDetailViewModel(application: Application) : AndroidViewModel(applicat
                         }
                     }
 
-                    // Nếu tất cả sản phẩm trong order này đã reviewed, disable button
                     val allReviewed = reviewStatusList.isNotEmpty() && reviewStatusList.all { it }
                     _uiState.update { it.copy(isLocalReviewed = allReviewed) }
                 }

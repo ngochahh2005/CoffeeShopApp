@@ -1,6 +1,5 @@
 package com.example.coffeeshopapp.presentation.components
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
@@ -13,9 +12,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -71,7 +68,7 @@ fun BoxItem(
                         error = painterResource(R.drawable.error_img)
                     )
 
-                    // hot/trending icon
+                    // trending icon
                     if (product.isTrending) {
                         Surface(
                             color = Color(0xFFFFEFEF).copy(alpha = 0.9f),

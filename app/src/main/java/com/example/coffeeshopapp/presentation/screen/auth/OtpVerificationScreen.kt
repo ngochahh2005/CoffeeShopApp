@@ -62,7 +62,7 @@ fun OtpVerificationScreen(
             .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Top bar
+        // top bar
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
@@ -74,7 +74,7 @@ fun OtpVerificationScreen(
 
         Spacer(modifier = Modifier.height(40.dp))
 
-        // Icon
+        // icon
         Icon(Icons.Default.Email, contentDescription = null, tint = TitleColor, modifier = Modifier.size(64.dp))
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -102,7 +102,7 @@ fun OtpVerificationScreen(
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        // OTP Input - 6 boxes
+        // otp
         BasicTextField(
             value = otpValue,
             onValueChange = { newValue ->
@@ -150,7 +150,7 @@ fun OtpVerificationScreen(
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        // Verify button
+        // verify button
         Button(
             onClick = {
                 if (otpValue.length != 6) {

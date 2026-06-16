@@ -88,7 +88,6 @@ object CartDataStore {
             } else {
                 currentItems.map { item ->
                     if (item.lineId == lineId) {
-                        // Không cập nhật lastModified ở đây để tránh nhảy sản phẩm khi bấm +/- trong giỏ hàng
                         item.copy(quantity = quantity)
                     } else {
                         item
@@ -128,7 +127,6 @@ object CartDataStore {
             val type = object : com.google.gson.reflect.TypeToken<List<CartItem>>() {}.type
             gson.fromJson<List<CartItem>>(raw, type) ?: emptyList()
         } catch (e: Exception) {
-            // Fallback to manual parsing for backward compatibility if needed
             runCatching {
                 val arr = JSONArray(raw)
                 buildList {

@@ -239,7 +239,6 @@ private fun PremiumCartItem(
             .fillMaxWidth()
             .clip(RoundedCornerShape(24.dp))
     ) {
-        // Aesthetic Swipe Action
         Box(
             modifier = Modifier
                 .matchParentSize()
@@ -258,7 +257,6 @@ private fun PremiumCartItem(
             }
         }
 
-        // Main Boutique Card
         Surface(
             modifier = Modifier
                 .fillMaxWidth()
@@ -288,7 +286,6 @@ private fun PremiumCartItem(
 
                 Spacer(modifier = Modifier.width(12.dp))
 
-                // Product Image with Frame
                 Box(
                     modifier = Modifier
                         .size(90.dp)
@@ -320,8 +317,7 @@ private fun PremiumCartItem(
                     )
 
                     Spacer(modifier = Modifier.height(6.dp))
-                    
-                    // Options as Minimal Chips
+
                     CartItemOptions(item)
 
                     Spacer(modifier = Modifier.height(10.dp))
@@ -340,7 +336,6 @@ private fun PremiumCartItem(
                         )
 
                         Spacer(modifier = Modifier.width(4.dp))
-                        // Elegant Boutique Quantity Picker
                         Row(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(12.dp))
@@ -405,7 +400,6 @@ private fun CartItemOptions(item: CartItem) {
 @Composable
 @Preview(showSystemUi = true)
 fun CartPreview() {
-    // Giả lập dữ liệu CartUiState
     val mockState = CartUiState(
         items = listOf(
             CartItem(
@@ -428,8 +422,8 @@ fun CartPreview() {
                 toppings = emptyList()
             )
         ),
-        selectedIds = setOf("1"), // Giả sử item 1 đang được chọn
-        totalAmount = 0 // Tổng tiền của các item được chọn
+        selectedIds = setOf("1"),
+        totalAmount = 0
     )
 
     CoffeeShopAppTheme {

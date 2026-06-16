@@ -49,8 +49,8 @@ import com.example.coffeeshopapp.presentation.screen.admin.PromotionManagementSc
 import com.example.coffeeshopapp.presentation.screen.admin.ReviewManagementScreen
 import com.example.coffeeshopapp.presentation.screen.admin.ToppingManagementScreen
 import com.example.coffeeshopapp.presentation.screen.admin.UserManagementScreen
-import com.example.coffeeshopapp.presentation.screen.admin.category.AdminCategoryScreen
-import com.example.coffeeshopapp.presentation.screen.admin.product.AdminProductScreen
+import com.example.coffeeshopapp.presentation.screen.admin.AdminCategoryScreen
+import com.example.coffeeshopapp.presentation.screen.admin.AdminProductScreen
 import com.example.coffeeshopapp.presentation.screen.auth.ForgotPasswordScreen
 import com.example.coffeeshopapp.presentation.screen.auth.LoginScreen
 import com.example.coffeeshopapp.presentation.screen.auth.OtpVerificationScreen
@@ -484,7 +484,7 @@ fun NavGraph(innerPadding: PaddingValues, navController: NavHostController) {
             )
         }
 
-        // Keep old route for backward compat
+        // reset password
         composable(route = Screen.ResetPassword.route) {
             ForgotPasswordScreen(
                 onBack = { navController.popBackStack() },

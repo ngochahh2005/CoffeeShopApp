@@ -63,7 +63,6 @@ fun FlowTagRow(
             allTags.forEach { (text, isSize) -> PillTag(text, isSize) }
         }.map { it.measure(constraints.copy(minWidth = 0)) }
 
-        // ✅ Guard: nếu không đo được gì thì không render
         if (tagPlaceables.isEmpty()) {
             return@SubcomposeLayout layout(0, 0) {}
         }
@@ -74,7 +73,6 @@ fun FlowTagRow(
         for (i in tagPlaceables.indices) {
             val p = tagPlaceables[i]
             val currentLine = lines.last()
-            // ✅ Nếu maxWidth = 0 (Preview chưa đo xong), cứ add hết vào 1 dòng
             val addedWidth = if (currentLine.items.isEmpty()) p.width else gap + p.width
             if (maxWidth == 0 || currentLine.width + addedWidth <= maxWidth) {
                 currentLine.items.add(i)
@@ -87,14 +85,14 @@ fun FlowTagRow(
 
         val totalShown = lines.sumOf { it.items.size }
         val overflowCount = allTags.size - totalShown
-        val lineHeight = tagPlaceables.maxOfOrNull { it.height } ?: 0  // ✅ maxOfOrNull thay vì maxOf
+        val lineHeight = tagPlaceables.maxOfOrNull { it.height } ?: 0
         val totalHeight = if (lines.isEmpty()) 0
         else lines.size * lineHeight + (lines.size - 1) * rowGap
 
         if (overflowCount > 0) {
             val overflowPlaceable = subcompose("overflow") {
                 PillTag("+$overflowCount", isSize = false)
-            }.firstOrNull()?.measure(constraints.copy(minWidth = 0))  // ✅ firstOrNull
+            }.firstOrNull()?.measure(constraints.copy(minWidth = 0))
 
             if (overflowPlaceable != null) {
                 val lastLine = lines.last()
@@ -111,7 +109,7 @@ fun FlowTagRow(
             val finalOverflow = allTags.size - lines.sumOf { it.items.size }
             val finalOverflowPlaceable = subcompose("overflow_final") {
                 PillTag("+$finalOverflow", isSize = false)
-            }.firstOrNull()?.measure(constraints.copy(minWidth = 0))  // ✅ firstOrNull
+            }.firstOrNull()?.measure(constraints.copy(minWidth = 0))
 
             layout(maxWidth.coerceAtLeast(0), totalHeight.coerceAtLeast(0)) {
                 lines.forEachIndexed { lineIdx, line ->

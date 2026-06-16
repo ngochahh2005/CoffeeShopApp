@@ -129,7 +129,7 @@ fun HomeScreen(
                     trendingItems = uiState.trendingItems,
                     recommendationItems = uiState.recommendationItems,
                     loadingFavorites = uiState.loadingFavorites,
-                    favorites = uiState.trendingItems.filter { it.isFavorite }.map { it.id }.toSet(),
+                    favorites = uiState.allProduct.filter { it.isFavorite }.map { it.id }.toSet(),
                     onFavoriteClick = { productId ->
                         viewModel.toggleFavorite(productId)
                     },

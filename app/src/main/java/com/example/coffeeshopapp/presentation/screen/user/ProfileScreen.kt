@@ -280,7 +280,6 @@ fun ProfileScreen(
                                     NetworkClient.api.logout(LogoutRequestDto(it))
                                 }
                             } catch (_: Exception) {
-                                // Logout local vẫn được xử lý bên dưới.
                             }
                             AuthDataStore.clearAll(context)
                             TokenProvider.token = null

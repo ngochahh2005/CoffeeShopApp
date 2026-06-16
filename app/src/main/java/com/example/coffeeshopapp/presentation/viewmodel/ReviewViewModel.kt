@@ -92,8 +92,7 @@ class ReviewViewModel(application: Application) : AndroidViewModel(application) 
                 val ratings = currentState.ratings
                 val comments = currentState.comments
                 val images = currentState.imagesMap
-                
-                // Ensure we have products for name lookup
+
                 val currentProducts = if (_products.value.isEmpty()) {
                     try {
                         val resp = NetworkClient.api.getProduct()
@@ -106,11 +105,10 @@ class ReviewViewModel(application: Application) : AndroidViewModel(application) 
 
                 var lastErrorMessage: String? = null
                 supervisorScope {
-                    // Lặp qua tất cả sản phẩm trong đơn hàng thay vì chỉ lặp qua danh sách ratings đã sửa
                     val deferredRequests = reviewItems.indices.map { index ->
                         async {
                             val item = reviewItems[index]
-                            val rating = ratings[index] ?: 5 // Mặc định 5 sao nếu chưa chọn
+                            val rating = ratings[index] ?: 5
                             
                             var productId = item.productId
                             if (productId == 0L) {
@@ -129,7 +127,6 @@ class ReviewViewModel(application: Application) : AndroidViewModel(application) 
                                 orderId = orderId,
                                 productId = productId,
                                 rating = rating,
-                                // Backend @NotBlank requires non-empty string
                                 comment = if (comments[index].isNullOrBlank()) "Đánh giá tuyệt vời!" else comments[index]!!
                             )
                             val gson = GsonBuilder().serializeNulls().create()

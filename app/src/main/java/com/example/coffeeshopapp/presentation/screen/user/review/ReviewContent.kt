@@ -167,7 +167,7 @@ fun ReviewContent(
 
                 CommonSpace()
 
-                // Rating Section
+                // Rating
                 Text(
                     text = "CHỌN ĐỂ ĐÁNH GIÁ",
                     modifier = Modifier.align(Alignment.CenterHorizontally),
@@ -196,7 +196,7 @@ fun ReviewContent(
 
                 Spacer(modifier = Modifier.height(32.dp))
 
-                // Comment Section
+                // Comment
                 Text(
                     text = "Để lại bình luận",
                     modifier = Modifier.padding(horizontal = 16.dp),
@@ -227,7 +227,7 @@ fun ReviewContent(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // Image Selection
+                // Image
                 Text(
                     text = "Thêm ảnh",
                     modifier = Modifier.padding(horizontal = 16.dp),
@@ -297,7 +297,7 @@ fun ReviewContent(
                 CommonSpace(32.dp)
             }
 
-            // Submit Button
+            // Submit button
             Button(
                 onClick = onSubmitClick,
                 enabled = !uiState.isSubmitting && reviewItems.isNotEmpty(),
@@ -365,7 +365,7 @@ fun ReviewScreenPreview() {
             isDeleted = false,
             rating = 4.5,
             reviewers = 120,
-            size = emptyList() // Hoặc truyền List<ProductSizeDto> nếu cần thiết
+            size = emptyList()
         ),
         ProductDto(
             id = 102,

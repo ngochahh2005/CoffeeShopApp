@@ -30,7 +30,6 @@ class AIChatViewModel : ViewModel() {
     val messages: List<ChatMessage> = _messages
 
     init {
-        // Welcome message
         _messages.add(ChatMessage("Xin chào! Tôi là trợ lý ảo của Coffee Shop. Tôi có thể giúp gì cho bạn?", false))
     }
 

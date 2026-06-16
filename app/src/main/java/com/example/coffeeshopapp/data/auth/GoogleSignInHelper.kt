@@ -24,7 +24,6 @@ object GoogleSignInHelper {
         }.getOrElse { firstError ->
             android.util.Log.e("GoogleSignIn", "Lỗi SignInWithGoogleOption: ${firstError.message}", firstError)
 
-            // Fallback: mở danh sách tất cả tài khoản Google nếu máy không hỗ trợ SignInWithGoogleOption tốt.
             runCatching {
                 val credentialManager = CredentialManager.create(context)
                 val googleIdOption = GetGoogleIdOption.Builder()
@@ -39,8 +38,7 @@ object GoogleSignInHelper {
                 credentialManager.getIdToken(context, request)
             }.getOrElse { secondError ->
                 android.util.Log.e("GoogleSignIn", "Lỗi GetGoogleIdOption (Fallback): ${secondError.message}", secondError)
-                
-                // Ném lỗi ra ngoài để LoginScreen có thể lấy message chi tiết
+
                 throw secondError
             }
         }

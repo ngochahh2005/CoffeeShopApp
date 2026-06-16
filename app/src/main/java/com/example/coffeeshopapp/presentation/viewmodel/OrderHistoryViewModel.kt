@@ -50,7 +50,7 @@ class OrderHistoryViewModel : ViewModel() {
             try {
                 val resp = userRepository.cancelOrder(orderId)
                 if (resp.result != null) {
-                    loadOrders() // Refresh list after cancellation
+                    loadOrders()
                 } else {
                     _uiState.update { it.copy(isLoading = false, error = resp.message) }
                 }

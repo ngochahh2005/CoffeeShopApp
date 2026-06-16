@@ -60,7 +60,6 @@ fun ListItem(
             modifier = Modifier.fillMaxSize(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Product Image with Aesthetic Frame
             Box(
                 modifier = Modifier
                     .padding(10.dp)
@@ -77,7 +76,7 @@ fun ListItem(
                     placeholder = painterResource(R.drawable.loading_img)
                 )
                 
-                // Rating Overlay
+                // rating
                 Surface(
                     color = Color.Black.copy(alpha = 0.6f),
                     shape = RoundedCornerShape(topStart = 16.dp, bottomEnd = 8.dp),
@@ -134,7 +133,7 @@ fun ListItem(
                 verticalArrangement = Arrangement.SpaceBetween,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Favorite Button
+                // favorite button
                 IconButton(
                     onClick = { if (!isLoading) onFavoriteClick(product.id) },
                     modifier = Modifier.size(28.dp)
@@ -151,7 +150,7 @@ fun ListItem(
                     }
                 }
 
-                // Premium Add Button
+                // add button
                 Surface(
                     modifier = Modifier
                         .size(36.dp)

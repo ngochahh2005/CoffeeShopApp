@@ -1,4 +1,4 @@
-package com.example.coffeeshopapp.presentation.screen.admin.product
+package com.example.coffeeshopapp.presentation.screen.admin
 
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult

@@ -70,13 +70,11 @@ class DashboardViewModel(
                 val now = java.time.LocalDate.now()
                 val (from, to) = when (groupBy) {
                     "MONTH" -> {
-                        // Whole current year
                         val from = now.withDayOfYear(1).toString()
                         val to = now.toString()
                         from to to
                     }
                     else -> {
-                        // Current month
                         val from = now.withDayOfMonth(1).toString()
                         val to = now.toString()
                         from to to
