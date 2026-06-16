@@ -16,9 +16,12 @@ import com.example.coffeeshopapp.data.local.AuthDataStore
 import java.util.concurrent.TimeUnit
 
 object NetworkClient {
+  private const val USE_LOCAL = false
+
+  private const val LOCAL_BASE_URL = "http://10.0.2.2:8080/"
   private const val DEPLOYED_BASE_URL = "https://coffeeshopapp-b888.onrender.com/"
 
-  val BASE_URL: String = DEPLOYED_BASE_URL
+  val BASE_URL: String = if (USE_LOCAL) LOCAL_BASE_URL else DEPLOYED_BASE_URL
 
   private val logging = HttpLoggingInterceptor().apply {
     level = HttpLoggingInterceptor.Level.BODY

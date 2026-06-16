@@ -290,7 +290,7 @@ private fun Image(product: Product, unitPrice: Long) {
                 Text(
                     text = buildAnnotatedString {
                         withStyle(MaterialTheme.typography.bodySmall.toSpanStyle().copy(color = Color(0xff60417E))) {
-                            append(product.rating.toString())
+                            append("%.1f".format(product.rating))
                         }
                         withStyle(MaterialTheme.typography.bodySmall.toSpanStyle().copy(color = Color(0xff60417E))) {
                             append(" (${product.reviewers} đánh giá)")

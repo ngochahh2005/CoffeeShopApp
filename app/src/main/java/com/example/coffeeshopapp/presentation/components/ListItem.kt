@@ -88,7 +88,7 @@ fun ListItem(
                         horizontalArrangement = Arrangement.spacedBy(2.dp)
                     ) {
                         Icon(Icons.Default.Star, null, tint = Color(0xFFFFD700), modifier = Modifier.size(10.dp))
-                        Text(product.rating.toString(), color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                        Text("%.1f".format(product.rating), color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                     }
                 }
             }

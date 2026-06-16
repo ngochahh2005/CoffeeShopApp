@@ -128,7 +128,7 @@ fun BoxItem(
                                 modifier = Modifier.size(12.dp)
                             )
                             Text(
-                                product.rating.toString(),
+                                "%.1f".format(product.rating),
                                 color = Color.White,
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold
