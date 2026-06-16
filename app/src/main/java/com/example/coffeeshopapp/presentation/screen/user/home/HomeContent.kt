@@ -85,10 +85,12 @@ fun HomeContent(
 
     val isSearching = viewModel.searchKeyWords.isNotBlank()
 
-    val categoryPositions by remember(filteredProducts, uiState.categories) {
+    val categoryPositions by remember(filteredProducts, uiState.categories, isSearching) {
         derivedStateOf {
             val positions = mutableMapOf<Long, Int>()
-            var currentIdx = 4
+            val initialIdx = if (isSearching) 2 else 5
+            var currentIdx = initialIdx
+
             val grouped = filteredProducts.groupBy { product ->
                 uiState.categories.find { it.id == product.categoryId }
             }
@@ -234,44 +236,47 @@ fun HomeContent(
             }
         }
 
-        groupedProducts.forEach { (category, products) ->
-            item {
-                Row(
-                    modifier = Modifier.padding(horizontal = 24.dp),
-                    verticalAlignment = Alignment.Bottom,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    Text(
-                        text = category?.name ?: "Khác",
-                        fontSize = 20.sp,
-                        fontFamily = k2d,
-                        fontWeight = FontWeight.Normal,
-                        color = TextColor,
-                    )
-                    if (category?.imageUrl != null) {
-                        AsyncImage(
-                            model = category.imageUrl.toFullImageUrl(),
-                            contentDescription = category.name,
-                            modifier = Modifier.size(32.dp),
-                            contentScale = ContentScale.Crop,
-                            placeholder = painterResource(R.drawable.loading_img),
-                            error = painterResource(R.drawable.error_img)
+        uiState.categories.forEach { category ->
+            val products = groupedProducts[category] ?: emptyList()
+            if (products.isNotEmpty()) {
+                item {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 24.dp),
+                        verticalAlignment = Alignment.Bottom,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Text(
+                            text = category.name,
+                            fontSize = 20.sp,
+                            fontFamily = k2d,
+                            fontWeight = FontWeight.Normal,
+                            color = TextColor,
                         )
+                        if (category.imageUrl != null) {
+                            AsyncImage(
+                                model = category.imageUrl.toFullImageUrl(),
+                                contentDescription = category.name,
+                                modifier = Modifier.size(32.dp),
+                                contentScale = ContentScale.Crop,
+                                placeholder = painterResource(R.drawable.loading_img),
+                                error = painterResource(R.drawable.error_img)
+                            )
+                        }
                     }
+                    CommonSpace(12.dp)
                 }
-                CommonSpace(12.dp)
-            }
 
-            items(products, key = { it.id }) { product ->
-                ListItem(
-                    product = product,
-                    isLoading = loadingFavorites.contains(product.id),
-                    onFavoriteClick = onFavoriteClick,
-                    onAddToCartClick = onAddToCartClick,
-                    openProductDetailScreen = openProductDetailScreen,
-                    modifier = Modifier.padding(horizontal = 24.dp)
-                )
-                CommonSpace(12.dp)
+                items(products, key = { it.id }) { product ->
+                    ListItem(
+                        product = product,
+                        isLoading = loadingFavorites.contains(product.id),
+                        onFavoriteClick = onFavoriteClick,
+                        onAddToCartClick = onAddToCartClick,
+                        openProductDetailScreen = openProductDetailScreen,
+                        modifier = Modifier.padding(horizontal = 24.dp)
+                    )
+                    CommonSpace(12.dp)
+                }
             }
         }
     }
