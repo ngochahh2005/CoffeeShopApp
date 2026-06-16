@@ -83,7 +83,7 @@ fun RegisterScreen(
                             )
                         )
 
-                        if (resp.result != null) {
+                        if (resp.code == 1000) {
                             Toast.makeText(context, "Đăng ký thành công! Vui lòng nhập mã OTP.", Toast.LENGTH_SHORT).show()
                             openOtpScreen(viewModel.email)
                         } else {

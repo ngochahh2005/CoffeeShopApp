@@ -80,7 +80,8 @@ fun LoginScreen(
     openAdminScreen: () -> Unit = openHomeScreen,
     openRegisterScreen: () -> Unit,
     openResetPasswordScreen: () -> Unit,
-    onGoogleLogin: () -> Unit = {}
+    onGoogleLogin: () -> Unit = {},
+    openOtpScreen: (String) -> Unit = {}
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
@@ -131,6 +132,29 @@ fun LoginScreen(
                             Toast.makeText(context, errorMsg, Toast.LENGTH_SHORT).show()
                         }
                     } catch (e: Exception) {
+                        if (e is retrofit2.HttpException) {
+                            try {
+                                val errorBody = e.response()?.errorBody()?.string()
+                                if (!errorBody.isNullOrEmpty()) {
+                                    val json = org.json.JSONObject(errorBody)
+                                    val code = if (json.has("code")) json.getInt("code") else 0
+                                    val message = if (json.has("message")) json.getString("message") else ""
+                                    
+                                    if (code == 1211 || message == "USER_NOT_VERIFIED") {
+                                        val email = if (json.has("result") && !json.isNull("result")) {
+                                            json.getString("result")
+                                        } else {
+                                            viewModel.username
+                                        }
+                                        Toast.makeText(context, "Tài khoản chưa xác thực! Vui lòng nhập mã OTP.", Toast.LENGTH_LONG).show()
+                                        openOtpScreen(email)
+                                        return@launch
+                                    }
+                                }
+                            } catch (ex: Exception) {
+                                ex.printStackTrace()
+                            }
+                        }
                         Toast.makeText(context, e.getErrorMessage(), Toast.LENGTH_SHORT).show()
                     } finally {
                         isLogging = false

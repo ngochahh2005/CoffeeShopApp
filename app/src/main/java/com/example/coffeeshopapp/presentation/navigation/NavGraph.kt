@@ -400,6 +400,9 @@ fun NavGraph(innerPadding: PaddingValues, navController: NavHostController) {
                 }},
                 openRegisterScreen = { navController.navigate(Screen.Register.route) },
                 openResetPasswordScreen = { navController.navigate(Screen.ForgotPassword.route) },
+                openOtpScreen = { email ->
+                    navController.navigate(Screen.OtpVerification.createRoute(email))
+                },
                 onGoogleLogin = {
                     coroutineScope.launch {
                         try {
